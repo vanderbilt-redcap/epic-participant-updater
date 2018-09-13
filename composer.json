@@ -1,0 +1,25 @@
+{
+    "name": "Vanderbilt/EpicParticipantUpdater",
+    "description": "Fetch data from Epic",
+    "type": "project",
+    "license": "MIT",
+    "keywords": ["PHP","epic"],
+    "authors": [
+        {
+            "name": "Francesco Delacqua",
+            "email": "francesco.delacqua@vumc.org"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^6.3",
+        "nikic/fast-route": "^1.3",
+        "gabordemooij/redbean": "dev-master",
+        "laravie/parser": "~1.0"
+    },
+    "require-dev": {},
+    "autoload": {
+        "psr-4": {
+            "Vanderbilt\\EpicParticipantUpdater\\App\\": "app/"
+        }
+    }
+}
