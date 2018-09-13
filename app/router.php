@@ -48,10 +48,6 @@ $uri = rawurldecode($uri);
 // dispatch the current route
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
-/* var_dump($routeInfo);
-var_dump($uri); */
-
-
 // create a BaseController to manage common routes or errors
 $baseController = new \Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController();
 

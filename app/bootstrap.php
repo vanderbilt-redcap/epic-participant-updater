@@ -1,15 +1,6 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater\App;
 
-
-
-// load configuration file or die
-try {
-    $config = require __DIR__.'/config.php';
-} catch(Exception $e) {
-    die('error, a config file must be specified');
-}
-
 require_once __DIR__.'/../vendor/autoload.php';
 
 error_reporting(E_ALL);

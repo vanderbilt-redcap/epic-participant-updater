@@ -1,5 +1,5 @@
 <?php
-namespace Vanderbilt\EpicParticipantUpdater\App;
+namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
 use Laravie\Parser\Xml\Reader;
 use Laravie\Parser\Xml\Document;
@@ -77,16 +77,5 @@ class XMLParser
             return false;
 		}
         
-    }
-
-    public function test()
-    {
-        $xml = (new Reader(new Document()))->load(__DIR__.'/../data/test.xml');
-        $user = $xml->parse([
-            'id' => ['uses' => 'user.id'],
-            'email' => ['uses' => 'user.email'],
-            'followers' => ['uses' => 'user::followers'],
-        ]);
-        var_dump($user);
     }
 }

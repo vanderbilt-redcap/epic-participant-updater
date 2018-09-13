@@ -1,6 +1,8 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater;
 
+require_once join(['vendor','autoload.php'],DIRECTORY_SEPARATOR);
+
 use ExternalModules\AbstractExternalModule;
 
 class EpicParticipantUpdater extends AbstractExternalModule {
@@ -58,7 +60,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         $projects = $this->getFetchingEnabledProjects();
         if(empty($projects)) return array("message" => "no projects enabled"); //exit if the module is not enabled in any project
 
-        $parser = new App\XMLParser();
+        $parser = new App\Helpers\XMLParser();
         $xml = $parser->load(__DIR__.'/data/epic_example.xml'); // local loading
 
         // $xml = $parser->load('https://localhost/redcap/modules/epic_fetcher_v1.0.0/data/epic_example.xml'); // remote loading
