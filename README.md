@@ -1,6 +1,6 @@
 # Redcap Epic Participant Updater
 
-External modules that collect data from EPIC and updates/creates the records on redcap
+External module to collect data from EPIC and update/create records on redcap
 
 ### Install dependencies
 Install dependencies with `Composer`.

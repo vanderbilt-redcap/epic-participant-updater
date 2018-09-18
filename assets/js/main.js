@@ -1,4 +1,4 @@
-(function($, window, document) {
+(function(window, document) {
     /*
      * API FUNCTIONS
      */
@@ -11,15 +11,15 @@
     });
 
     // check data from epic
-    function checkData() {
-            request_instance.post('epic/check')
-            .then(function(response) {
-                // const target = document.getElementById('results-container');
+    function checkData(params = {}) {
+        request_instance.post('epic/check', params)
+        .then(function(response) {
+            // const target = document.getElementById('results-container');
 
-                const data = response.data || [];
-            })
-            .catch(ajaxFail)
-            .then(function() { });
+            const data = response.data || [];
+        })
+        .catch(ajaxFail)
+        .then(function() { });
     }
 
     //helper function to display a basic alert on error
@@ -28,10 +28,6 @@
         alert(response.message);
     }
 
-    const checkButton = document.getElementById('checkButton');
-    checkButton.addEventListener('click', function(e){
-        e.preventDefault();
-        checkData();
-    });
+    window.checkEpicData = checkData; //expose the check function
 
-}(window.jQuery, window, document));
+}(window, document));

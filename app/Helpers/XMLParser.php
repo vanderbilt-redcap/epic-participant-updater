@@ -24,15 +24,22 @@ class XMLParser
 
         if (filter_var($path, FILTER_VALIDATE_URL)) {
             // the path is a url: load the remote data
-            $xml = $this->loadRemoteXML($path);
-            if(!$xml) return false;
+            $xml_string = $this->loadRemoteXML($path);
+            if(!$xml_string) return false;
             
-            return (new Reader(new Document()))->extract($xml);
+            return $this->readXML($xml_string);
         }else {
 
             return (new Reader(new Document()))->load($path);
         }
+    }
 
+    /**
+     * reads an xml file in string format
+     */
+    function readXML($xml_string)
+    {
+        return (new Reader(new Document()))->extract($xml_string);
     }
 
     private function loadRemoteXML($url)
@@ -62,10 +69,10 @@ class XMLParser
         // Check if a header exists.
 		if ($remote_response->hasHeader('Content-Length')) {
 			$stream = $remote_response->getBody();
-			$contents = $stream->getContents(); // returns all the contents
+			$data = $stream->getContents(); // returns all the contents
 
             //everything is ok; return data
-            return $contents;
+            return $data;
 		}else {
 			$response = array(
 				"error" => true,

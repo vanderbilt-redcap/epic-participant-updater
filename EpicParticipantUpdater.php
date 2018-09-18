@@ -52,39 +52,56 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         // return key($proj->metadata);
         return $proj->table_pk;
     }
+
+
+    public function getXMLDataFromPath($path)
+    {
+        if(empty($path)) return array("message" => "no path specified");
+        $parser = new App\Helpers\XMLParser();
+        $xml = $parser->load($path);
+        $xml_data = $xml->parse($this->xml_schema);
+        return $xml_data;
+    }
+
+    public function getXMLDataFromString($string)
+    {
+        // var_dump(htmlspecialchars($string));
+        $parser = new App\Helpers\XMLParser();
+        $xml = $parser->readXML($string);
+        var_dump("XML", $xml);
+        $xml_data = $xml->parse($this->xml_schema);
+        return $xml_data;
+    }
+
+
      /**
      * Function called by the CRON to check the XML file
      */
-    public function checkXML()
+    public function checkXML($xml_data=[])
     {
+        if(empty($xml_data))return array("message" => "no data");
+
         $projects = $this->getFetchingEnabledProjects();
         if(empty($projects)) return array("message" => "no projects enabled"); //exit if the module is not enabled in any project
-
-        $parser = new App\Helpers\XMLParser();
-        $xml = $parser->load(__DIR__.'/data/epic_example.xml'); // local loading
-
-        // $xml = $parser->load('https://localhost/redcap/modules/epic_fetcher_v1.0.0/data/epic_example.xml'); // remote loading
-
-        $epic_data = $xml->parse($this->xml_schema);
-
+        
         // check for projects that are using the same irb number of the XML
         foreach($projects as $project_id)
         {
             // set the context of the project
             $_GET['pid'] = $project_id;
             
-            $projectIsInResearch = $this->checkIRB($project_id, $epic_data['irbNumber']); // check for existing
+            $projectIsInResearch = $this->checkIRB($project_id, $xml_data['irbNumber']); // check for existing
 
             if(!$projectIsInResearch) continue; //continue to next project loop
 
-            $record = $this->checkMRN($project_id, $epic_data['candidateID']); // check for existing 
+            $record = $this->checkMRN($project_id, $xml_data['candidateID']); // check for existing 
             $status_field_name = $this->getProjectSetting($this->status_mapping_key, $project_id);
 
             if($record)
             {
                 foreach($record as $record_id => &$data)
                 {
-                    $data[$status_field_name] = trim($epic_data['processState']);
+                    $data[$status_field_name] = trim($xml_data['processState']);
                     $response = \REDCap::saveData($project_id, 'array', array($record));
                     App\Helpers\Logger::log($this->logFile, "data updated: {$response}");
                 }
@@ -96,8 +113,8 @@ class EpicParticipantUpdater extends AbstractExternalModule {
 
                 $data = array(
                     $record_id_field => $this->addAutoNumberedRecord($project_id),
-                    $mrn_field_name => $epic_data['candidateID'],
-                    $status_field_name => trim($epic_data['processState']),
+                    $mrn_field_name => $xml_data['candidateID'],
+                    $status_field_name => trim($xml_data['processState']),
                 );
 
                 $response = \RedCap::saveData($project_id, 'json', json_encode(array($data)));
@@ -165,6 +182,22 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         }
 
         return $projects;
+    }
+
+    /**
+     * reads a file sent via a form
+     */
+    function readXML($name = 'file', $save=false)
+    {
+        $fileHelper = new App\Helpers\File();
+        if($save)
+        {
+            $file_path = $fileHelper->upload($name);
+            $data = file_get_contents($file_path);
+        }else {
+            $data = $fileHelper->read($name);
+        }
+        return $data;
     }
 
     function cronTest()

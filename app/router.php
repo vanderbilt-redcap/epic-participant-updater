@@ -32,7 +32,7 @@ $httpMethod = $_SERVER['REQUEST_METHOD'];
 $REDCAP_ROUTING = true; //use the redcap generated url
 if($REDCAP_ROUTING)
 {
-    $uri = $_GET['action']; //redcap version
+    $uri = isset($_GET['action']) ? $_GET['action'] : ''; //redcap version
 }else{
     // standard version
     $uri = $_SERVER['REQUEST_URI'];
