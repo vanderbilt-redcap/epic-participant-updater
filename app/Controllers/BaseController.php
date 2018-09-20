@@ -1,7 +1,15 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Controllers;
 
 class BaseController
-{	
+{
+
+	function test()
+	{
+		$response = array(
+			"message" => "this is just a test",
+		);
+		$this->printJSON($response);
+	}
 
 	// error 404
 	function notFound()

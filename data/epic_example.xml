@@ -1,97 +1,44 @@
 <?xml version="1.0"?>
-<Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
-	<Header>
-		<Action s:mustUnderstand="1">
-			urn:ihe:qrph:rpe:2009:EnrollPatientRequest
-		</Action>
-		<MessageID>
-			urn:uuid:6ceb36d8-e2b9-49b2-bc66-c46bfda50892
-		</MessageID>
-		<ReplyTo>
-			<Address>
-				http://www.w3.org/2005/08/addressing/anonymous
-			</Address>
-		</ReplyTo>
-		<From>
-			<Address>
-				http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
-			</Address>
-		</From>
-		<To s:mustUnderstand="1">
-			https://starbrite.vanderbilt.edu/s/uber/api/epic/epic-interface
-		</To>
-		<Security xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" s:mustUnderstand="1">
-			<Timestamp u:Id="_0">
-				<Created>
-					2018-09-07T18:22:07.117Z
-				</Created>
-				<Expires>
-					2018-09-07T18:27:07.117Z
-				</Expires>
-			</Timestamp>
-			<UsernameToken u:Id="uuid-e47fa3c9-8a2d-4f98-8122-a7095670a6ed-985">
-				<Username>
-					vanderbilt\epcinter
-				</Username>
-				<Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">
-					xxxxxxxx
-				</Password>
-			</UsernameToken>
-		</Security>
-	</Header>
-	<Body>
-		<EnrollPatientRequestRequest xmlns:rpe="urn:ihe:qrph:rpe:2009" xmlns="urn:hl7-org:v3">
-			<processState>
-				On Study
-			</processState>
-			<patient>
-				<candidateID extension="026820303" root="1.2.840.114350.1.13.478.2.7.5.737384.14" />
-				<name>
-					<given>
-						xxxxxx
-					</given>
-					<family>
-						xxxxxx
-					</family>
-				</name>
-				<address>
-					<streetAddressLine>
-						xxxxxx
-					</streetAddressLine>
-					<city>
-						xxxxxx
-					</city>
-					<state>
-						xxxxxx
-					</state>
-					<postalCode>
-						xxxxxx
-					</postalCode>
-					<country>
-						xxxxxx
-					</country>
-				</address>
-				<dob value="xxxxxx" />
-			</patient>
-			<study>
-				<instantiation>
-					<plannedStudy>
-						<id extension="140915" root="1.2.3.4" />
-					</plannedStudy>
-				</instantiation>
-				<component1>
-					<studyActivitiesAtSite>
-						<subject1>
-							<experimentalUnit>
-								<effectiveTime>
-									<low value="20180908" />
-									<high value="20180908" />
-								</effectiveTime>
-							</experimentalUnit>
-						</subject1>
-					</studyActivitiesAtSite>
-				</component1>
-			</study>
-		</EnrollPatientRequestRequest>
-	</Body>
-</Envelope>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+<s:Header>
+<a:Action s:mustUnderstand="1">urn:ihe:qrph:rpe:2009:EnrollPatientRequest</a:Action>
+<a:MessageID>urn:uuid:6ceb36d8-e2b9-49b2-bc66-c46bfda50892</a:MessageID>
+<a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo>
+<a:From><a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address></a:From>
+<a:To s:mustUnderstand="1">https://starbrite.vanderbilt.edu/s/uber/api/epic/epic-interface</a:To>
+<o:Security xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" s:mustUnderstand="1">
+<u:Timestamp u:Id="_0">
+<u:Created>2018-09-07T18:22:07.117Z</u:Created>
+<u:Expires>2018-09-07T18:27:07.117Z</u:Expires>
+</u:Timestamp>
+<o:UsernameToken u:Id="uuid-e47fa3c9-8a2d-4f98-8122-a7095670a6ed-985">
+<o:Username>vanderbilt\epcinter</o:Username>
+<o:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">xxxxxxxx</o:Password>
+</o:UsernameToken>
+</o:Security>
+</s:Header>
+<s:Body>
+<rpe:EnrollPatientRequestRequest xmlns:rpe="urn:ihe:qrph:rpe:2009" xmlns="urn:hl7-org:v3">
+<rpe:processState>On Study</rpe:processState><rpe:patient>
+<rpe:candidateID extension="026820274" root="1.2.840.114350.1.13.478.2.7.5.737384.14"/>
+<rpe:name>
+<given>xxxxxx</given>
+<family>xxxxxx</family>
+</rpe:name>
+<rpe:address>
+<streetAddressLine>xxxxxx</streetAddressLine>
+<city>xxxxxx</city>
+<state>xxxxxx</state>
+<postalCode>xxxxxx</postalCode>
+<country>xxxxxx</country>
+</rpe:address>
+<rpe:dob value="xxxxxx"/>
+</rpe:patient><study>
+<instantiation><plannedStudy><id extension="140915" root="1.2.3.4"/></plannedStudy></instantiation>
+<component1><studyActivitiesAtSite><subject1><experimentalUnit>
+<effectiveTime><low value="20180908"/><high value="20180908"/></effectiveTime>
+</experimentalUnit></subject1></studyActivitiesAtSite></component1>
+</study>
+</rpe:EnrollPatientRequestRequest>
+</s:Body>
+</s:Envelope>

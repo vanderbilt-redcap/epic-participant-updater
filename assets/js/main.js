@@ -5,7 +5,7 @@
     const module_prefix = PREFIX || 'epic_participant_updater';
     const request_instance = axios.create({
         // baseURL: `//${location.host}${API_BASE_URL}`,
-        baseURL: `//${location.host}${location.pathname}?prefix=${module_prefix}&page=api&action=`,
+        baseURL: `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&action=`,
         timeout: 5000,
         // headers: {'X-API-BASE-URL': API_BASE_URL}
     });
@@ -25,7 +25,8 @@
     //helper function to display a basic alert on error
     function ajaxFail(error) {
         var response = error.response || {message: 'unexpected error'};
-        alert(response.message);
+        console.error(response.message);
+        return response;
     }
 
     window.checkEpicData = checkData; //expose the check function

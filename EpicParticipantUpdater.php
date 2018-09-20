@@ -3,6 +3,10 @@ namespace Vanderbilt\EpicParticipantUpdater;
 
 require_once join(['vendor','autoload.php'],DIRECTORY_SEPARATOR);
 
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\Logger as Logger;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser as EpicXMLParser;
+
 use ExternalModules\AbstractExternalModule;
 
 class EpicParticipantUpdater extends AbstractExternalModule {
@@ -15,6 +19,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         'candidateID'   => ['uses' => 'Body.EnrollPatientRequestRequest.patient.candidateID::extension'], // MRN
         'irbNumber'       => ['uses' => 'Body.EnrollPatientRequestRequest.study.instantiation.plannedStudy.id::extension'],
     ]; // schema of the EPIC xml file
+
     
     function __construct()
     {
@@ -22,26 +27,18 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         $config = $this->getConfig();
         $this->logFile =  $this->getModulePath().$config['log-file'];
     }
-        
-    public function getAPIBase()
-    {
-        $api_url = $this->getUrl('API');
-        $components = parse_url($api_url);
-        return $components['path'];
-    }
 
     // function redcap_every_page_top($project_id) {}
 
-    function redcap_every_page_before_render ($project_id){}
+    // function redcap_every_page_before_render ($project_id){}
 
-    
-    function redcap_project_home_page($project_id) {}
+    // function redcap_project_home_page($project_id) {}
 
-    function validateSettings($settings)
+    /* function validateSettings($settings)
     {
         if($settings[$this->mrn_mapping_key]=='my test abcde')
             return 'test';
-    }
+    } */
 
     /**
      * @return string the name of the primary key field
@@ -57,19 +54,22 @@ class EpicParticipantUpdater extends AbstractExternalModule {
     public function getXMLDataFromPath($path)
     {
         if(empty($path)) return array("message" => "no path specified");
-        $parser = new App\Helpers\XMLParser();
-        $xml = $parser->load($path);
-        $xml_data = $xml->parse($this->xml_schema);
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            // the path is a url: load the remote data
+            $xml_string = FileHelper::loadRemoteFile($path);
+        }else {
+            $xml_string = file_get_contents($path);
+        }
+        if(!$xml_string) return false;
+
+        $xml_data = EpicXMLParser::parse($xml_string);
         return $xml_data;
     }
 
-    public function getXMLDataFromString($string)
+    public function getXMLDataFromString($xml_string)
     {
-        // var_dump(htmlspecialchars($string));
-        $parser = new App\Helpers\XMLParser();
-        $xml = $parser->readXML($string);
-        var_dump("XML", $xml);
-        $xml_data = $xml->parse($this->xml_schema);
+        $xml_data = EpicXMLParser::parse($xml_string);
         return $xml_data;
     }
 
@@ -88,20 +88,20 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         foreach($projects as $project_id)
         {
             // set the context of the project
-            $_GET['pid'] = $project_id;
+            // $_GET['pid'] = $project_id;
             
             $projectIsInResearch = $this->checkIRB($project_id, $xml_data['irbNumber']); // check for existing
 
             if(!$projectIsInResearch) continue; //continue to next project loop
 
-            $record = $this->checkMRN($project_id, $xml_data['candidateID']); // check for existing 
+            $record = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
             $status_field_name = $this->getProjectSetting($this->status_mapping_key, $project_id);
 
             if($record)
             {
                 foreach($record as $record_id => &$data)
                 {
-                    $data[$status_field_name] = trim($xml_data['processState']);
+                    $data[$status_field_name] = trim($xml_data['status']);
                     $response = \REDCap::saveData($project_id, 'array', array($record));
                     App\Helpers\Logger::log($this->logFile, "data updated: {$response}");
                 }
@@ -113,12 +113,12 @@ class EpicParticipantUpdater extends AbstractExternalModule {
 
                 $data = array(
                     $record_id_field => $this->addAutoNumberedRecord($project_id),
-                    $mrn_field_name => $xml_data['candidateID'],
-                    $status_field_name => trim($xml_data['processState']),
+                    $mrn_field_name => $xml_data['MRN'],
+                    $status_field_name => trim($xml_data['status']),
                 );
 
                 $response = \RedCap::saveData($project_id, 'json', json_encode(array($data)));
-                App\Helpers\Logger::log($this->logFile, "data created: {$response}");
+                Logger::log($this->logFile, "data created: {$response}");
             }
         }
         return array(
@@ -134,7 +134,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
     {
         $Project = new \Project($project_id);
         $project_irb_number = $Project->project['project_irb_number'];
-        if ( is_null($project_irb_number) || isset($project_irb_number) )
+        if ( !isset($project_irb_number) || is_null($project_irb_number) )
             return false; // no IRB number set for this project
 
         return ($irbNumber === $project_irb_number);
@@ -184,29 +184,13 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         return $projects;
     }
 
-    /**
-     * reads a file sent via a form
-     */
-    function readXML($name = 'file', $save=false)
-    {
-        $fileHelper = new App\Helpers\File();
-        if($save)
-        {
-            $file_path = $fileHelper->upload($name);
-            $data = file_get_contents($file_path);
-        }else {
-            $data = $fileHelper->read($name);
-        }
-        return $data;
-    }
-
     function cronTest()
     {
         $projects = $this->getFetchingEnabledProjects();
         foreach($projects as $project_id)
         {
             $_GET['pid'] = $project_id;
-            App\Helper\Logger::log($this->logFile, "cron test done for project {$project_id}");
+            Logger::log($this->logFile, "cron test done for project {$project_id}");
             
             // echo 'INSIDE CRON TEST '.$project_id;
         }
