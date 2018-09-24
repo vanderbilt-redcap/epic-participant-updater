@@ -46,14 +46,5 @@
             "type": "field-list"
         }
      ],
-     "crons": [
-        {
-           "cron_name": "check_epic_xml",
-           "cron_description": "Cron that runs every 10 minutes to check the epic xml file",
-           "method": "checkXML",
-           "cron_frequency": "10",
-           "cron_max_run_time": "60"
-        }
-    ],
     "log-file": "log.txt"
  }

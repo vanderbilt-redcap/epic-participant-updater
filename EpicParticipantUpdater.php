@@ -14,11 +14,6 @@ class EpicParticipantUpdater extends AbstractExternalModule {
     private $logFile;
     private $mrn_mapping_key = 'mrn-mapping';
     private $status_mapping_key = 'status-mapping';
-    private $xml_schema = [
-        'processState'  => ['uses' => 'Body.EnrollPatientRequestRequest.processState'], // study status
-        'candidateID'   => ['uses' => 'Body.EnrollPatientRequestRequest.patient.candidateID::extension'], // MRN
-        'irbNumber'       => ['uses' => 'Body.EnrollPatientRequestRequest.study.instantiation.plannedStudy.id::extension'],
-    ]; // schema of the EPIC xml file
 
     
     function __construct()
@@ -27,18 +22,6 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         $config = $this->getConfig();
         $this->logFile =  $this->getModulePath().$config['log-file'];
     }
-
-    // function redcap_every_page_top($project_id) {}
-
-    // function redcap_every_page_before_render ($project_id){}
-
-    // function redcap_project_home_page($project_id) {}
-
-    /* function validateSettings($settings)
-    {
-        if($settings[$this->mrn_mapping_key]=='my test abcde')
-            return 'test';
-    } */
 
     /**
      * @return string the name of the primary key field
@@ -159,7 +142,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
     }
 
     /**
-     * @return array  ids of the projects which have enabled this module
+     * @return array ids of the projects which have enabled this module
      */
     private function getFetchingEnabledProjects()
     {

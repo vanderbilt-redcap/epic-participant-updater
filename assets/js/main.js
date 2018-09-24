@@ -10,13 +10,25 @@
         // headers: {'X-API-BASE-URL': API_BASE_URL}
     });
 
-    // check data from epic
-    function checkData(params = {}) {
+    /**
+     * check data from epic
+     * @param {object} params 
+     * @param {object} caller an html element
+     * @fires epicDataChecked
+     */
+    function checkData(params = {}, caller) {
+        
         request_instance.post('epic/check', params)
         .then(function(response) {
             // const target = document.getElementById('results-container');
-
+            console.log(typeof caller)
             const data = response.data || [];
+            if(caller) {
+                const dataCheckedEvent = new CustomEvent('epicDataChecked', {
+                    detail: {response:data},
+                });
+                caller.dispatchEvent(dataCheckedEvent);
+            }
         })
         .catch(ajaxFail)
         .then(function() { });
