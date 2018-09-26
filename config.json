@@ -1,7 +1,7 @@
 {
     "name": "Epic Participant Updater",
     "namespace": "Vanderbilt\\EpicParticipantUpdater",
-    "description": "This is a description of the module, and will be displayed below the module name in the user interface.",
+    "description": "Fetch data from EPIC XML file.",
     "authors": [
         {
              "name": "Francesco Delacqua",
@@ -11,9 +11,8 @@
      ],
      "enable-every-page-hooks-on-system-pages": true,
      "permissions": [
-        "redcap_project_home_page",
-        "redcap_control_center",
-        "redcap_every_page_before_render"
+         "redcap_module_system_enable",
+         "redcap_module_system_disable"
     ],
     "links": {
         "project": [

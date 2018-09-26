@@ -23,6 +23,17 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         $this->logFile =  $this->getModulePath().$config['log-file'];
     }
 
+    function redcap_module_system_enable($version)
+    {
+        $vendor_exists = file_exists('vendor');
+        Logger::log($this->logFile, "enabled");
+    }
+    
+    function redcap_module_system_disable($version)
+    {
+        Logger::log($this->logFile, "disabled");
+    }
+
     /**
      * @return string the name of the primary key field
      */
