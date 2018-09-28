@@ -23,6 +23,7 @@ require_once __DIR__."/bootstrap.php";
 $dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r) {
     $r->addRoute('GET', "/settings/{pid:\d+}", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\SettingsController/listItems');
     $r->addRoute('POST', "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check');
+    $r->addRoute('PUT', "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check');
     $r->addRoute('GET', "/test", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test');
 });
 

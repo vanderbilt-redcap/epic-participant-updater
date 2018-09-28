@@ -34,6 +34,34 @@
         .then(function() { });
     }
 
+    /**
+     * check data from epic
+     * @param {object} file retrieved from an html input of type file
+     * @param {object} caller an html element
+     * @fires epicDataUploaded
+     */
+    function ajaxFileUpload(file, caller)
+    {
+      var data = new FormData();
+      data.append('file', file);
+
+      var config = {
+        headers: { 'content-type': 'multipart/form-data' }
+      };
+
+      request_instance.put('epic/check', data, config)
+        .then(function (response) {
+            const data = response.data || [];
+            if(caller) {
+                const dataUploadedEvent = new CustomEvent('epicDataUploaded', {
+                    detail: {response:data},
+                });
+                caller.dispatchEvent(dataUploadedEvent);
+            }
+        })
+        .catch(ajaxFail);
+    }
+
     //helper function to display a basic alert on error
     function ajaxFail(error) {
         var response = error.response || {message: 'unexpected error'};
@@ -42,5 +70,7 @@
     }
 
     window.checkEpicData = checkData; //expose the check function
+    window.ajaxFileUpload = ajaxFileUpload; //expose the ajaxFileUpload function
+    window.epicEndpoint = `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&action=/epic/check`; //expose the epic endpoint
 
 }(window, document));

@@ -10,7 +10,7 @@ class EpicController extends BaseController
     function __construct()
     {
 		$this->module = new EPU();
-    }
+	}
     
     /*
     * check the XML
@@ -19,12 +19,18 @@ class EpicController extends BaseController
 	{
         
         try {
-
 			$params = json_decode(file_get_contents("php://input"),true); //get the params
 			$params = array_merge($params, $_POST);
+			$method = $_SERVER['REQUEST_METHOD'];
+			if ('PUT' === $method) {
+				$_PUT = array();
+				FileHelper::parse_raw_http_request($_PUT);
+				/* parse_str(file_get_contents('php://input'), $_PUT);
+				var_dump($_PUT); //$_PUT contains put fields  */
+			}
 
 
-			if(empty($params) && empty($_FILES)) {
+			if(empty($params) && empty($_FILES) && empty($_PUT)) {
 				// no params and no files; exit
 				$response = array(
 					"error" => true,
@@ -46,6 +52,12 @@ class EpicController extends BaseController
 					"message" => "no params specified",
 				); // no params; exit */
 				$this->printJSON($response);
+			}
+			// check if getting xml file from a $_PUT
+			else if( !empty($_PUT) ){
+				$string = array_shift($_PUT['files']); //PROCESS ONLY THE FIRST FILE
+				$xml_data = $this->module->getXMLDataFromString($string);
+				$response = $this->module->checkXML($xml_data);
 			}
 			// check if getting xml file from a path
 			else if (isset($params['path']))

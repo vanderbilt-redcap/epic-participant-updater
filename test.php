@@ -72,15 +72,22 @@ function upload()
   <hr>
   
   <h3>File Upload test</h3>
+  <p>upload an xml file via form</p>
   <form action="" method="post" enctype="multipart/form-data">
-  <input type="file" name="file[]" multiple>
-  <input type="hidden" name="upload" value="1">
-  <input type="submit">
+    <input type="file" name="file[]" multiple>
+    <input type="hidden" name="upload" value="1">
+    <input type="submit">
   </form>
   
   <hr>
   <h3>AJAX call test</h3>
-  <button id="checkButton">check</button>
+  <p>check an xml file at a specific url</p>
+  <button id="checkButton">remote check</button>
+  <hr>
+  <h3>AJAX upload test</h3>
+  <p>upload an xml file via ajax</p>
+  <input type="file" name="file" id="file">
+  <button id="uploadButton">ajax upload</button>
   
   <!-- SCRIPTS -->
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -95,6 +102,8 @@ function upload()
     const checkButton = document.getElementById('checkButton');
     const localPath = '<?=__DIR__.'/data/epic_example.xml'?>';
     const remotePath = 'https://localhost/redcap/modules/epic_participant_updater_v1.0.0/data/epic_example.xml';
+
+    
     
     checkButton.addEventListener('click', function(e){
       e.preventDefault();
@@ -104,6 +113,25 @@ function upload()
     });
     
     checkButton.addEventListener('epicDataChecked', (e) => {
+      console.log(e);
+      try {
+        const message = e.detail.response.message;
+        const projects = e.detail.response.projects.join(',');
+        alert(`${message}.\nprojects: ${projects}`);
+      } catch (error) {
+        alert(error);
+      }
+    });
+
+    const uploadButton = document.getElementById('uploadButton');
+    uploadButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      const _file = document.getElementById('file').files[0]; //get the file from the form
+      if(typeof _file !== 'undefined')
+        ajaxFileUpload(_file, uploadButton);
+    });
+
+    uploadButton.addEventListener('epicDataUploaded', (e) => {
       console.log(e);
       try {
         const message = e.detail.response.message;
