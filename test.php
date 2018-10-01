@@ -78,6 +78,11 @@ function upload()
     <input type="hidden" name="upload" value="1">
     <input type="submit">
   </form>
+  <form action="/api/?type=module&prefix=epic_participant_updater&page=api&action=/epic/check" method="post" enctype="multipart/form-data">
+    <input type="file" name="file[]" multiple>
+    <input type="hidden" name="upload" value="1">
+    <input type="submit">
+  </form>
   
   <hr>
   <h3>AJAX call test</h3>
@@ -86,11 +91,13 @@ function upload()
   <hr>
   <h3>AJAX upload test</h3>
   <p>upload an xml file via ajax</p>
-  <input type="file" name="file" id="file">
-  <button id="uploadButton">ajax upload</button>
+  <input type="file" name="file" id="file" multiple>
+  <button id="uploadButton">axios ajax upload</button>
+  <button id="sa_uploadButton">superagent ajax upload</button>
   
   <!-- SCRIPTS -->
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/superagent/3.8.3/superagent.min.js"></script>
   <!-- MAIN SCRIPT -->
   <script>
   
@@ -123,15 +130,38 @@ function upload()
       }
     });
 
+    /* axios */
+
     const uploadButton = document.getElementById('uploadButton');
     uploadButton.addEventListener('click', function(e) {
       e.preventDefault();
-      const _file = document.getElementById('file').files[0]; //get the file from the form
-      if(typeof _file !== 'undefined')
-        ajaxFileUpload(_file, uploadButton);
+      const files = document.getElementById('file').files; //get the file from the form
+      if(typeof files !== 'undefined')
+        axios_ajaxFileUpload(files, uploadButton);
     });
 
     uploadButton.addEventListener('epicDataUploaded', (e) => {
+      console.log(e);
+      try {
+        const message = e.detail.response.message;
+        const projects = e.detail.response.projects.join(',');
+        alert(`${message}.\nprojects: ${projects}`);
+      } catch (error) {
+        alert(error);
+      }
+    });
+
+    /* superagent */
+
+    const sa_uploadButton = document.getElementById('sa_uploadButton');
+    sa_uploadButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      const files = document.getElementById('file').files; //get the file from the form
+      if(typeof files !== 'undefined')
+        sa_ajaxFileUpload(files, uploadButton);
+    });
+
+    sa_uploadButton.addEventListener('epicDataUploaded', (e) => {
       console.log(e);
       try {
         const message = e.detail.response.message;

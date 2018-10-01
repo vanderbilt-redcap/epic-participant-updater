@@ -9,6 +9,7 @@ class EpicController extends BaseController
 
     function __construct()
     {
+		$this->cors();
 		$this->module = new EPU();
 	}
     
@@ -43,32 +44,35 @@ class EpicController extends BaseController
 				 * NOTE: ONLY ONE FILE IS GOING TO BE PROCESSED
 				 */
 				$files = FileHelper::getFormFiles();
-				$file = array_shift($files); //PROCESS ONLY THE FIRST FILE
-				$string = FileHelper::getContents($file);
-				$xml_data = $this->module->getXMLDataFromString($string);
-				$response = $this->module->checkXML($xml_data);
-				/* $response = array(
-					"error" => true,
-					"message" => "no params specified",
-				); // no params; exit */
+				// $file = array_shift($files); //PROCESS ONLY THE FIRST FILE
+				$response = array();
+				foreach ($files as $file) {
+
+					$string = FileHelper::getContents($file);
+					$xml_data = $this->module->getXMLDataFromString($string);
+					$current_response = $this->module->checkXML($xml_data);
+					$response = array_merge($response, $current_response);
+				}
+
 				$this->printJSON($response);
 			}
 			// check if getting xml file from a $_PUT
 			else if( !empty($_PUT) ){
-				$string = array_shift($_PUT['files']); //PROCESS ONLY THE FIRST FILE
-				$xml_data = $this->module->getXMLDataFromString($string);
-				$response = $this->module->checkXML($xml_data);
+				$files = $_PUT['files'];
+				// $file = array_shift($files); //PROCESS ONLY THE FIRST FILE
+				$response = array();
+				foreach ($files as $file) {
+					$string = $file;
+					$xml_data = $this->module->getXMLDataFromString($string);
+					$current_response = $this->module->checkXML($xml_data);
+					$response = array_merge($response, $current_response);
+				}
 			}
 			// check if getting xml file from a path
 			else if (isset($params['path']))
 			{
 				$path = $params['path'];
 				$xml_data = $this->module->getXMLDataFromPath($path);
-				$response = $this->module->checkXML($xml_data);
-			}else if(isset($params['xml']))
-			{
-				$string = $params['xml'];
-				$xml_data = $this->module->getXMLDataFromString($string);
 				$response = $this->module->checkXML($xml_data);
 			}
             

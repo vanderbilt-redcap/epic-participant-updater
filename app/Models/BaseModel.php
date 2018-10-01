@@ -1,7 +1,5 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
 
-use \RedBeanPHP\R as R;
-
 class BaseModel extends \RedBeanPHP\SimpleModel {
 
 	/**

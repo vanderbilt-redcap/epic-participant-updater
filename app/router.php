@@ -1,19 +1,6 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater\App;
 
-function redcapConnect()
-{
-    $module_root = dirname(__DIR__);
-    $app_root = dirname ( dirname( $module_root ) );
-    // Set constant for distinguishing this file from plugins or modules that call redcap_connect.php
-    define("REDCAP_CONNECT_NONVERSIONED", true);
-    require_once join(array($app_root,'redcap_connect.php'), DIRECTORY_SEPARATOR);
-    // require_once join(array($app_root,'redcap_v'.$redcap_version,'Config','init_functions.php'), DIRECTORY_SEPARATOR);
-    $redcap_directory = "{$app_root}/redcap_v{$redcap_version}";
-}
-
-// redcapConnect();
-
 require_once __DIR__."/bootstrap.php";
 
 /**
@@ -26,7 +13,6 @@ $dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r)
     $r->addRoute('PUT', "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check');
     $r->addRoute('GET', "/test", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test');
 });
-
 
 // get current fetch method and URI
 $httpMethod = $_SERVER['REQUEST_METHOD'];

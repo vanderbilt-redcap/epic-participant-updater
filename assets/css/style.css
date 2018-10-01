@@ -1,3 +1,14 @@
 body {
     margin-top: 100px;
 }
+
+/* compatibility fix for bootstrap */
+.rainbow .close {
+    float: none;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    color: inherit;
+    text-shadow: none;
+    opacity: inherit;
+}
