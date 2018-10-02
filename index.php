@@ -33,6 +33,56 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   </form>
   </code></pre>
 
+  <h6>CURL EXAMPLE</h6>
+  <pre>
+  <code data-language="php">
+  $query_params = array(
+    'type' => 'module',
+    'prefix' => 'epic_participant_updater',
+    'page' => 'api',
+    'action' => '/epic/check',
+    'pid' => 13,
+    // 'token' => '12E1EC227A97863EF6500A897A7B50C3',
+  );
+
+  $redcap_URL = 'https://redcap.test/api/';
+  $URL = "{$redcap_URL}?" . http_build_query($query_params, '', '&');
+  
+  $file = array_pop($_FILES);
+
+  $file_data = array();
+
+  $file_data[] = new CurlFile(
+        $file["tmp_name"][0],
+        $file["type"][0],
+        $file["name"][0]
+    );
+
+  $extra_params = array(
+    'foo' => 'bar',
+  );
+
+  $data = array_merge($file_data, $extra_params);
+
+  
+  try {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $URL);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false); // ignore error for self signed certificate
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+    curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    $output = curl_exec($ch);
+    print $output;
+  </code>
+  </pre>
+
   <h6>AXIOS EXAMPLE</h6>
   <pre>
   <code data-language="html">
@@ -44,7 +94,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
     function ajaxFileUpload(file)
     {
       var request_instance = axios.create({
-        baseURL: '//redcap.test/api/?type=module&prefix=epic_participant_updater&page=api&action=',
+        baseURL: '//redcap.test/api/?type=module&prefix=epic_participant_updater&pid=13&page=api&action=',
         timeout: 5000,
       });
       var data = new FormData();
@@ -68,7 +118,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
     send_button.addEventListener('click', function(e) {
       e.preventDefault();
-      ajaxFileUpload(file_input);
+      ajaxFileUpload(file_input.files[0]);
     });
 
   </code></pre>

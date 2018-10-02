@@ -1,6 +1,6 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
 
-class BaseModel extends \RedBeanPHP\SimpleModel {
+class BaseModel {
 
 	/**
 	 * fields that must be sanitized before rendering

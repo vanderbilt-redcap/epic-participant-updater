@@ -9,7 +9,7 @@ class EpicController extends BaseController
 
     function __construct()
     {
-		$this->cors();
+		parent::__construct();
 		$this->module = new EPU();
 	}
     

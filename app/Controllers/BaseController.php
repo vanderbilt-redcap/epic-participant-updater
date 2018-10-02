@@ -2,13 +2,16 @@
 
 class BaseController
 {
-
+	function __construct()
+    {
+		$this->cors();
+	}
 	/**
-	 *  An example CORS-compliant method.  It will allow any GET, POST, or OPTIONS requests from any
-	 *  origin.
+	 *  CORS-compliant method.
+	 *  It will allow any GET, POST, OPTIONS, PUT, PATCH, HEAD requests from any origin.
 	 *
-	 *  In a production environment, you probably want to be more restrictive, but this gives you
-	 *  the general idea of what is involved.  For the nitty-gritty low-down, read:
+	 *  In a production environment, you probably want to be more restrictive.
+	 *  For more read:
 	 *
 	 *  - https://developer.mozilla.org/en/HTTP_access_control
 	 *  - http://www.w3.org/TR/cors/

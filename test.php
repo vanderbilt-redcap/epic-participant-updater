@@ -9,30 +9,34 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
 function upload()
 {
-  $upload_url = 'https://redcap.test/api/?type=module&prefix=epic_participant_updater&page=api&action=/epic/check';
+  $query_params = array(
+    'type' => 'module',
+    'prefix' => 'epic_participant_updater',
+    'pid' => '13',
+    'page' => 'api',
+    'action' => '/epic/check',
+    // 'token' => '3A4AC0D0622589C429049363426C6AE2',
+  );
+  $URL = 'https://redcap.test/api/?' . http_build_query($query_params, '', '&');
+  
+  
   $files = FileHelper::getFormFiles();
-  /*   $file = array_walk($_FILES['file'], function($array, $key) use ($file) {
-    $file[$key] = is_array($value) array_shift($value);
-  }); */
   $file_data = array();
   foreach($files as $key => $file)
   {
     $file_data[$key] = new \CurlFile($file["tmp_name"], $file["type"], $file["name"]);
   }
-  $data = array(
-    'token' => '638C010A48EEC4D99195231CDA11BD95',
-    'content' => 'project',
+  
+  $extra_params = array(
     'format' => 'json',
     'returnFormat' => 'json'
   );
   
-  $post = array_merge($file_data, $data);
+  $data = array_merge($file_data, $extra_params);
   
   try {
     $ch = curl_init();
-    // curl_setopt($ch, CURLOPT_URL, 'https://redcap.test/api/');
-    // curl_setopt($ch, CURLOPT_URL, 'https://redcap.test/modules/epic_participant_updater_v1.0.0/upload.php');
-    curl_setopt($ch, CURLOPT_URL, $upload_url);
+    curl_setopt($ch, CURLOPT_URL, $URL);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false); // ignore error for self signed certificate
     curl_setopt($ch, CURLOPT_VERBOSE, true);
@@ -43,7 +47,7 @@ function upload()
     curl_setopt($ch, CURLOPT_HEADER, false);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
     $output = curl_exec($ch);
     print $output;
     
@@ -78,7 +82,7 @@ function upload()
     <input type="hidden" name="upload" value="1">
     <input type="submit">
   </form>
-  <form action="/api/?type=module&prefix=epic_participant_updater&page=api&action=/epic/check" method="post" enctype="multipart/form-data">
+  <form action="/api/?type=module&prefix=epic_participant_updater&page=api&pid=13&action=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file[]" multiple>
     <input type="hidden" name="upload" value="1">
     <input type="submit">
