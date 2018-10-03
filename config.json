@@ -24,7 +24,7 @@
         ]
      },
      "no-auth-pages": [
-        "__api"
+        "api"
      ],
      "project-settings": [
         {

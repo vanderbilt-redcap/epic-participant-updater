@@ -37,12 +37,11 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   <pre>
   <code data-language="php">
   $query_params = array(
+    'NOAUTH' => '',
     'type' => 'module',
     'prefix' => 'epic_participant_updater',
     'page' => 'api',
     'action' => '/epic/check',
-    'pid' => 13,
-    // 'token' => '12E1EC227A97863EF6500A897A7B50C3',
   );
 
   $redcap_URL = 'https://redcap.test/api/';
