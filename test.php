@@ -7,18 +7,22 @@ $page->PrintHeaderExt();
 
 include APP_PATH_VIEWS . 'HomeTabs.php';
 
+
 function upload()
 {
+  global $module;
+
   $query_params = array(
+    'NOAUTH' => '',
     'type' => 'module',
-    'prefix' => 'epic_participant_updater',
-    'pid' => '13',
+    'prefix' => $module->PREFIX,
     'page' => 'api',
-    'action' => '/epic/check',
+    'action' => '/epic/check'
     // 'token' => '3A4AC0D0622589C429049363426C6AE2',
   );
-  $URL = 'https://redcap.test/api/?' . http_build_query($query_params, '', '&');
-  
+  $URL = APP_PATH_WEBROOT_FULL.'api/?' . http_build_query($query_params, '', '&');
+  /* $action = urldecode(http_build_query(['action' => '/epic/check']));
+  $URL = join([$URL, $action],'&'); */
   
   $files = FileHelper::getFormFiles();
   $file_data = array();
@@ -58,11 +62,11 @@ function upload()
       $e->getCode(), $e->getMessage()),
       E_USER_ERROR);
       
-    }
-    
-    $info = curl_getinfo($ch);
-    curl_close($ch);
   }
+    
+  $info = curl_getinfo($ch);
+  curl_close($ch);
+}
   ?>
   <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('./assets/css/style.css'); ?>">
   <h3 style="text-align: center;text-transform:uppercase;">
@@ -76,13 +80,14 @@ function upload()
   <hr>
   
   <h3>File Upload test</h3>
-  <p>upload an xml file via form</p>
+  <p>upload an xml file via form (curl)</p>
   <form action="" method="post" enctype="multipart/form-data">
     <input type="file" name="file[]" multiple>
     <input type="hidden" name="upload" value="1">
     <input type="submit">
   </form>
-  <form action="/api/?type=module&prefix=epic_participant_updater&page=api&pid=13&action=/epic/check" method="post" enctype="multipart/form-data">
+  <p>upload an xml file via form (API URL in form action)</p>
+  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/?type=module&prefix=epic_participant_updater&page=api&pid=13&action=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file[]" multiple>
     <input type="hidden" name="upload" value="1">
     <input type="submit">
@@ -96,6 +101,7 @@ function upload()
   <h3>AJAX upload test</h3>
   <p>upload an xml file via ajax</p>
   <input type="file" name="file" id="file" multiple>
+  <button id="jq_uploadButton">jQuery ajax upload</button>
   <button id="uploadButton">axios ajax upload</button>
   <button id="sa_uploadButton">superagent ajax upload</button>
   
@@ -106,15 +112,25 @@ function upload()
   <script>
   
   </script>
-  <script>const PREFIX = '<?= $module->PREFIX; ?>';</script>
+  <script>
+  const PREFIX = '<?= $module->PREFIX; ?>';
+  const APP_PATH_WEBROOT_FULL = '<?= preg_replace('/^http(?:s)?:\/\/(.*?)(?:\/)?$/','$1', APP_PATH_WEBROOT_FULL); ?>';
+  </script>
   <script src="<?= $module->getUrl('./assets/js/main.js').'&ver='.time(); ?>"></script>
   <script>
   (function($, window, document) {
     const checkButton = document.getElementById('checkButton');
-    const localPath = '<?=__DIR__.'/data/epic_example.xml'?>';
-    const remotePath = 'https://localhost/redcap/modules/epic_participant_updater_v1.0.0/data/epic_example.xml';
+    const remotePath = '<?=APP_PATH_WEBROOT_FULL;?>modules/epic_participant_updater_v1.0.0/data/epic_example.xml';
 
-    
+    const onEpicDataUploaded = function(e) {
+      try {
+        const message = e.detail.response.message;
+        const projects = e.detail.response.projects.join(',');
+        alert(`${message}.\nprojects: ${projects}`);
+      } catch (error) {
+        alert(error);
+      }
+    };
     
     checkButton.addEventListener('click', function(e){
       e.preventDefault();
@@ -125,13 +141,22 @@ function upload()
     
     checkButton.addEventListener('epicDataChecked', (e) => {
       console.log(e);
-      try {
-        const message = e.detail.response.message;
-        const projects = e.detail.response.projects.join(',');
-        alert(`${message}.\nprojects: ${projects}`);
-      } catch (error) {
-        alert(error);
-      }
+      onEpicDataUploaded(e);
+    });
+
+    /* jQuery */
+
+    const jquery_uploadButton = document.getElementById('jq_uploadButton');
+    jquery_uploadButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      const files = document.getElementById('file').files; //get the file from the form
+      if(typeof files !== 'undefined')
+        jq_ajaxFileUpload(files, uploadButton);
+    });
+
+    jquery_uploadButton.addEventListener('epicDataUploaded', (e) => {
+      console.log(e);
+      onEpicDataUploaded(e);
     });
 
     /* axios */
@@ -146,13 +171,7 @@ function upload()
 
     uploadButton.addEventListener('epicDataUploaded', (e) => {
       console.log(e);
-      try {
-        const message = e.detail.response.message;
-        const projects = e.detail.response.projects.join(',');
-        alert(`${message}.\nprojects: ${projects}`);
-      } catch (error) {
-        alert(error);
-      }
+      onEpicDataUploaded(e);
     });
 
     /* superagent */
@@ -167,13 +186,7 @@ function upload()
 
     sa_uploadButton.addEventListener('epicDataUploaded', (e) => {
       console.log(e);
-      try {
-        const message = e.detail.response.message;
-        const projects = e.detail.response.projects.join(',');
-        alert(`${message}.\nprojects: ${projects}`);
-      } catch (error) {
-        alert(error);
-      }
+      onEpicDataUploaded(e);
     });
 
   

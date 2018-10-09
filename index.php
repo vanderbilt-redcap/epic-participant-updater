@@ -22,12 +22,11 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
     <a style="font-size:20px;" href="<?= $module->getUrl('test.php'); ?>">go to the test page</a>
   </h3>
 
-  <h2>Usage</h2>
-  <p>create a super API token (TODO: explain)</p>
+  <h2>Examples</h2>
 
   <h6>FORM EXAMPLE</h6>
   <pre><code data-language="html" >
-  <form action="https://redcap.test/api/?type=module&prefix=epic_participant_updater&page=api&action=/epic/check" method="post" enctype="multipart/form-data">
+  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/?type=module&prefix=epic_participant_updater&page=api&action=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file">
     <input type="submit">
   </form>
@@ -39,12 +38,12 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   $query_params = array(
     'NOAUTH' => '',
     'type' => 'module',
-    'prefix' => 'epic_participant_updater',
+    'prefix' => $module->PREFIX, //epic_participant_updater
     'page' => 'api',
     'action' => '/epic/check',
   );
 
-  $redcap_URL = 'https://redcap.test/api/';
+  $redcap_URL = '<?=APP_PATH_WEBROOT_FULL;?>api/';
   $URL = "{$redcap_URL}?" . http_build_query($query_params, '', '&');
   
   $file = array_pop($_FILES);
@@ -79,47 +78,96 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
     $output = curl_exec($ch);
     print $output;
+  } catch(Exception $e) {
+    
+    trigger_error(sprintf(
+      'Curl failed with error #%d: %s',
+      $e->getCode(), $e->getMessage()),
+      E_USER_ERROR);
+      
+  }
   </code>
   </pre>
+
+  <h6>JQUERY EXAMPLE</h6>
+  <pre>
+  <code data-language="html">
+    <input type="file" id="file">
+    <input type="button" id="send-button" value="send XML" />
+
+    &lt;script&gt;
+      const redcap_URL = 'YOUR REDCAP BASE URL';
+      const base_url = `//${redcap_URL}/api/?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&action=`;
+
+      function ajaxFileUpload(files)
+      {
+          // see https://stackoverflow.com/a/8244082
+          var formData = getFilesAsFormData(files);
+          $.ajax({
+              url: `${baseURL}/epic/check`,
+              type: 'PUT',
+              data: formData,
+              processData: false,
+              contentType: false,
+          })
+          .done( ( data, textStatus, jqXHR ) => {
+              console.log(data);
+          }).fail( ( jqXHR, textStatus, errorThrown ) => {
+              console.log(errorThrown);
+          });
+          
+      }
+
+      var file_input = document.getElementById('file');
+      var send_button = document.getElementById('send-button');
+
+      send_button.addEventListener('click', function(e) {
+        e.preventDefault();
+        ajaxFileUpload(file_input.files[0]);
+      });
+    &lt;/script&gt;
+  </code></pre>
 
   <h6>AXIOS EXAMPLE</h6>
   <pre>
   <code data-language="html">
     <input type="file" id="file">
     <input type="button" id="send-button" value="send XML" />
-  </code>
-  <code data-language="javascript">
 
-    function ajaxFileUpload(file)
-    {
-      var request_instance = axios.create({
-        baseURL: '//redcap.test/api/?type=module&prefix=epic_participant_updater&pid=13&page=api&action=',
-        timeout: 5000,
-      });
-      var data = new FormData();
-      data.append('file', file);
+     &lt;script&gt;
+      const redcap_URL = 'YOUR REDCAP BASE URL';
+      const base_url = `//${redcap_URL}/api/?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&action=`;
       
-      var config = {
-        headers: { 'content-type': 'multipart/form-data' }
-      };
-      
-      request_instance.put('epic/check', data, config)
+      function ajaxFileUpload(file)
+      {
+        var request_instance = axios.create({
+          baseURL: base_url,
+          timeout: 5000,
+        });
+        var data = new FormData();
+        data.append('file', file);
+        
+        var config = {
+          headers: { 'content-type': 'multipart/form-data' }
+        };
+        
+        request_instance.put('epic/check', data, config)
         .then(function(response) {
           console.log(response);
         })
         .catch(function(error) {
           console.log(error);
         });
-    }
-
-    var file_input = document.getElementById('file');
-    var send_button = document.getElementById('send-button');
-
-    send_button.addEventListener('click', function(e) {
-      e.preventDefault();
-      ajaxFileUpload(file_input.files[0]);
-    });
-
+      }
+      
+      var file_input = document.getElementById('file');
+      var send_button = document.getElementById('send-button');
+      
+      send_button.addEventListener('click', function(e) {
+        e.preventDefault();
+        ajaxFileUpload(file_input.files[0]);
+      });
+    &lt;/script&gt;
   </code></pre>
 
 <?php $page->PrintFooterExt();

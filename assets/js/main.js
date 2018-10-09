@@ -1,10 +1,11 @@
-(function(window, document) {
+(function($, window, document) {
     /*
     * API FUNCTIONS
     */
     const module_prefix = PREFIX || 'epic_participant_updater';
-    const baseURL = `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&action=`;
-
+    const app_path_webroot_full = APP_PATH_WEBROOT_FULL || location.host;
+    const baseURL = `//${app_path_webroot_full}/api/?NOAUTH=&type=module&prefix=${module_prefix}&page=api&action=`;
+    
     const request_instance = axios.create({
         // baseURL: `//${location.host}${API_BASE_URL}`,
         baseURL: baseURL,
@@ -53,7 +54,7 @@
         }
         return data;    
     }
-
+    
     /**
     * fires upload event on succesful upload
     * @param {object} caller html element used to listen for the epicDataUploaded event
@@ -84,38 +85,69 @@
             const data = response.data || [];
             fireUploadEvent(caller, data);
         })
-        .catch(ajaxFail);
+        .catch( e => {
+            ajaxFail(e.response.data);
+        });
     }
-
+    
     /**
     * upload an xml epic file using superagent
     * @param {object} files retrieved from an html input of type file
     * @param {object} caller optional html element used to listen for the epicDataUploaded event
     * @fires epicDataUploaded
     */
-   function sa_ajaxFileUpload(files, caller)
-   {
-       var formData = getFilesAsFormData(files);
-       
+    function sa_ajaxFileUpload(files, caller)
+    {
+        var formData = getFilesAsFormData(files);
+        
         superagent.put(`${baseURL}/epic/check`)
-            .send(formData)
-            .on('error', ajaxFail)
-            .then(response => {
-                const data = response.body || [];
-                fireUploadEvent(caller, data);
-            });
-   }
+        .send(formData)
+        .on('error', e => {
+            ajaxFail(e.response.body);
+        })
+        .then(response => {
+            const data = response.body || [];
+            fireUploadEvent(caller, data);
+        });
+    }
+    
+    /**
+    * upload an xml epic file using superagent
+    * @param {object} files retrieved from an html input of type file
+    * @param {object} caller optional html element used to listen for the epicDataUploaded event
+    * @fires epicDataUploaded
+    */
+    function jq_ajaxFileUpload(files, caller)
+    {
+        // see https://stackoverflow.com/a/8244082
+        var formData = getFilesAsFormData(files);
+        $.ajax({
+            url: `${baseURL}/epic/check`,
+            type: 'PUT',
+            data: formData,
+            processData: false,
+            contentType: false,
+        })
+        .done( ( data, textStatus, jqXHR ) => {
+            fireUploadEvent(caller, data);
+        }).fail( ( jqXHR, textStatus, errorThrown ) => {
+            ajaxFail(jqXHR.responseJSON);
+        });
+        
+    }
     
     //helper function to display a basic alert on error
     function ajaxFail(error) {
-        var response = error.response || {message: 'unexpected error'};
-        console.error(response.message);
-        return response;
+        var message = error.message || 'unexpected error';
+        console.error(message);
+        alert(message);
+        return error;
     }
     
     window.checkEpicData = checkData; //expose the check function
-    window.axios_ajaxFileUpload = axios_ajaxFileUpload; //expose the ajaxFileUpload function
-    window.sa_ajaxFileUpload = sa_ajaxFileUpload; //expose the ajaxFileUpload function
+    window.axios_ajaxFileUpload = axios_ajaxFileUpload; //expose the axios_ajaxFileUpload function
+    window.sa_ajaxFileUpload = sa_ajaxFileUpload; //expose the sa_ajaxFileUpload function
+    window.jq_ajaxFileUpload = jq_ajaxFileUpload; //expose the jq_ajaxFileUpload function
     window.epicEndpoint = `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&action=/epic/check`; //expose the epic endpoint
     
-}(window, document));
+}(jQuery, window, document));
