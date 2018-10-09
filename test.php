@@ -87,12 +87,20 @@ function upload()
     <input type="submit">
   </form>
   <p>upload an xml file via form (API URL in form action)</p>
-  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/?type=module&prefix=epic_participant_updater&page=api&pid=13&action=/epic/check" method="post" enctype="multipart/form-data">
+  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/?type=module&prefix=<?= $module->PREFIX; ?>&page=api&pid=13&action=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file[]" multiple>
     <input type="hidden" name="upload" value="1">
     <input type="submit">
   </form>
-  
+  <?php
+
+    if ( isset($_POST['upload']) )
+    {
+      echo '<pre>';
+      upload();
+      echo '</pre>';
+    }
+  ?>
   <hr>
   <h3>AJAX call test</h3>
   <p>check an xml file at a specific url</p>
@@ -120,7 +128,7 @@ function upload()
   <script>
   (function($, window, document) {
     const checkButton = document.getElementById('checkButton');
-    const remotePath = '<?=APP_PATH_WEBROOT_FULL;?>modules/epic_participant_updater_v1.0.0/data/epic_example.xml';
+    const remotePath = '<?=APP_PATH_WEBROOT_FULL;?>modules/<?= $module->PREFIX; ?>_<?= $module->VERSION; ?>/data/epic_example.xml';
 
     const onEpicDataUploaded = function(e) {
       try {
@@ -132,6 +140,8 @@ function upload()
       }
     };
     
+    /* check remote file */
+
     checkButton.addEventListener('click', function(e){
       e.preventDefault();
       checkEpicData({
@@ -193,13 +203,6 @@ function upload()
   }(window.jQuery, window, document));
 </script>
 <?php
-
-if ( isset($_POST['upload']) )
-{
-  echo '<pre>';
-  upload();
-  echo '</pre>';
-}
 
 /* if ( isset($_GET['sendmail']) )
 {
