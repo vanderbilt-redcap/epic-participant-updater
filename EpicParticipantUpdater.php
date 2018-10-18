@@ -4,8 +4,9 @@ namespace Vanderbilt\EpicParticipantUpdater;
 require_once join(['vendor','autoload.php'],DIRECTORY_SEPARATOR);
 
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
-use Vanderbilt\EpicParticipantUpdater\App\Helpers\Logger as Logger;
-use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser as EpicXMLParser;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\Logger;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
+// use Vanderbilt\EpicParticipantUpdater\App\Helpers\DependencyHelper;
 
 use ExternalModules\AbstractExternalModule;
 
@@ -26,6 +27,14 @@ class EpicParticipantUpdater extends AbstractExternalModule {
     function redcap_module_system_enable($version)
     {
         $vendor_exists = file_exists('vendor');
+        $base_dir = __DIR__;
+        /* if(!$vendor_exists)
+        {
+            include(join(['app','Helpers','DependencyHelper.php'], DIRECTORY_SEPARATOR));
+            $dh = new DependencyHelper($base_dir);
+            $dh->installDependencies();
+        } */
+
         Logger::log($this->logFile, "enabled");
     }
     
@@ -43,30 +52,6 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         // return key($proj->metadata);
         return $proj->table_pk;
     }
-
-
-    public function getXMLDataFromPath($path)
-    {
-        if(empty($path)) return array("message" => "no path specified");
-
-        if (filter_var($path, FILTER_VALIDATE_URL)) {
-            // the path is a url: load the remote data
-            $xml_string = FileHelper::loadRemoteFile($path);
-        }else {
-            $xml_string = file_get_contents($path);
-        }
-        if(!$xml_string) return false;
-
-        $xml_data = EpicXMLParser::parse($xml_string);
-        return $xml_data;
-    }
-
-    public function getXMLDataFromString($xml_string)
-    {
-        $xml_data = EpicXMLParser::parse($xml_string);
-        return $xml_data;
-    }
-
 
      /**
      * Function called by the CRON to check the XML file

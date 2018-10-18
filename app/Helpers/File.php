@@ -118,7 +118,7 @@ class File {
 		}
 	}
 
-	static function parse_raw_http_request(array &$a_data)
+	static function parse_raw_http_request(array &$data)
 	{
 		// read incoming data
 		$input = file_get_contents('php://input');
@@ -146,7 +146,7 @@ class File {
 				// match "name", then everything after "stream" (optional) except for prepending newlines 
 				preg_match("/name=\"([^\"]*)\".*stream[\n|\r]+([^\n\r].*)?$/s", $block, $matches);
 				// ad all files in the $files array
-				$a_data[$matches[1]] = $matches[2];
+				$data[$matches[1]] = $matches[2];
 			}
 			// parse files, again
 			else if (strpos($block, 'filename=') !== FALSE)
@@ -160,10 +160,10 @@ class File {
 			{
 				// match "name" and optional value in between newline sequences
 				preg_match('/name=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $block, $matches);
-				$a_data[$matches[1]] = $matches[2];
+				$data[$matches[1]] = $matches[2];
 			}
 		}
-		if(!empty($files)) $a_data['files'] = $files;
+		if(!empty($files)) $data['files'] = $files;
 	}
 
 	/**
