@@ -26,15 +26,6 @@ class EpicParticipantUpdater extends AbstractExternalModule {
 
     function redcap_module_system_enable($version)
     {
-        $vendor_exists = file_exists('vendor');
-        $base_dir = __DIR__;
-        /* if(!$vendor_exists)
-        {
-            include(join(['app','Helpers','DependencyHelper.php'], DIRECTORY_SEPARATOR));
-            $dh = new DependencyHelper($base_dir);
-            $dh->installDependencies();
-        } */
-
         Logger::log($this->logFile, "enabled");
     }
     
