@@ -1,58 +1,33 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater\App;
 
+use Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\Router;
+
 require_once __DIR__."/bootstrap.php";
 
-/**
- * create a dispatcher and register the routes
- * each route is managed by a controller and one of it's functions.
- */
-$dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r) {
-    $r->addRoute('POST', "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check');
-    $r->addRoute('PUT', "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check');
-    $r->addRoute('GET', "/test", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test');
-});
-
-// get current fetch method and URI
-$httpMethod = $_SERVER['REQUEST_METHOD'];
-
-$REDCAP_ROUTING = true; //use the redcap generated url
-if($REDCAP_ROUTING)
-{
-    $uri = isset($_GET['action']) ? $_GET['action'] : ''; //redcap version
-}else{
-    // standard version
-    $uri = $_SERVER['REQUEST_URI'];
-    
-    // Strip query string (?foo=bar) and decode URI
-    if (false !== $pos = strpos($uri, '?')) {
-        $uri = substr($uri, 0, $pos);
-    }
-}
-
-$uri = rawurldecode($uri);
-
-// dispatch the current route
-$routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+// httpMethod, route, handler
+$routes = [
+    [['POST','PUT'], "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check'],
+    ['GET', "/epic/logs", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs'],
+    ['GET', "/test", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test'],
+];
 
 // create a BaseController to manage common routes or errors
-$baseController = new \Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController();
+$baseController = new BaseController();
 
-switch ($routeInfo[0]) {
-    case \FastRoute\Dispatcher::NOT_FOUND:
-        // ... 404 Not Found
-        $baseController->notFound();
-        break;
-    case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-        $allowedMethods = $routeInfo[1];
-        // ... 405 Method Not Allowed
-        $baseController->notAllowed();
-        break;
-    case \FastRoute\Dispatcher::FOUND:
-        $handler = $routeInfo[1];
-        $vars = $routeInfo[2];
-        // ... call $handler with $vars
-        list($class, $method) = explode("/", $handler, 2);
-    	call_user_func_array(array(new $class, $method), $vars);
-        break;
-} 
+$router = new Router($routes, $baseController);
+
+if(defined("MODULE_DIRECT_ACCESS"))
+{
+    // standard routing with url rewrite
+    $route = Router::extractRoute();
+}else{
+    /**
+     * redcap routing
+     * {APP_PATH_WEBROOT_FULL}/api?type=module&prefix={PREFIX}&page=api&action=/route_name
+     **/
+    $route = Router::extractRoute('action');
+}
+
+$router->dispatch($route);
