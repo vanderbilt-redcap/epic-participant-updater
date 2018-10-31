@@ -150,7 +150,6 @@ function upload()
     });
     
     checkButton.addEventListener('epicDataChecked', (e) => {
-      console.log(e);
       onEpicDataUploaded(e);
     });
 

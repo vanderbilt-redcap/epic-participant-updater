@@ -26,7 +26,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
   <h6>FORM EXAMPLE</h6>
   <pre><code data-language="html" >
-  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/?type=module&prefix=epic_participant_updater&page=api&action=/epic/check" method="post" enctype="multipart/form-data">
+  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/index.php?type=module&prefix=epic_participant_updater&page=api&action=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file">
     <input type="submit">
   </form>
@@ -43,7 +43,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
     'action' => '/epic/check',
   );
 
-  $redcap_URL = '<?=APP_PATH_WEBROOT_FULL;?>api/';
+  $redcap_URL = '<?=APP_PATH_WEBROOT_FULL;?>api/index.php';
   $URL = "{$redcap_URL}?" . http_build_query($query_params, '', '&');
   
   $file = array_pop($_FILES);
@@ -97,7 +97,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
     &lt;script&gt;
       const redcap_URL = 'YOUR REDCAP BASE URL';
-      const base_url = `//${redcap_URL}/api/?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&action=`;
+      const base_url = `//${redcap_URL}/api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&action=`;
 
       function ajaxFileUpload(files)
       {
@@ -136,7 +136,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
      &lt;script&gt;
       const redcap_URL = 'YOUR REDCAP BASE URL';
-      const base_url = `//${redcap_URL}/api/?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&action=`;
+      const base_url = `//${redcap_URL}/api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&action=`;
       
       function ajaxFileUpload(file)
       {
