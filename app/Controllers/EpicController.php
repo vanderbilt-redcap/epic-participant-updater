@@ -20,6 +20,15 @@ class EpicController extends BaseController
 	{
         $response = $this->app->check();
         $this->printJSON($response);
+    }
+    
+    /*
+    * list the logs
+    */
+	public function getLogs()
+	{
+        $response = $this->app->getLogs();
+        $this->printJSON($response);
 	}
 
 }

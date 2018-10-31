@@ -21,7 +21,14 @@
               "icon": "xml",
               "url": "index.php"
            }
-        ]
+        ],
+        "control-center": [
+            {
+               "name": "Epic Participant Updater",
+               "icon": "report",
+               "url": "dashboard.php"
+            }
+         ]
      },
      "no-auth-pages": [
         "api"

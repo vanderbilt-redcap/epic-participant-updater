@@ -34,6 +34,20 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         Logger::log($this->logFile, "disabled");
     }
 
+    public function log($message,$parameters=[])
+    {
+        foreach ($parameters as $key => &$value) {
+            if($key==='message')
+            {
+                // message cannot be a parameter
+                unset($parameters[$key]);
+            }else {
+                if(is_array($value)) $value = implode(', ',$value);
+            }
+        }
+        parent::log($message,$parameters);
+    }
+
     /**
      * @return string the name of the primary key field
      */
@@ -49,10 +63,10 @@ class EpicParticipantUpdater extends AbstractExternalModule {
      */
     public function checkXML($xml_data=[])
     {
-        if(empty($xml_data))return array("message" => "no data");
-
+        if(empty($xml_data)) throw new \Exception($error='no data');
+        
         $projects = $this->getFetchingEnabledProjects();
-        if(empty($projects)) return array("message" => "no projects enabled"); //exit if the module is not enabled in any project
+        if(empty($projects)) throw new \Exception($error='no projects enabled');
         
         // check for projects that are using the same irb number of the XML
         foreach($projects as $project_id)
@@ -69,32 +83,74 @@ class EpicParticipantUpdater extends AbstractExternalModule {
 
             if($record)
             {
-                foreach($record as $record_id => &$data)
-                {
-                    $data[$status_field_name] = trim($xml_data['status']);
-                    $response = \REDCap::saveData($project_id, 'array', array($record));
-                    App\Helpers\Logger::log($this->logFile, "data updated: {$response}");
-                }
+                $this->updateRecord($project_id, $record);
             }
             else
             {
-                $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
-                $mrn_field_name = $this->getProjectSetting($this->mrn_mapping_key, $project_id);
-
-                $data = array(
-                    $record_id_field => $this->addAutoNumberedRecord($project_id),
-                    $mrn_field_name => $xml_data['MRN'],
-                    $status_field_name => trim($xml_data['status']),
-                );
-
-                $response = \RedCap::saveData($project_id, 'json', json_encode(array($data)));
-                Logger::log($this->logFile, "data created: {$response}");
+                $this->createRecord($project_id);
             }
         }
-        return array(
-            "message" => "xml checked for all projects",
-            "projects" => $projects,
+        $response = [
+            'message' => 'xml checked for all projects',
+            'projects' => $projects,
+            'status' => 'success',
+        ];
+        return $response;
+    }
+
+    /**
+     * update the status of an existing record
+     */
+    private function updateRecord($project_id, $record)
+    {
+        $errors = [];
+        foreach($record as $record_id => &$data)
+        {
+            $data[$status_field_name] = trim($xml_data['status']);
+            $response = \REDCap::saveData($project_id, 'array', array($record));
+            if($error = $response['errors'])
+            {
+                $this->log(__FUNCTION__, [
+                    'status' => 'error',
+                    'description' => "error updating record {$record_id}: {$error}",
+                ]);
+            }else {
+                $this->log(__FUNCTION__, [
+                    'status' => 'success',
+                    'description' => "record {$record_id} has been updated",
+                ]);
+            }
+
+        }
+    }
+
+    /**
+     * create a new record
+     */
+    private function createRecord($project_id)
+    {
+        $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
+        $mrn_field_name = $this->getProjectSetting($this->mrn_mapping_key, $project_id);
+        
+        $data = array(
+            $record_id_field => $this->addAutoNumberedRecord($project_id),
+            $mrn_field_name => $xml_data['MRN'],
+            $status_field_name => trim($xml_data['status']),
         );
+        
+        $response = \RedCap::saveData($project_id, 'json', json_encode(array($data)));
+        if($error = $response['errors'])
+        {
+            $this->log(__FUNCTION__, [
+                'status' => 'error',
+                'description' => "error creating new record: {$error}",
+            ]);
+        }else {
+            $this->log(__FUNCTION__, [
+                'status' => 'success',
+                'description' => "new record created",
+            ]);
+        }
     }
 
      /**

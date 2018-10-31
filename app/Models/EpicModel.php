@@ -46,8 +46,6 @@ class EpicModel extends BaseModel {
 					$current_response = $this->module->checkXML($xml_data);
 					$response = array_merge($response, $current_response);
 				}
-
-				return $response;
 			}
 			// check if getting xml file from a $_PUT
 			else if( !empty($_PUT) ){
@@ -67,15 +65,38 @@ class EpicModel extends BaseModel {
 				$xml_data = EpicXMLParser::parseFromPath($path);
 				$response = $this->module->checkXML($xml_data);
 			}
-            
+
 			return $response;
 		} catch (\Exception $e) {
-            $response = array(
-                "error" => true,
+			$response = array(
+				"error" => true,
 				"message" => $e->getMessage(),
 			);
+			$this->module->log(__FUNCTION__, [
+				'status' => 'error',
+				'description' => $e->getMessage(),
+			]);
 			header('HTTP/1.1 500 Internal Server Error');
 			return $response;
 		}
+	}
+
+	public function getlogs()
+	{
+		/* select message, ip
+		where
+			 timestamp > '2017-07-07'
+			 and user in ('joe', 'tom')
+			 or some_parameter like '%abc%'
+		order by timestamp desc */
+		$fields = ['log_id', 'timestamp', 'user', 'ip', 'project_id', 'record', 'message', 'status', 'description'];
+		$sql = "SELECT ".implode(',',$fields)." ORDER BY timestamp DESC";
+		$result = $this->module->queryLogs($sql);
+		$json = [];
+		while($row = mysqli_fetch_assoc($result)){
+			$json[] = $row;
+		}
+
+		return $json;
 	}
 }
