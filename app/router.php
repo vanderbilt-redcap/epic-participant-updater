@@ -10,7 +10,7 @@ require_once __DIR__."/bootstrap.php";
 $routes = [
     [['POST','PUT'], "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check'],
     ['GET', "/epic/logs", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs'],
-    ['GET', "/test", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test'],
+    ['GET', "/test[/{id:\d+}]", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test'],
 ];
 
 // create a BaseController to manage common routes or errors
