@@ -24,10 +24,13 @@ class EpicController extends BaseController
     
     /*
     * list the logs
+    * @todo add pagination
     */
 	public function getLogs()
 	{
-        $response = $this->app->getLogs();
+        $page=0; //$_GET['p']
+        $limit=10; //$_GET['limit']
+        $response = $this->app->getLogs($page, $limit);
         $this->printJSON($response);
 	}
 
