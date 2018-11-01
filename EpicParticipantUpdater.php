@@ -79,8 +79,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
             if(!$projectIsInResearch) continue; //continue to next project loop
 
             $record = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
-            $status_field_name = $this->getProjectSetting($this->status_mapping_key, $project_id);
-
+            
             if($record)
             {
                 $this->updateRecord($project_id, $record);
@@ -97,13 +96,13 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         ];
         return $response;
     }
-
+    
     /**
      * update the status of an existing record
      */
     private function updateRecord($project_id, $record)
     {
-        $errors = [];
+        $status_field_name = $this->getProjectSetting($this->status_mapping_key, $project_id);
         foreach($record as $record_id => &$data)
         {
             $data[$status_field_name] = trim($xml_data['status']);
@@ -114,16 +113,16 @@ class EpicParticipantUpdater extends AbstractExternalModule {
                     'status' => 'error',
                     'description' => "error updating record {$record_id}: {$error}",
                 ]);
-            }else {
+            }else
+            {
                 $this->log(__FUNCTION__, [
                     'status' => 'success',
                     'description' => "record {$record_id} has been updated",
                 ]);
             }
-
         }
     }
-
+            
     /**
      * create a new record
      */
@@ -131,6 +130,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
     {
         $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
         $mrn_field_name = $this->getProjectSetting($this->mrn_mapping_key, $project_id);
+        $status_field_name = $this->getProjectSetting($this->status_mapping_key, $project_id);
         
         $data = array(
             $record_id_field => $this->addAutoNumberedRecord($project_id),
@@ -145,7 +145,8 @@ class EpicParticipantUpdater extends AbstractExternalModule {
                 'status' => 'error',
                 'description' => "error creating new record: {$error}",
             ]);
-        }else {
+        }else
+        {
             $this->log(__FUNCTION__, [
                 'status' => 'success',
                 'description' => "new record created",
