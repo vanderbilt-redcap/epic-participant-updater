@@ -84,15 +84,9 @@ class EpicModel extends BaseModel {
 	/**
 	 * set $limit to -1 to skip pagination
 	 */
-	public function getlogs($page=0, $limit=10)
+	public function getlogs($page, $limit)
 	{
-		$offset = $page*$limit;
-		/* select message, ip
-		where
-			 timestamp > '2017-07-07'
-			 and user in ('joe', 'tom')
-			 or some_parameter like '%abc%'
-		order by timestamp desc */
+		$offset = ($page-1)*$limit; // when page is 1 the offset is 0
 		$fields = ['log_id', 'timestamp', 'user', 'ip', 'project_id', 'record', 'message', 'status', 'description'];
 		$sql = "SELECT ".implode(',',$fields)." ORDER BY timestamp DESC";
 		if($limit>0) $sql .= " LIMIT {$offset}, {$limit}";
@@ -104,4 +98,5 @@ class EpicModel extends BaseModel {
 
 		return $json;
 	}
+
 }

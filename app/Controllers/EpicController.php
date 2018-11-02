@@ -4,7 +4,10 @@ use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 
 class EpicController extends BaseController
 {
-	private $module;
+    private $module;
+    private $defaults = [
+        'logs_per_page' => 50,
+    ];
 
     function __construct()
     {
@@ -28,8 +31,8 @@ class EpicController extends BaseController
     */
 	public function getLogs()
 	{
-        $page=0; //$_GET['p']
-        $limit=10; //$_GET['limit']
+        $page = isset($_GET['p']) ? $_GET['p'] : 1;
+        $limit = isset($_GET['limit']) ? $_GET['p'] : $this->defaults['logs_per_page'];
         $response = $this->app->getLogs($page, $limit);
         $this->printJSON($response);
 	}

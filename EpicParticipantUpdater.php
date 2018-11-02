@@ -73,12 +73,19 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         {
             // set the context of the project
             // $_GET['pid'] = $project_id;
-            
             $projectIsInResearch = $this->checkIRB($project_id, $xml_data['irbNumber']); // check for existing
-
+            
             if(!$projectIsInResearch) continue; //continue to next project loop
-
+            
             $record = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
+            
+            /**
+             * trying to override the projectid and record id
+             * not working for record id
+             * got to make my own logging function
+             */
+            $_GET['pid'] = $project_id; //override current PID
+            $_GET['id'] = $record['record_id']; //override current record id
             
             if($record)
             {
@@ -112,10 +119,10 @@ class EpicParticipantUpdater extends AbstractExternalModule {
                 $this->log(__FUNCTION__, [
                     'status' => 'error',
                     'description' => "error updating record {$record_id}: {$error}",
-                ]);
-            }else
-            {
-                $this->log(__FUNCTION__, [
+                    ]);
+                }else
+                {
+                    $this->log(__FUNCTION__, [
                     'status' => 'success',
                     'description' => "record {$record_id} has been updated",
                 ]);

@@ -73,30 +73,75 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
      * the data retrieved from the endpoint is cached
      * this is a placeholder for load on scroll
      */
-    let page = 1; // pagination, used in infinite scrolling
-    let cachedData = []; // data
+    let page = 0; // pagination, used in infinite scrolling
+    let cachedData = {}; // data saved in pages chunks
+    let loading = false;
 
+    const shouldLoad = function(page, cachedData) {
+      if(page==1) return true; // should load the first time
+
+      let previousPageData = cachedData[page-1];
+      return (previousPageData && previousPageData.length>0);
+    }
     /**
      * load data and render
      */
-    const loadData = function(template, container, params={}) {
+    const loadData = function(params={}) {
+      const dfd = $.Deferred();
       const defaultParams = {p:1};
       const data = $.extend({}, defaultParams, params);
       page = data.p; //set current page (for pagination)
 
-      container.innerHTML = 'loading...';
-      
+      loading = true; // something is loading
       return $.ajax({
         url: `${api_base_url}/epic/logs`,
         type: 'GET',
         data: data
       }).done( ( data, textStatus, jqXHR ) => {
-        cachedData = data;
-        render(template, cachedData, container)
+        cachedData[page] = data; //save data
+        dfd.resolve(data);
       }).fail( ( jqXHR, textStatus, errorThrown ) => {
-        container.innerHTML = 'error';
         console.log(arguments);
+        dfd.reject(errorThrown);
+      }).always(() =>{
+        loading = false; // no more loading
       });
+      return dfd;
+    };
+
+    /**
+     * return the cached data in array format
+     */
+    const getCachedData = function() {
+      let data = [];
+      for(let p in cachedData) {
+        data = data.concat(cachedData[p]);
+      }
+      return data;
+    }
+
+    /**
+     * load data and append it to the cached data
+     */
+    const loadNext = function(callback) {
+      const dfd = $.Deferred();
+
+      if(typeof callback !== 'function') dfd.reject(Error("not a valid callback"));
+      else if(loading) dfd.reject(Error("already loading"));
+      else if(!shouldLoad(page+1, cachedData)) dfd.reject(Error("can't load anymore"));
+      else {
+        page = page+1;
+
+        loadData({p:page}).done(() => {
+          const data = getCachedData();
+          callback(data);
+          dfd.resolve(data);
+        }).fail(()=>{
+          dfd.reject();
+        });
+      }
+
+      return dfd;
     };
 
     /**
@@ -107,6 +152,15 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       var html = template(context);
       container.innerHTML = html;
     };
+
+    /**
+     * calculate the gap between 2 elements
+     */
+    const getDistance = function(topElement,bottomElement) {
+      const rect_top = topElement.getBoundingClientRect();
+      const rect_bottom = bottomElement.getBoundingClientRect();
+      return Math.abs(rect_bottom.top - rect_top.bottom);
+    }
     
     /**
      * translate the status to a class
@@ -145,7 +199,27 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       const templateSource = document.getElementById("entry-template").innerHTML;
       
       const template = Handlebars.compile(templateSource);
-      loadData(template, logsTable); // load data 
+
+      const loadAndRender = (params={}) => {
+        const dfd = $.Deferred();
+        const page = params.p || 1;
+
+        if(loading) dfd.reject('already loading');
+        if(!shouldLoad(page, cachedData)) dfd.reject('no more loading');
+
+        logsTable.innerHTML = 'loading...';
+        return loadData(params).done(data => {
+          render(template, data, logsTable);
+          dfd.resolve(data);
+        }).fail((error)=>{
+          logsTable.innerHTML = 'error';
+          dfd.reject(error);
+        });
+
+        return dfd;
+      }; //closure for easy re-use
+      
+      loadAndRender();
       
       /** refresh the data */
       refreshButton.addEventListener('click', function(e){
@@ -155,7 +229,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         const animationClass = "fa-spin";
         icon.classList.add(animationClass);
         
-        loadData(template, logsTable).always(function(){
+        loadAndRender().always(function(){
           icon.classList.remove(animationClass); // remove animation
           refreshButton.style.pointerEvents = 'all'; //enable the button
         });
@@ -178,12 +252,15 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
        * infinite scrolling
        */
       window.addEventListener("scroll", function(e){
-        if($(window).scrollTop() + $(window).height() == $(document).height()) {
-            /* console.log("simulating page load!");
-            setTimeout(()=>{
-              alert("content loaded. increasing pagination!");
-            }, 5000);   */
-        }
+          const scrolledToBottom = $(window).scrollTop() + $(window).height() == $(document).height();
+          if(scrolledToBottom) {
+
+            loadNext( data => {
+              render(template, data, logsTable);
+            }).fail(error=>{
+              console.log(error);
+            });
+          }
       });
     });
 
@@ -210,18 +287,20 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         <th scope="col">description</th>
       </tr>
     </thead>
-    {{#each .}}  
-    <tr class="entry {{class status}}">
-      <td>{{log_id}}</td>
-      <td>{{date timestamp}}</td>
-      <td>{{message}}</td>
-      <td>{{description}}</td>
-    </tr>
-    {{else}}
+    <tbody>
+      {{#each .}}  
       <tr class="entry {{class status}}">
-        <td colspan="4">no content</td>
+        <td>{{log_id}}</td>
+        <td>{{date timestamp}}</td>
+        <td>{{message}}</td>
+        <td>{{description}}</td>
       </tr>
-    {{/each}}
+      {{else}}
+        <tr class="entry {{class status}}">
+          <td colspan="4">no content</td>
+        </tr>
+      {{/each}}
+    </tbody>
   </table>
   </script>
 <?php $page->PrintFooterExt();
