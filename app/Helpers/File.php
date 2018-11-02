@@ -9,10 +9,11 @@ class File {
 
 	private static $max_file_size = 1000000;
 	private static $allowed_file_types = array(
-		'jpg' => 'image/jpeg',
-		'png' => 'image/png',
-		'gif' => 'image/gif',
-		'xml' => 'application/xml',
+		'image/jpeg',
+		'image/png',
+		'image/gif',
+		'application/xml',
+		'text/xml',
 	);
 
 	/**
@@ -46,17 +47,19 @@ class File {
 			}
 	}
 
-	private static function checkFileFormat($filename)
+	/**
+	 * check the file extension
+	 * @throws exception if file file is not allowed 
+	 */
+	private static function checkFileFormat($file)
 	{
 		// DO NOT TRUST $file['mime'] VALUE !!
 		// Check MIME Type by yourself.
 		$finfo = new \finfo(FILEINFO_MIME_TYPE);
-		if (false === $ext = array_search(
-			$finfo->file($filename),
-			self::$allowed_file_types,
-			true
-			)) {
-			throw new \RuntimeException('Invalid file format.');
+		$ext = $finfo->file($file['tmp_name']);
+		if (!in_array($ext, self::$allowed_file_types))
+		{
+			throw new \RuntimeException("Invalid file format: {$ext}");
 		}
 		return $ext;
 	}
@@ -83,39 +86,36 @@ class File {
 		return $path_parts['extension'];
 	}
 	
+	/**
+	 * upload a file
+	 * @throws exception
+	 */
 	static function upload($file,$destination = '/tmp/epic')
 	{
-		try {
-			$file_tmp_name = $file['tmp_name'];
-			self::checkErrors($name);
-			self::checkFileFormat($file);
-			self::checkDestination($destination);
-			
-			$ext = self::getFileExtension($file['name']);
-			
-			// You should name it uniquely.
-			// DO NOT USE $_FILES[$name]['name'] WITHOUT ANY VALIDATION !!
-			// On this example, obtain safe unique name from its binary data.
-			$file_path = sprintf('%s/%s_%s.%s',
-			$destination,
-			sha1_file($file_tmp_name),
-			time(),
-			$ext
-			);
+		$file_tmp_name = $file['tmp_name'];
+		self::checkErrors($name);
+		self::checkFileFormat($file);
+		self::checkDestination($destination);
+		
+		$ext = self::getFileExtension($file['name']);
+		
+		// You should name it uniquely.
+		// DO NOT USE $_FILES[$name]['name'] WITHOUT ANY VALIDATION !!
+		// On this example, obtain safe unique name from its binary data.
+		$file_path = sprintf('%s/%s_%s.%s',
+		$destination,
+		sha1_file($file_tmp_name),
+		time(),
+		$ext
+		);
 
-			if (!move_uploaded_file( $file_tmp_name, $file_path) )
-			{
-				throw new \RuntimeException('Failed to move uploaded file.');
-			}
-				
-			echo 'File is uploaded successfully.';
-			return $file_path;
-				
-		} catch (\RuntimeException $e) {
-			
-			echo $e->getMessage();
-			
+		if (!move_uploaded_file( $file_tmp_name, $file_path) )
+		{
+			throw new \RuntimeException('Failed to move uploaded file.');
 		}
+			
+		echo 'File is uploaded successfully.';
+		return $file_path;
 	}
 
 	static function parse_raw_http_request(array &$data)
@@ -172,16 +172,10 @@ class File {
 	 */
 	static function getContents($file)
 	{
-		try {
-			self::checkErrors($file);
-			self::checkFileFormat($file['tmp_name']);
-			$contents = file_get_contents($file['tmp_name']);
-			return $contents;
-		} catch (\RuntimeException $e) {
-			
-			echo $e->getMessage();
-			
-		}
+		self::checkErrors($file);
+		self::checkFileFormat($file);
+		$contents = file_get_contents($file['tmp_name']);
+		return $contents;
 	}
 
 	static function loadRemoteFile($url)

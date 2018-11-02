@@ -20,7 +20,7 @@ function upload()
     'action' => '/epic/check'
     // 'token' => '3A4AC0D0622589C429049363426C6AE2',
   );
-  $URL = APP_PATH_WEBROOT_FULL.'api/?' . http_build_query($query_params, '', '&');
+  $URL = APP_PATH_WEBROOT_FULL.'api/index.php?' . http_build_query($query_params, '', '&');
   /* $action = urldecode(http_build_query(['action' => '/epic/check']));
   $URL = join([$URL, $action],'&'); */
   
@@ -50,7 +50,7 @@ function upload()
     curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
     curl_setopt($ch, CURLOPT_HEADER, false);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POST, true); // POST method
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
     $output = curl_exec($ch);
     print $output;
@@ -87,7 +87,7 @@ function upload()
     <input type="submit">
   </form>
   <p>upload an xml file via form (API URL in form action)</p>
-  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/?type=module&prefix=<?= $module->PREFIX; ?>&page=api&pid=13&action=/epic/check" method="post" enctype="multipart/form-data">
+  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/index.php?type=module&prefix=<?= $module->PREFIX; ?>&page=api&pid=13&action=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file[]" multiple>
     <input type="hidden" name="upload" value="1">
     <input type="submit">
