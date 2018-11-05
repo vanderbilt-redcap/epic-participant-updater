@@ -15,18 +15,11 @@
          "redcap_module_system_disable"
     ],
     "links": {
-        "project": [
-           {
-              "name": "Epic Participant Updater",
-              "icon": "xml",
-              "url": "index.php"
-           }
-        ],
         "control-center": [
             {
-               "name": "Epic Participant Updater",
-               "icon": "report",
-               "url": "dashboard.php"
+                "name": "Epic Participant Updater",
+                "icon": "report",
+                "url": "dashboard.php"
             }
          ]
      },

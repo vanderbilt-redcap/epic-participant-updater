@@ -10,6 +10,7 @@ require_once __DIR__."/bootstrap.php";
 $routes = [
     [['POST','PUT'], "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check'],
     ['GET', "/epic/logs", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs'],
+    ['GET', "/epic/projects", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getProjects'],
     ['GET', "/test[/{id:\d+}]", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test'],
 ];
 

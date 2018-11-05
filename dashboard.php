@@ -8,11 +8,10 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
 ?>
 
-  <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('./assets/css/style.css'); ?>">
-  <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('./assets/css/fontawesome/css/all.css'); ?>">
+  <?php include('header.php');?>
+  <hr>
   <h3>Dashboard</h3>
   <hr>
-  
   <section>
     <h6>ENDPOINT</h6>
     <em id="endpoint-container"><?=APP_PATH_WEBROOT_FULL?>api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&action=/epic/check</em>
@@ -93,7 +92,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       page = data.p; //set current page (for pagination)
 
       loading = true; // something is loading
-      return $.ajax({
+      $.ajax({
         url: `${api_base_url}/epic/logs`,
         type: 'GET',
         data: data
@@ -283,6 +282,8 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       <tr scope="row">
         <th scope="col">id</th>
         <th scope="col">timestamp</th>
+        <th scope="col">project id</th>
+        <th scope="col">record</th>
         <th scope="col">message</th>
         <th scope="col">description</th>
       </tr>
@@ -292,12 +293,14 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       <tr class="entry {{class status}}">
         <td>{{log_id}}</td>
         <td>{{date timestamp}}</td>
+        <td>{{project_id}}</td>
+        <td>{{record}}</td>
         <td>{{message}}</td>
         <td>{{description}}</td>
       </tr>
       {{else}}
         <tr class="entry {{class status}}">
-          <td colspan="4">no content</td>
+          <td colspan="6">no content</td>
         </tr>
       {{/each}}
     </tbody>

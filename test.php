@@ -68,12 +68,13 @@ function upload()
   curl_close($ch);
 }
   ?>
-  <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('./assets/css/style.css'); ?>">
-  <h3 style="text-align: center;text-transform:uppercase;">
-  <a style="font-size:20px;" href="<?= $module->getUrl('index.php'); ?>">go to the module page</a>
-  </h3>
+  <?php include('header.php');?>
+  <hr>
+  <h3>Test</h3>
+  <hr>
   
-  <h3 style="text-align: center;text-transform:uppercase;">
+  <h3 style="text-transform:uppercase;">
+  <i class="fas fa-file-download"></i>
   <a style="font-size:20px;" href="<?= $module->getUrl('data/epic_example.xml'); ?>" download="sample.xml">download epic xml file example</a>
   </h3>
   

@@ -35,6 +35,16 @@ class EpicController extends BaseController
         $limit = isset($_GET['limit']) ? $_GET['p'] : $this->defaults['logs_per_page'];
         $response = $this->app->getLogs($page, $limit);
         $this->printJSON($response);
+    }
+    
+    /*
+    * list the logs
+    * @todo add pagination
+    */
+	public function getProjects()
+	{
+        $response = $this->app->getFetchingEnabledProjects();
+        $this->printJSON($response);
 	}
 
 }
