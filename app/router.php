@@ -26,9 +26,9 @@ if(defined("MODULE_DIRECT_ACCESS"))
 }else{
     /**
      * redcap routing
-     * {APP_PATH_WEBROOT_FULL}/api?type=module&prefix={PREFIX}&page=api&action=/route_name
+     * {APP_PATH_WEBROOT_FULL}/api?type=module&prefix={PREFIX}&page=api&route=/route_name
      **/
-    $route = Router::extractRoute('action');
+    $route = Router::extractRoute('route');
 }
 
 $router->dispatch($route);

@@ -4,7 +4,7 @@
     */
     const module_prefix = PREFIX || 'epic_participant_updater';
     const app_path_webroot_full = APP_PATH_WEBROOT_FULL || location.host;
-    const baseURL = `//${app_path_webroot_full}/api/index.php?NOAUTH=&type=module&prefix=${module_prefix}&page=api&action=`;
+    const baseURL = `//${app_path_webroot_full}/api/index.php?NOAUTH=&type=module&prefix=${module_prefix}&page=api&route=`;
     
     const request_instance = axios.create({
         // baseURL: `//${location.host}${API_BASE_URL}`,
@@ -148,6 +148,6 @@
     window.axios_ajaxFileUpload = axios_ajaxFileUpload; //expose the axios_ajaxFileUpload function
     window.sa_ajaxFileUpload = sa_ajaxFileUpload; //expose the sa_ajaxFileUpload function
     window.jq_ajaxFileUpload = jq_ajaxFileUpload; //expose the jq_ajaxFileUpload function
-    window.epicEndpoint = `//${location.host}/api/index.php?type=module&prefix=${module_prefix}&page=api&action=/epic/check`; //expose the epic endpoint
+    window.epicEndpoint = `//${location.host}/api/index.php?type=module&prefix=${module_prefix}&page=api&route=/epic/check`; //expose the epic endpoint
     
 }(jQuery, window, document));

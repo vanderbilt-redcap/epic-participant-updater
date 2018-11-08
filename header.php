@@ -35,7 +35,7 @@
 <script>
 (function($, window, document){
   const module_prefix = '<?= $module->PREFIX; ?>';
-  const api_base_url = `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&action=`;
+  const api_base_url = `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&route=`;
   let loading = false;
     /**
      * load data

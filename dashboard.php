@@ -14,7 +14,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   <hr>
   <section>
     <h6>ENDPOINT</h6>
-    <em id="endpoint-container"><?=APP_PATH_WEBROOT_FULL?>api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&action=/epic/check</em>
+    <em id="endpoint-container"><?=APP_PATH_WEBROOT_FULL?>api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&route=/epic/check</em>
     <input class="btn btn-primary" type="button" value="copy to clipboard" id="copy-button">
   </section>
   
@@ -67,7 +67,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
     };
 
     const module_prefix = '<?= $module->PREFIX; ?>';
-    const api_base_url = `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&action=`;
+    const api_base_url = `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&route=`;
     /**
      * the data retrieved from the endpoint is cached
      * this is a placeholder for load on scroll
