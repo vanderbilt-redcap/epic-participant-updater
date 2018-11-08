@@ -108,10 +108,11 @@ class EpicModel extends BaseModel {
         if(empty($projects)) throw new \Exception($error='no projects enabled');
         
         // check for projects that are using the same irb number of the XML
-        foreach($projects as $project_id)
+        foreach($projects as $project)
         {
             // set the context of the project
             // $_GET['pid'] = $project_id;
+            $project_id = $project['project_id'];
             $projectIsInResearch = $this->checkIRB($project_id, $xml_data['irbNumber']); // check for existing
             
             if(!$projectIsInResearch) continue; //continue to next project loop
@@ -252,7 +253,9 @@ class EpicModel extends BaseModel {
         $projects = array();
         while($row = db_fetch_assoc($query))
         {
-            $projects[] = $row['project_id'];
+            $project_id =  $row['project_id'];
+            $project = new \Project($project_id);
+            $projects[] = $project->project; // Array with project's basic values
         }
 
         return $projects;
