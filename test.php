@@ -17,7 +17,7 @@ function upload()
     'type' => 'module',
     'prefix' => $module->PREFIX,
     'page' => 'api',
-    'action' => '/epic/check'
+    'route' => '/epic/check'
     // 'token' => '3A4AC0D0622589C429049363426C6AE2',
   );
   $URL = APP_PATH_WEBROOT_FULL.'api/index.php?' . http_build_query($query_params, '', '&');
@@ -88,7 +88,7 @@ function upload()
     <input type="submit">
   </form>
   <p>upload an xml file via form (API URL in form action)</p>
-  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/index.php?type=module&prefix=<?= $module->PREFIX; ?>&page=api&pid=13&action=/epic/check" method="post" enctype="multipart/form-data">
+  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/index.php?type=module&prefix=<?= $module->PREFIX; ?>&page=api&pid=13&route=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file[]" multiple>
     <input type="hidden" name="upload" value="1">
     <input type="submit">
@@ -117,90 +117,94 @@ function upload()
   <!-- SCRIPTS -->
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/superagent/3.8.3/superagent.min.js"></script>
-  <!-- MAIN SCRIPT -->
+  <!-- MAIN SCRIPT - exposes EpicTestApp -->
+  <script src="<?= $module->getUrl('./assets/js/epic-test-app.js').'&ver='.time(); ?>"></script>
   <script>
-  
-  </script>
-  <script>
-  const PREFIX = '<?= $module->PREFIX; ?>';
-  const APP_PATH_WEBROOT_FULL = '<?= preg_replace('/^http(?:s)?:\/\/(.*?)(?:\/)?$/','$1', APP_PATH_WEBROOT_FULL); ?>';
-  </script>
-  <script src="<?= $module->getUrl('./assets/js/main.js').'&ver='.time(); ?>"></script>
-  <script>
-  (function($, window, document) {
-    const checkButton = document.getElementById('checkButton');
-    const remotePath = '<?=APP_PATH_WEBROOT_FULL;?>modules/<?= $module->PREFIX; ?>_<?= $module->VERSION; ?>/data/epic_example.xml';
+    (function($, window, document) {
+      var APP_PATH_WEBROOT_FULL = '<?= preg_replace('/^http(?:s)?:\/\/(.*?)(?:\/)?$/','$1', APP_PATH_WEBROOT_FULL); ?>';
+      var PREFIX = '<?= $module->PREFIX; ?>';
+      var module_prefix =  PREFIX || 'epic_participant_updater';
+      var app_path_webroot_full = APP_PATH_WEBROOT_FULL || location.host;
+      var baseURL = ['//',app_path_webroot_full,'/api/index.php?NOAUTH=&type=module&prefix=',module_prefix,'&page=api&route='].join('');
+      
+      var app = EpicTestApp.init({baseURL:baseURL}); // from main.js
 
-    const onEpicDataUploaded = function(e) {
-      try {
-        const message = e.detail.response.message;
-        const projects = e.detail.response.projects.join(',');
-        alert(`${message}.\nprojects: ${projects}`);
-      } catch (error) {
-        alert(error);
-      }
-    };
+      var checkButton = document.getElementById('checkButton');
+      var remotePath = '<?=APP_PATH_WEBROOT_FULL;?>modules/<?= $module->PREFIX; ?>_<?= $module->VERSION; ?>/data/epic_example.xml';
+
+      var onEpicDataUploaded = function(e) {
+        try {
+          var message = e.detail.response.message;
+          var projects = e.detail.response.projects;
+          var stringified_projects = projects.map(function(project, index){
+            var string = [' - ',project.project_name,' (',project.project_id,')'].join('');
+            return string;
+          });
+          var projects_string_list = stringified_projects.join('\n ');
+          alert(`${message}.\nprojects:\n ${projects_string_list}`);
+        } catch (error) {
+          alert(error);
+        }
+      };
     
-    /* check remote file */
+      /* check remote file */
 
-    checkButton.addEventListener('click', function(e){
-      e.preventDefault();
-      checkEpicData({
-        path: remotePath,
-      }, this);
-    });
-    
-    checkButton.addEventListener('epicDataChecked', (e) => {
-      onEpicDataUploaded(e);
-    });
+      checkButton.addEventListener('click', function(e){
+        e.preventDefault();
+        app.checkData({
+          path: remotePath,
+        }, this);
+      });
+      
+      checkButton.addEventListener('epicDataChecked', (e) => {
+        onEpicDataUploaded(e);
+      });
 
-    /* jQuery */
+      /* jQuery */
 
-    const jquery_uploadButton = document.getElementById('jq_uploadButton');
-    jquery_uploadButton.addEventListener('click', function(e) {
-      e.preventDefault();
-      const files = document.getElementById('file').files; //get the file from the form
-      if(typeof files !== 'undefined')
-        jq_ajaxFileUpload(files, uploadButton);
-    });
+      const jquery_uploadButton = document.getElementById('jq_uploadButton');
+      jquery_uploadButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        const files = document.getElementById('file').files; //get the file from the form
+        if(typeof files !== 'undefined')
+        app.jq_ajaxFileUpload(files, uploadButton);
+      });
 
-    jquery_uploadButton.addEventListener('epicDataUploaded', (e) => {
-      console.log(e);
-      onEpicDataUploaded(e);
-    });
+      jquery_uploadButton.addEventListener('epicDataUploaded', (e) => {
+        console.log(e);
+        onEpicDataUploaded(e);
+      });
 
-    /* axios */
+      /* axios */
 
-    const uploadButton = document.getElementById('uploadButton');
-    uploadButton.addEventListener('click', function(e) {
-      e.preventDefault();
-      const files = document.getElementById('file').files; //get the file from the form
-      if(typeof files !== 'undefined')
-        axios_ajaxFileUpload(files, uploadButton);
-    });
+      const uploadButton = document.getElementById('uploadButton');
+      uploadButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        const files = document.getElementById('file').files; //get the file from the form
+        if(typeof files !== 'undefined')
+        app.axios_ajaxFileUpload(files, uploadButton);
+      });
 
-    uploadButton.addEventListener('epicDataUploaded', (e) => {
-      console.log(e);
-      onEpicDataUploaded(e);
-    });
+      uploadButton.addEventListener('epicDataUploaded', (e) => {
+        console.log(e);
+        onEpicDataUploaded(e);
+      });
 
-    /* superagent */
+      /* superagent */
 
-    const sa_uploadButton = document.getElementById('sa_uploadButton');
-    sa_uploadButton.addEventListener('click', function(e) {
-      e.preventDefault();
-      const files = document.getElementById('file').files; //get the file from the form
-      if(typeof files !== 'undefined')
-        sa_ajaxFileUpload(files, uploadButton);
-    });
+      const sa_uploadButton = document.getElementById('sa_uploadButton');
+      sa_uploadButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        const files = document.getElementById('file').files; //get the file from the form
+        if(typeof files !== 'undefined')
+        app.sa_ajaxFileUpload(files, uploadButton);
+      });
 
-    sa_uploadButton.addEventListener('epicDataUploaded', (e) => {
-      console.log(e);
-      onEpicDataUploaded(e);
-    });
-
-  
-  }(window.jQuery, window, document));
+      sa_uploadButton.addEventListener('epicDataUploaded', (e) => {
+        console.log(e);
+        onEpicDataUploaded(e);
+      });
+    }(window.jQuery, window, document));
 </script>
 <?php
 

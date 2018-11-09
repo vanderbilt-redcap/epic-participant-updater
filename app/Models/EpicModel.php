@@ -121,11 +121,11 @@ class EpicModel extends BaseModel {
             
             if($record)
             {
-                $this->updateRecord($project_id, $record, $xml_data);
+                $this->updateRecord($project, $record, $xml_data);
             }
             else
             {
-                $this->createRecord($project_id, $xml_data);
+                $this->createRecord($project, $xml_data);
             }
         }
         $response = [
@@ -139,8 +139,10 @@ class EpicModel extends BaseModel {
     /**
      * update the status of an existing record
      */
-    private function updateRecord($project_id, $record, $xml_data)
+    private function updateRecord($project, $record, $xml_data)
     {
+        $project_id = $project['project_id'];
+        $irb_number = $project['project_irb_number'];
         $status_field_name = $this->module->getProjectSetting($this->status_mapping_key, $project_id);
         foreach($record as $record_id => &$data)
         {
@@ -151,14 +153,16 @@ class EpicModel extends BaseModel {
                 $this->module->log(__FUNCTION__, [
                     '_project_id' => $project_id,
                     '_record_id' => $record_id,
+                    'irb_number' => $irb_number,
                     'status' => 'error',
                     'description' => "error updating record {$record_id}: {$error}",
-                ]);
+                    ]);
             }else
             {
                 $this->module->log(__FUNCTION__, [
                     '_project_id' => $project_id,
                     '_record_id' => $record_id,
+                    'irb_number' => $irb_number,
                     'status' => 'success',
                     'description' => "record {$record_id} has been updated",
                 ]);
@@ -169,8 +173,10 @@ class EpicModel extends BaseModel {
     /**
      * create a new record
      */
-    private function createRecord($project_id, $xml_data)
+    private function createRecord($project, $xml_data)
     {
+        $project_id = $project['project_id'];
+        $irb_number = $project['project_irb_number'];
         $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
         $mrn_field_name = $this->module->getProjectSetting($this->mrn_mapping_key, $project_id);
         $status_field_name = $this->module->getProjectSetting($this->status_mapping_key, $project_id);
@@ -188,6 +194,7 @@ class EpicModel extends BaseModel {
             $this->module->log(__FUNCTION__, [
                 '_project_id' => $project_id,
                 '_record_id' => $record_id,
+                'irb_number' => $irb_number,
                 'status' => 'error',
                 'description' => "error creating new record: {$error}",
             ]);
@@ -196,6 +203,7 @@ class EpicModel extends BaseModel {
             $this->module->log(__FUNCTION__, [
                 '_project_id' => $project_id,
                 '_record_id' => $record_id,
+                'irb_number' => $irb_number,
                 'status' => 'success',
                 'description' => "new record created",
             ]);

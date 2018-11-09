@@ -32,67 +32,19 @@
     </ul>
   </div>
 </nav>
+ <!-- MAIN SCRIPT - exposes HeaderApp -->
+<script src="<?= $module->getUrl('./assets/js/header-app.js'); ?>"></script>
 <script>
 (function($, window, document){
-  const module_prefix = '<?= $module->PREFIX; ?>';
-  const api_base_url = `//${location.host}/api/?type=module&prefix=${module_prefix}&page=api&route=`;
-  let loading = false;
-    /**
-     * load data
-     */
-    const loadData = function() {
-      const dfd = $.Deferred();
-      
-      laoding = true;
 
-      $.ajax({
-        url: `${api_base_url}/epic/projects`,
-        type: 'GET',
-      }).done( ( data, textStatus, jqXHR ) => {
-        dfd.resolve(data);
-      }).fail( ( jqXHR, textStatus, errorThrown ) => {
-        console.log(arguments);
-        dfd.reject(errorThrown);
-      }).always(() =>{
-        loading = false; // no more loading
-      });
-      return dfd;
-    };
-
-  /**
-   * set the active menu item
-   */
-  function setActiveLink(menu_element) {
-      const links = menu_element.querySelectorAll('.navbar-nav li.nav-item a');
-      links.forEach(element => {
-        if(element.href == location.href) {
-          element.parentNode.classList.add('active');
-        }else {
-          element.parentNode.classList.remove('active');
-        }
-      });
-    }
   $(function(){
+    var module_prefix = '<?= $module->PREFIX; ?>';
+    var app_base_path = '<?= APP_PATH_WEBROOT; ?>';
+    var api_base_path = '/api/?type=module&prefix='+module_prefix+'&page=api&route=';
 
-    const menu = document.getElementById('epu_menu');
-    setActiveLink(menu);
-
-    const projectsList = document.getElementById('projects-list');
-    
-    /**
-     * load the projects that enabled the module 
-     * and display them in the menu
-     */
-    loadData().done(function(data){
-      projectsList.innerHTML = '';
-      data.forEach(element => {
-        const a = document.createElement('a');
-        a.classList.add('dropdown-item');
-        a.href = '#';
-        const text = document.createTextNode(`project ${element}`);
-        a.appendChild(text);
-        projectsList.appendChild(a);
-      });
+    var app = HeaderApp.init({
+      app_base_path: app_base_path,
+      api_base_path: api_base_path,
     });
 
   });
