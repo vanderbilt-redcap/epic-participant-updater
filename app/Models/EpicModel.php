@@ -1,17 +1,17 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
 
-use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater as EPU;
+use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 
 class EpicModel extends BaseModel {
 
 	private $mrn_mapping_key = 'mrn-mapping';
-	private $status_mapping_key = 'status-mapping';
+    private $status_mapping_key = 'status-mapping';
 	
-	function __construct()
+	function __construct(EpicParticipantUpdater $module)
 	{
-		$this->module = new EPU();
+		$this->module = $module;
 		parent::__construct();
 	}
 
@@ -73,19 +73,19 @@ class EpicModel extends BaseModel {
 		} catch (\Exception $e) {
 			$response = array(
 				"error" => true,
-				"message" => $e->getMessage(),
-			);
-			$this->module->log(__FUNCTION__, [
-				'status' => 'error',
-				'description' => $e->getMessage(),
-			]);
-			header('HTTP/1.1 500 Internal Server Error');
+                "message" => $e->getMessage(),
+            );
+            $log = new LogModel(__FUNCTION__, $response);
+            $log->save($this->module);
+			// header('HTTP/1.1 500 Internal Server Error');
 			return $response;
 		}
 	}
 
-
-	/**
+    /**
+     * get the primary key of a project
+     *
+     * @param int $project_id
      * @return string the name of the primary key field
      */
     private function getProjectPrimaryKey($project_id)
@@ -102,10 +102,30 @@ class EpicModel extends BaseModel {
      */
     private function checkXML($xml_data=[])
     {
-        if(empty($xml_data)) throw new \Exception($error='no data');
+        // check the data
+        if(empty($xml_data))
+        {
+            $response = [
+				'status' => 'info', // generic message
+				'description' => 'no data',
+            ];
+            $log = new LogModel(__FUNCTION__, $response);
+            $log->save($this->module);
+            return $response;
+        }
         
+        // check if any project is enabled
         $projects = $this->getFetchingEnabledProjects();
-        if(empty($projects)) throw new \Exception($error='no projects enabled');
+        if(empty($projects))
+        {
+            $response = [
+				'status' => 'info', // generic message
+				'description' => 'no projects enabled',
+            ];
+            $log = new LogModel(__FUNCTION__, $response);
+            $log->save($this->module);
+            return $response;
+        }
         
         // check for projects that are using the same irb number of the XML
         foreach($projects as $project)
@@ -129,10 +149,12 @@ class EpicModel extends BaseModel {
             }
         }
         $response = [
+            'status' => 'info',
             'message' => 'xml checked for all projects',
             'projects' => $projects,
-            'status' => 'success',
         ];
+        $log = new LogModel(__FUNCTION__, $response);
+        $log->save($this->module);
         return $response;
     }
     
@@ -148,25 +170,23 @@ class EpicModel extends BaseModel {
         {
             $data[$status_field_name] = trim($xml_data['status']);
             $response = \REDCap::saveData($project_id, 'array', array($record));
+            $log = new LogModel(__FUNCTION__, [
+                'project_id' => $project_id,
+                'record_id' => $record_id,
+                'irb_number' => $irb_number,
+                'MRN' => $xml_data['MRN'],
+            ]);
             if($error = $response['errors'])
             {
-                $this->module->log(__FUNCTION__, [
-                    '_project_id' => $project_id,
-                    '_record_id' => $record_id,
-                    'irb_number' => $irb_number,
-                    'status' => 'error',
-                    'description' => "error updating record {$record_id}: {$error}",
-                    ]);
+                $log->status = 'error';
+                $log->description = "error updating record {$record_id}: {$error}";
             }else
             {
-                $this->module->log(__FUNCTION__, [
-                    '_project_id' => $project_id,
-                    '_record_id' => $record_id,
-                    'irb_number' => $irb_number,
-                    'status' => 'success',
-                    'description' => "record {$record_id} has been updated",
-                ]);
+
+                $log->status = 'success';
+                $log->description = "record {$record_id} has been updated";
             }
+            $log->save($this->module);
         }
     }
             
@@ -189,25 +209,22 @@ class EpicModel extends BaseModel {
         
         $response = \RedCap::saveData($project_id, 'json', json_encode(array($data)));
         $record_id = implode(', ', $response['ids']);
+        $log = new LogModel(__FUNCTION__, [
+            'project_id' => $project_id,
+            'record_id' => $record_id,
+            'irb_number' => $irb_number,
+            'MRN' => $xml_data['MRN'],
+        ]);
         if($error = $response['errors'])
         {
-            $this->module->log(__FUNCTION__, [
-                '_project_id' => $project_id,
-                '_record_id' => $record_id,
-                'irb_number' => $irb_number,
-                'status' => 'error',
-                'description' => "error creating new record: {$error}",
-            ]);
+            $log->status = 'error';
+            $log->description = "error creating new record: {$error}";
         }else
         {
-            $this->module->log(__FUNCTION__, [
-                '_project_id' => $project_id,
-                '_record_id' => $record_id,
-                'irb_number' => $irb_number,
-                'status' => 'success',
-                'description' => "new record created",
-            ]);
+            $log->status = 'success';
+            $log->description = "new record created";
         }
+        $log->save($this->module);
     }
 
      /**
@@ -268,25 +285,5 @@ class EpicModel extends BaseModel {
 
         return $projects;
     }
-
-	/**
-	 * set $limit to -1 to skip pagination
-	 */
-	public function getlogs($page, $limit)
-	{
-		$offset = ($page-1)*$limit; // when page is 1 the offset is 0
-		$fields = ['log_id', 'timestamp', 'user', 'ip',
-			'_project_id AS project_id', '_record_id AS record',
-			'message', 'status', 'description'];
-		$sql = "SELECT ".implode(',',$fields)." ORDER BY timestamp DESC";
-		if($limit>0) $sql .= " LIMIT {$offset}, {$limit}";
-		$result = $this->module->queryLogs($sql);
-		$json = [];
-		while($row = mysqli_fetch_assoc($result)){
-			$json[] = $row;
-		}
-
-		return $json;
-	}
 
 }
