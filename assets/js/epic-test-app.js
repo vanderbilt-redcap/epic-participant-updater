@@ -11,6 +11,7 @@
 
         /**
          * inizialize the app
+         * 
          * @param {object} params 
          */
         init: function(params) {
@@ -26,6 +27,7 @@
         
         /**
         * check data from epic
+        * 
         * @param {object} params 
         * @param {object} caller an html element
         * @fires epicDataChecked
@@ -50,6 +52,7 @@
         
         /**
         * create a FormData
+        * 
         * @param {object} files retrieved from an html input of type file
         * @return {object} FormData with files
         */
@@ -68,6 +71,7 @@
         
         /**
         * fires upload event on succesful upload
+        * 
         * @param {object} caller html element used to listen for the epicDataUploaded event
         * @fires epicDataUploaded
         */
@@ -82,7 +86,8 @@
         },
         
         /**
-        * upload an xml epic file
+        * upload an xml epic file using axios
+        * 
         * @param {object} files retrieved from an html input of type file
         * @param {object} caller optional html element used to listen for the epicDataUploaded event
         * @fires epicDataUploaded
@@ -104,6 +109,7 @@
         
         /**
         * upload an xml epic file using superagent
+        * 
         * @param {object} files retrieved from an html input of type file
         * @param {object} caller optional html element used to listen for the epicDataUploaded event
         * @fires epicDataUploaded
@@ -124,7 +130,8 @@
         },
         
         /**
-        * upload an xml epic file using superagent
+        * upload an xml epic file using jQuery
+        * 
         * @param {object} files retrieved from an html input of type file
         * @param {object} caller optional html element used to listen for the epicDataUploaded event
         * @fires epicDataUploaded
@@ -151,6 +158,7 @@
         
         /**
          * helper function to display a basic alert on error
+         * 
          * @param {string} error 
          */
         ajaxFail: function(error) {

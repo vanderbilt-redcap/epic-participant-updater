@@ -5,6 +5,11 @@
       loading: false,
       options: {},
   
+      /**
+       * initialize the App object
+       * 
+       * @param {Object} params 
+       */
       init: function(params) {
         // set the options
         this.options = $.extend({}, this.options, params);
@@ -23,8 +28,11 @@
           self._createProjectsMenu(projectsMenuItem, data, projects_base_url);
         });
       },
-      /**
-        * load data
+
+       /**
+        * load data from url
+        * 
+        * @param {string} url 
         */
       _loadData: function(url) {
         var dfd = $.Deferred();
@@ -46,8 +54,10 @@
         return dfd;
       },
   
-      /**
+     /**
       * set the active menu item
+      * 
+      * @param {Element} menu_element 
       */
       _setActiveLink: function(menu_element) {
         var links = menu_element.querySelectorAll('.navbar-nav li.nav-item a');
@@ -62,6 +72,10 @@
   
       /**
        * create the menu with a list projects using the module
+       * 
+       * @param {Element} menu_item 
+       * @param {Array} projects 
+       * @param {string} projects_base_url 
        */
       _createProjectsMenu: function(menu_item, projects, projects_base_url) {
         menu_item.innerHTML = ''; // reset the menu
@@ -69,7 +83,7 @@
           var a = document.createElement('a');
           a.classList.add('dropdown-item');
           a.href = `${projects_base_url}${project.project_id}`;
-          var text = document.createTextNode(`${project.project_name} (#${project.project_id})`);
+          var text = document.createTextNode(`${project.project_name} (ID ${project.project_id})`);
           a.appendChild(text);
           menu_item.appendChild(a);
         });

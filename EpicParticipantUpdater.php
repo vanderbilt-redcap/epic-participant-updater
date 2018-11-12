@@ -27,7 +27,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         Logger::log($this->logFile, "disabled");
     }
 
-    public function log($message,$parameters=[])
+    /* public function log($message,$parameters=[])
     {
         foreach ($parameters as $key => &$value) {
             if($key==='message')
@@ -39,6 +39,6 @@ class EpicParticipantUpdater extends AbstractExternalModule {
             }
         }
         parent::log($message,$parameters);
-    }
+    } */
 
 }

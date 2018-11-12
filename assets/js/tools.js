@@ -1,6 +1,7 @@
 var Tools = {
     /**
      * copy a string to the clipboard
+     * 
      * @param {string} str 
      */
     copyToClipboard: function(str) {

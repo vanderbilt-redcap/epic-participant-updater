@@ -1,6 +1,8 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Controllers;
 
+use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater as EPU;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
+use Vanderbilt\EpicParticipantUpdater\App\Models\LogModel;
 
 class EpicController extends BaseController
 {
@@ -11,9 +13,10 @@ class EpicController extends BaseController
 
     function __construct()
     {
-		parent::__construct();
+        parent::__construct();
 		
-		$this->app = new EpicModel();
+        $this->module = new EPU();
+		$this->app = new EpicModel($this->module);
 	}
     
     /*
@@ -33,7 +36,7 @@ class EpicController extends BaseController
 	{
         $page = isset($_GET['p']) ? $_GET['p'] : 1;
         $limit = isset($_GET['limit']) ? $_GET['p'] : $this->defaults['logs_per_page'];
-        $response = $this->app->getLogs($page, $limit);
+        $response = LogModel::list($this->module, $page, $limit);
         $this->printJSON($response);
     }
     
