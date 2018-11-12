@@ -12,6 +12,7 @@
         
         /**
          * initialize the app
+         * 
          * @param {object} params 
          */
         init: function(params) {
@@ -23,6 +24,7 @@
         
         /**
          * load data from the endpoint and display the results
+         * 
          * @param {object} params 
          */
         loadAndRender: function(params={}) {
@@ -60,7 +62,8 @@
         },
         
        /**
-        * load data and render
+        * load data
+        * 
         * @param {object} params 
         */
         _loadData: function(params={}) {
@@ -121,8 +124,12 @@
             return dfd;
         },
         
-        /**
+       /**
         * render data using a templating engine
+        * 
+        * @param {Element} target 
+        * @param {Object} Handlebars template 
+        * @param {Object} data 
         */
         render: function(target, template, data) {
             var context = data; 
@@ -140,6 +147,9 @@
         },
         
         
+        /**
+         * register the templating engine helper functions
+         */
         _setTemplatingEngineHelpers: function() {
             /**
             * translate the status to a class
@@ -147,12 +157,20 @@
             */
             Handlebars.registerHelper('class', function(status) {
                 let className = '';
-                switch (status) {    
+                switch (status) {
+                    case 'success':
+                        className = 'table-success';
+                        break;
+                    case 'warning':
+                        className = 'table-warning';
+                        break;
                     case 'error':
-                    className = 'table-danger';           
-                    break;
+                        className = 'table-danger';
+                        break;
+                    case 'info':
                     default:
-                    break;
+                        className = '';
+                        break;
                 }
                 return className;
             });

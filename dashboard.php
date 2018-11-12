@@ -117,13 +117,15 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
     })(jQuery,window,document);
   </script>
   <script id="entry-template" type="text/x-handlebars-template">
-    <table class="table table-striped table-bordered">
+    <table class="table table-striped table-bordered table-hover">
       <thead class="thead-light">
         <tr scope="row">
           <th scope="col">id</th>
           <th scope="col">timestamp</th>
           <th scope="col">project id</th>
           <th scope="col">record</th>
+          <th scope="col">MRN</th>
+          <th scope="col">IRB number</th>
           <th scope="col">message</th>
           <th scope="col">description</th>
         </tr>
@@ -135,12 +137,14 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
           <td>{{date timestamp}}</td>
           <td>{{project_id}}</td>
           <td>{{record}}</td>
+          <td>{{MRN}}</td>
+          <td>{{irb_number}}</td>
           <td>{{message}}</td>
           <td>{{description}}</td>
         </tr>
         {{else}}
           <tr class="entry {{class status}}">
-            <td colspan="6">no content</td>
+            <td colspan="8">no content</td>
           </tr>
         {{/each}}
       </tbody>
