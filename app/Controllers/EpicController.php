@@ -36,7 +36,7 @@ class EpicController extends BaseController
 	{
         $page = isset($_GET['p']) ? $_GET['p'] : 1;
         $limit = isset($_GET['limit']) ? $_GET['p'] : $this->defaults['logs_per_page'];
-        $response = LogModel::list($this->module, $page, $limit);
+        $response = LogModel::getList($this->module, $page, $limit);
         $this->printJSON($response);
     }
     

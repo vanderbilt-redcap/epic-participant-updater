@@ -57,7 +57,7 @@ class LogModel {
      * @param int $limit
      * @return void
      */
-	public static function list(EpicParticipantUpdater $module, int $page, int $limit)
+	public static function getList(EpicParticipantUpdater $module, int $page, int $limit)
 	{
         $offset = ($page-1)*$limit; // when page is 1 the offset is 0
 		$sql = "SELECT ".implode(',',self::$DB_fields)." ORDER BY timestamp DESC";
