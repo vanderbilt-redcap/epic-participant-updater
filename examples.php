@@ -22,7 +22,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
   <h6>FORM EXAMPLE</h6>
   <pre><code data-language="html" >
-  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/index.php?type=module&prefix=epic_participant_updater&page=api&route=/epic/check" method="post" enctype="multipart/form-data">
+  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/index.php?NOAUTH&type=module&prefix=epic_participant_updater&page=api&route=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file">
     <input type="submit">
   </form>

@@ -88,7 +88,7 @@ function upload()
     <input type="submit">
   </form>
   <p>upload an xml file via form (API URL in form action)</p>
-  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/index.php?type=module&prefix=<?= $module->PREFIX; ?>&page=api&pid=13&route=/epic/check" method="post" enctype="multipart/form-data">
+  <form action="<?=APP_PATH_WEBROOT_FULL;?>api/index.php?NOAUTH&type=module&prefix=<?= $module->PREFIX; ?>&page=api&pid=13&route=/epic/check" method="post" enctype="multipart/form-data">
     <input type="file" name="file[]" multiple>
     <input type="hidden" name="upload" value="1">
     <input type="submit">
