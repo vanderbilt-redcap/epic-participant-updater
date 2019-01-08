@@ -19,6 +19,7 @@ class EpicModel extends BaseModel {
 	{
         
         try {
+            $HTTP_RAW_POST_DATA = file_get_contents("php://input"); // SOAP request
 			$params = json_decode(file_get_contents("php://input"),true); //get the params
 			$params = array_merge($params, $_POST);
 			$method = $_SERVER['REQUEST_METHOD'];
@@ -29,13 +30,16 @@ class EpicModel extends BaseModel {
 
 
 			$response = array();
-			if(empty($params) && empty($_FILES) && empty($_PUT)) {
+			if(empty($HTTP_RAW_POST_DATA) && empty($params) && empty($_FILES) && empty($_PUT)) {
 				// no params and no files; exit
 				$response = array(
 					"error" => true,
 					"message" => "no params specified",
 				);
 			}
+			else if( !empty($HTTP_RAW_POST_DATA) ){
+                self::handleSOAPRequest($HTTP_RAW_POST_DATA);
+            }
 			else if( !empty($_FILES) ){
 				/**
 				 * data is coming from an upload form
@@ -67,7 +71,7 @@ class EpicModel extends BaseModel {
 				$path = $params['path'];
 				$xml_data = EpicXMLParser::parseFromPath($path);
 				$response = $this->checkXML($xml_data);
-			}
+            }
 
 			return $response;
 		} catch (\Exception $e) {
@@ -80,7 +84,36 @@ class EpicModel extends BaseModel {
 			// header('HTTP/1.1 500 Internal Server Error');
 			return $response;
 		}
-	}
+    }
+    
+    /**
+     * handle a SOAP request from Epic
+     *
+     * @param string $HTTP_RAW_POST_DATA
+     * @return void
+     */
+    private function handleSOAPRequest($HTTP_RAW_POST_DATA)
+    {
+        $xml_data = EpicXMLParser::parse($HTTP_RAW_POST_DATA);
+        $current_response = $this->checkXML($xml_data);
+        self::createSOAPResponse($HTTP_RAW_POST_DATA);
+    }
+
+    /**
+     * reply to the SOAP request from Epic
+     *
+     * @param string $HTTP_RAW_POST_DATA
+     * @return void
+     */
+    private static function createSOAPResponse($xml_string)
+    {
+        $xml = @simplexml_load_string($xml_string);
+        $patientRequest = $xml->children('soap', true)->Body->children()->CallService->requestBody->EnrollPatientRequestRequest;
+        $responseXML = new \SimpleXMLElement($patientRequest->asXML());
+        Header('Content-type: text/xml');
+        echo $responseXML->asXML();
+        exit(0);
+    }
 
     /**
      * get the primary key of a project
@@ -202,7 +235,7 @@ class EpicModel extends BaseModel {
         $status_field_name = $this->module->getProjectSetting($this->status_mapping_key, $project_id);
         
         $data = array(
-            $record_id_field => $this->addAutoNumberedRecord($project_id),
+            $record_id_field => $this->module->addAutoNumberedRecord($project_id),
             $mrn_field_name => $xml_data['MRN'],
             $status_field_name => trim($xml_data['status']),
         );

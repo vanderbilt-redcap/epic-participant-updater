@@ -14,18 +14,67 @@ class EpicXMLParser
      */
     static function parse($xml_string)
     {
-        $xml = @simplexml_load_string($xml_string);
+        $stripped_xml = self::strip_XML_namespaces($xml_string);
+        $xml = @simplexml_load_string($stripped_xml);
         if($xml===false){
             throw new \RuntimeException('The file format is not valid.');
         }
-        $data = [];
         try {
-            $data['status'] = (string) $xml->children('s', true)->Body->children('rpe', true)->EnrollPatientRequestRequest->processState;
+            /* $data['status'] = (string) $xml->children('s', true)->Body->children('rpe', true)->EnrollPatientRequestRequest->processState;
             $data['MRN'] = (string) $xml->children('s', true)->Body->children('rpe', true)->EnrollPatientRequestRequest->patient->candidateID->attributes()['extension'][0];
-            $data['irbNumber'] = (string) $xml->children('s', true)->Body->children('rpe', true)->EnrollPatientRequestRequest->children()->study->instantiation->plannedStudy->id->attributes()['extension'];
+            $data['irbNumber'] = (string) $xml->children('s', true)->Body->children('rpe', true)->EnrollPatientRequestRequest->children()->study->instantiation->plannedStudy->id->attributes()['extension']; */
+            
+            $data = self::extract($xml);
+
             foreach ($data as $key => $value) {
                 if(empty($value)) throw new \RuntimeException("'{$key}' cannot be empty.");
             }
+            return $data;
+        }catch (\RuntimeException $e) {
+			$error = $e->getMessage();
+			return [];
+		}
+    }
+
+    private static function strip_XML_namespaces($xml_string)
+    {
+        $regex = "/(<\/?)\w+:(.+?>)/is";
+        $stripped_xml = preg_replace($regex,"$1$2",$xml_string);
+        return $stripped_xml;
+    }
+
+    private static function extract($xml)
+    {
+        try {
+            /* $patientRequest = $xml->children('soap', true)->Body->children()->CallService->requestBody->EnrollPatientRequestRequest;
+
+            $study = $patientRequest->children('hl7', true)->study;
+            $study_id = $study->instantiation->plannedStudy->id->attributes()['extension'][0];
+
+            $processState = $patientRequest->processState; // status
+
+            $patient = $patientRequest->patient;
+            $patient_name = $patient->name->children('hl7', true)->given;
+            $patient_lastname = $patient->name->children('hl7', true)->family;
+
+            $candidateID = $patient->candidateID->attributes()['extension'][0]; */
+
+            $patientRequest = $xml->Body->CallService->requestBody->EnrollPatientRequestRequest;
+            $study = $patientRequest->study;
+            $study_id = $study->instantiation->plannedStudy->id->attributes()['extension'][0];
+
+            $processState = $patientRequest->processState; // status
+
+            $patient = $patientRequest->patient;
+            $patient_name = $patient->name->given;
+            $patient_lastname = $patient->name->family;
+
+            $candidateID = $patient->candidateID->attributes()['extension'][0];
+
+            $data = array();
+            $data['status'] = (string) $processState;
+            $data['MRN'] = (string) $candidateID;
+            $data['irbNumber'] = (string) $study_id;
         }catch (\RuntimeException $e) {
 			$error = $e->getMessage();
 			return [];
