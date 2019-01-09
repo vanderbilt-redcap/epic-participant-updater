@@ -100,15 +100,23 @@ class EpicModel extends BaseModel {
     }
 
     /**
-     * reply to the SOAP request from Epic
+     * reply to the SOAP request from Epic:
+     * - get the original soap request
+     * - remove namespaces
+     * - print the EnrollPatientRequestRequest node
      *
      * @param string $HTTP_RAW_POST_DATA
      * @return void
      */
     private static function createSOAPResponse($xml_string)
     {
-        $xml = @simplexml_load_string($xml_string);
-        $patientRequest = $xml->children('soap', true)->Body->children()->CallService->requestBody->EnrollPatientRequestRequest;
+        $stripped_xml = EpicXMLParser::strip_XML_namespaces($xml_string); // remove namespace prefixes
+        $xml = @simplexml_load_string($stripped_xml);
+        /* $nameSpaces = $xml->getNameSpaces(true);
+        foreach($nameSpaces as $namespace => $uri) {
+            $xml->registerXPathNamespace($namespace, $uri);
+        }*/
+        $patientRequest = $xml->Body->CallService->requestBody->EnrollPatientRequestRequest;
         $responseXML = new \SimpleXMLElement($patientRequest->asXML());
         Header('Content-type: text/xml');
         echo $responseXML->asXML();

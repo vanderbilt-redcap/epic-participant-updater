@@ -32,33 +32,34 @@ class EpicXMLParser
             return $data;
         }catch (\RuntimeException $e) {
 			$error = $e->getMessage();
-			return [];
+			return array();
 		}
     }
 
-    private static function strip_XML_namespaces($xml_string)
+    /**
+     * strip the namespaces from an xml document
+     * to avoid having to specify the namespace prefix of nooes when
+     * an xml document is parsed for data: $xml->children('soap', true)
+     *
+     * @param [type] $xml_string
+     * @return void
+     */
+    public static function strip_XML_namespaces($xml_string)
     {
         $regex = "/(<\/?)\w+:(.+?>)/is";
         $stripped_xml = preg_replace($regex,"$1$2",$xml_string);
         return $stripped_xml;
     }
 
+    /**
+     * extract data from an epic xml
+     *
+     * @param SimpleXMLElement $xml
+     * @return void
+     */
     private static function extract($xml)
     {
         try {
-            /* $patientRequest = $xml->children('soap', true)->Body->children()->CallService->requestBody->EnrollPatientRequestRequest;
-
-            $study = $patientRequest->children('hl7', true)->study;
-            $study_id = $study->instantiation->plannedStudy->id->attributes()['extension'][0];
-
-            $processState = $patientRequest->processState; // status
-
-            $patient = $patientRequest->patient;
-            $patient_name = $patient->name->children('hl7', true)->given;
-            $patient_lastname = $patient->name->children('hl7', true)->family;
-
-            $candidateID = $patient->candidateID->attributes()['extension'][0]; */
-
             $patientRequest = $xml->Body->CallService->requestBody->EnrollPatientRequestRequest;
             $study = $patientRequest->study;
             $study_id = $study->instantiation->plannedStudy->id->attributes()['extension'][0];
@@ -66,8 +67,6 @@ class EpicXMLParser
             $processState = $patientRequest->processState; // status
 
             $patient = $patientRequest->patient;
-            $patient_name = $patient->name->given;
-            $patient_lastname = $patient->name->family;
 
             $candidateID = $patient->candidateID->attributes()['extension'][0];
 
@@ -77,7 +76,7 @@ class EpicXMLParser
             $data['irbNumber'] = (string) $study_id;
         }catch (\RuntimeException $e) {
 			$error = $e->getMessage();
-			return [];
+			return array();
 		}
         return $data;
     }
