@@ -43,7 +43,7 @@ class LogModel {
      * @param EpicParticipantUpdater $module
      * @return void
      */
-    public function save(EpicParticipantUpdater $module)
+    public function save($module)
     {
         $module->log($this->message, $this->parameters);
     }
@@ -57,7 +57,7 @@ class LogModel {
      * @param int $limit
      * @return void
      */
-	public static function getList(EpicParticipantUpdater $module, int $page, int $limit)
+	public static function getList($module, $page, $limit)
 	{
         $offset = ($page-1)*$limit; // when page is 1 the offset is 0
 		$sql = "SELECT ".implode(',',self::$DB_fields)." ORDER BY timestamp DESC";
@@ -83,6 +83,54 @@ class LogModel {
             $value = 'info'; //set the default status
 
         $this->parameters['status'] = $value;
+    }
+
+    /**
+     * dump the current request in a log file
+     *
+     * @return void
+     */
+    public static function dumpRequest()
+    {
+        $log_directory_path = join(DIRECTORY_SEPARATOR, array(EDOC_PATH,'EPU'));
+        if (!file_exists($log_directory_path)) {
+            mkdir($log_directory_path, 0777, true);
+        }
+
+        $req_dump = '';
+        $requests = array(
+            'method' => $_SERVER['REQUEST_METHOD'],
+            '$_SERVER' => print_r($_SERVER, true),
+            '$_POST' => print_r($_POST, true),
+            '$_GET' => print_r($_GET, true),
+            '$_FILES' => print_r($_FILES, true),
+            'file_get_contents' => file_get_contents("php://input"),
+        );
+        foreach ($requests as $key => $value) {
+            $req_dump .= "----- {$key}: -----\n\n";
+            $req_dump .= "{$value}\n\n";
+            $req_dump .= "\n------------------------\n";
+        }
+
+        $now = self::getMicroDate('Y-m-d_H-i-s-u');
+        $path = join(DIRECTORY_SEPARATOR, array($log_directory_path,"EPU_request_{$now}.log"));
+        try {
+            $fp = fopen($path, 'c');
+            fwrite($fp, $req_dump);
+            fclose($fp);
+        } catch (\Throwable $th) {
+            die('cannot write dump file');
+        }
+        
+    }
+
+    private static function getMicroDate($format="Y-m-d H:i:s.u")
+    {
+        $t = microtime(true);
+        $micro = sprintf("%06d",($t - floor($t)) * 1000000);
+        $d = new \DateTime( date('Y-m-d H:i:s.'.$micro, $t) );
+
+        return $d->format($format); // note at point on "u"
     }
  
     /**

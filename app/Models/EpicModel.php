@@ -95,7 +95,7 @@ class EpicModel extends BaseModel {
     private function handleSOAPRequest($HTTP_RAW_POST_DATA)
     {
         $xml_data = EpicXMLParser::parse($HTTP_RAW_POST_DATA);
-        $current_response = $this->checkXML($xml_data);
+        $response = $this->checkXML($xml_data);
         self::createSOAPResponse($HTTP_RAW_POST_DATA);
     }
 
