@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <CallService xmlns="urn:epic-com:Interconnect.2011.Services">
+      <e0aID>100030</e0aID>
+      <instantOfLastUpdate>5616246184[UTC</instantOfLastUpdate>
+      <e0aOverrides>
+        <e0aOverrides xmlns="urn:epic-com:Interconnect.2011.Services">
+          <ProcessID>DEV-3319620</ProcessID>
+          <JWTProperties />
+          <OAuth2Properties />
+          <TransformParameters />
+          <BindingParameters />
+        </e0aOverrides>
+      </e0aOverrides>
+      <requestBody>
+        <EnrollPatientRequestRequest xmlns="urn:ihe:qrph:rpe:2009">
+          <processState>On Study</processState>
+          <patient>
+            <candidateID extension="2000269" root="1.2.840.114350.1.13.478.3.7.5.737384.14" />
+            <name>
+              <hl7:given xmlns:hl7="urn:hl7-org:v3">Fred</hl7:given>
+              <hl7:family xmlns:hl7="urn:hl7-org:v3">Research</hl7:family>
+            </name>
+            <dob value="07251986" />
+          </patient>
+          <hl7:study xmlns:hl7="urn:hl7-org:v3">
+            <hl7:instantiation>
+              <hl7:plannedStudy>
+                <hl7:id extension="101" root="1.2.3.4" />
+              </hl7:plannedStudy>
+            </hl7:instantiation>
+          </hl7:study>
+        </EnrollPatientRequestRequest>
+      </requestBody>
+      <messageHeaders>
+        <messageHeaders xmlns="urn:epic-com:Interconnect.2011.Services">
+          <messageHeader>
+            <http>1</http>
+            <localName>Content-Type</localName>
+            <value>application/soap+xml; charset=utf-8</value>
+          </messageHeader>
+        </messageHeaders>
+      </messageHeaders>
+      <attachments>
+        <attachments xmlns="">
+          <_incoming_ />
+          <_outgoing_ />
+        </attachments>
+      </attachments>
+      <sessionId>
+      </sessionId>
+      <restErrorAsResponse>true</restErrorAsResponse>
+      <viaEcf>false</viaEcf>
+      <exeSync>true</exeSync>
+    </CallService>
+  </soap:Body>
+</soap:Envelope>

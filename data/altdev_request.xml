@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <CallService xmlns="urn:epic-com:Interconnect.2011.Services">
+      <e0aID>100030</e0aID>
+      <instantOfLastUpdate>5616850866[UTC</instantOfLastUpdate>
+      <e0aOverrides>
+        <e0aOverrides xmlns="urn:epic-com:Interconnect.2011.Services">
+          <ProcessID>altdev-2663549</ProcessID>
+          <TransformParameters>
+            <BindingParameters />
+          </TransformParameters>
+        </e0aOverrides>
+      </e0aOverrides>
+      <requestBody>
+        <rpe:EnrollPatientRequestRequest xmlns="urn:hl7-org:v3" xmlns:rpe="urn:ihe:qrph:rpe:2009">
+          <rpe:processState>On Study</rpe:processState>
+          <rpe:patient>
+            <rpe:candidateID extension="2000789" root="1.2.840.114350.1.13.478.3.7.5.737384.14" />
+            <rpe:name>
+              <given>Honey</given>
+              <family>Badger</family>
+            </rpe:name>
+            <rpe:address>
+              <streetAddressLine>123 Somewhere lane</streetAddressLine>
+              <city>Antioch</city>
+              <state>TN</state>
+              <postalCode>37013</postalCode>
+              <country>US</country>
+            </rpe:address>
+            <rpe:dob value="19811021" />
+          </rpe:patient>
+          <study>
+            <instantiation>
+              <plannedStudy>
+                <id extension="101" />
+              </plannedStudy>
+            </instantiation>
+          </study>
+        </rpe:EnrollPatientRequestRequest>
+      </requestBody>
+      <messageHeaders>
+        <messageHeaders xmlns="urn:epic-com:Interconnect.2011.Services">
+          <messageHeader>
+            <http>1</http>
+            <localName>Content-Type</localName>
+            <value>application/soap+xml; charset=utf-8</value>
+          </messageHeader>
+        </messageHeaders>
+      </messageHeaders>
+      <attachments>
+        <attachments xmlns="">
+          <_incoming_ />
+          <_outgoing_ />
+        </attachments>
+      </attachments>
+      <sessionId>
+      </sessionId>
+      <restErrorAsResponse>true</restErrorAsResponse>
+      <viaEcf>false</viaEcf>
+      <exeSync>true</exeSync>
+    </CallService>
+  </soap:Body>
+</soap:Envelope>

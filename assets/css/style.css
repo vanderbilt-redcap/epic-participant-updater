@@ -12,3 +12,8 @@ body {
     text-shadow: none;
     opacity: inherit;
 }
+
+
+#logs table tbody tr td:last-child {
+    white-space: pre;
+}

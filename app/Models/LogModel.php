@@ -36,9 +36,9 @@ class LogModel {
         };
     }
 
-
     /**
      * save the log using a module
+     * in 
      *
      * @param EpicParticipantUpdater $module
      * @return void
@@ -92,36 +92,49 @@ class LogModel {
      */
     public static function dumpRequest()
     {
+
+        $request_log = self::getRequestLog();
         $log_directory_path = join(DIRECTORY_SEPARATOR, array(EDOC_PATH,'EPU'));
         if (!file_exists($log_directory_path)) {
             mkdir($log_directory_path, 0777, true);
-        }
-
-        $req_dump = '';
-        $requests = array(
-            'method' => $_SERVER['REQUEST_METHOD'],
-            '$_SERVER' => print_r($_SERVER, true),
-            '$_POST' => print_r($_POST, true),
-            '$_GET' => print_r($_GET, true),
-            '$_FILES' => print_r($_FILES, true),
-            'file_get_contents' => file_get_contents("php://input"),
-        );
-        foreach ($requests as $key => $value) {
-            $req_dump .= "----- {$key}: -----\n\n";
-            $req_dump .= "{$value}\n\n";
-            $req_dump .= "\n------------------------\n";
         }
 
         $now = self::getMicroDate('Y-m-d_H-i-s-u');
         $path = join(DIRECTORY_SEPARATOR, array($log_directory_path,"EPU_request_{$now}.log"));
         try {
             $fp = fopen($path, 'c');
-            fwrite($fp, $req_dump);
+            fwrite($fp, $request_log);
             fclose($fp);
         } catch (\Throwable $th) {
-            die('cannot write dump file');
+            error_log('Epic participant updater - LogModel cannot write dump file');
         }
-        
+    }
+
+    public static function getRequestLog()
+    {
+        $request_log = '';
+        $requests = array(
+            'METHOD' => $_SERVER['REQUEST_METHOD'],
+            'php://input' => file_get_contents("php://input"),
+            '$_POST' => $_POST,
+            '$_GET' => $_GET,
+            '$_FILES' => $_FILES,
+            '$_SERVER' => $_SERVER,
+        );
+        foreach ($requests as $type => $request) {
+            if(empty($request)) continue; //do not print empty values
+            if(is_array($request))
+            {
+                $request_log .= "{$type}:\n\n";
+                foreach ($request as $key => $value) {
+                    $request_log .= "\t\t{$key}: {$value}\n\n";
+                }
+            }else
+            {
+                $request_log .= "{$type}: {$request}\n\n";
+            }
+        }
+        return $request_log;
     }
 
     private static function getMicroDate($format="Y-m-d H:i:s.u")

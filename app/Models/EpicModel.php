@@ -37,7 +37,7 @@ class EpicModel extends BaseModel {
 					"message" => "no params specified",
 				);
 			}
-			else if( !empty($HTTP_RAW_POST_DATA) ){
+			else if( empty($_PUT) && !empty($HTTP_RAW_POST_DATA) ){
                 self::handleSOAPRequest($HTTP_RAW_POST_DATA);
             }
 			else if( !empty($_FILES) ){
@@ -189,13 +189,18 @@ class EpicModel extends BaseModel {
                 $this->createRecord($project, $xml_data);
             }
         }
+        $project_ids = array_map(function($project) {
+            return $project['project_id'];
+        }, $projects);
         $response = [
             'status' => 'info',
             'message' => 'xml checked for all projects',
-            'projects' => $projects,
+            'description' => implode(', ', $project_ids),
         ];
         $log = new LogModel(__FUNCTION__, $response);
         $log->save($this->module);
+
+        $response['projects'] = $projects; // do not want to log an array in the DB, but need it in JSON
         return $response;
     }
     

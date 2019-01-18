@@ -74,8 +74,12 @@ function upload()
   <hr>
   
   <h3 style="text-transform:uppercase;">
-  <i class="fas fa-file-download"></i>
-  <a style="font-size:20px;" href="<?= $module->getUrl('data/epic_example.xml'); ?>" download="sample.xml">download epic xml file example</a>
+    <i class="fas fa-file-download"></i>
+    <a style="font-size:20px;" href="<?= $module->getUrl('data/dev_request.xml'); ?>" download="sample_dev.xml">download epic xml file example (DEV)</a>
+  </h3>
+  <h3 style="text-transform:uppercase;">
+    <i class="fas fa-file-download"></i>
+    <a style="font-size:20px;" href="<?= $module->getUrl('data/altdev_request.xml'); ?>" download="sample_altdev.xml">download epic xml file example (ALT DEV)</a>
   </h3>
   
   <hr>
@@ -103,10 +107,6 @@ function upload()
     }
   ?>
   <hr>
-  <h3>AJAX call test</h3>
-  <p>check an xml file at a specific url</p>
-  <button id="checkButton">remote check</button>
-  <hr>
   <h3>AJAX upload test</h3>
   <p>upload an xml file via ajax</p>
   <input type="file" name="file" id="file" multiple>
@@ -130,7 +130,7 @@ function upload()
       var app = EpicTestApp.init({baseURL:baseURL}); // from main.js
 
       var checkButton = document.getElementById('checkButton');
-      var remotePath = '<?=APP_PATH_WEBROOT_FULL;?>modules/<?= $module->PREFIX; ?>_<?= $module->VERSION; ?>/data/epic_example.xml';
+      var remotePath = '<?=APP_PATH_WEBROOT_FULL;?>modules/<?= $module->PREFIX; ?>_<?= $module->VERSION; ?>/data/dev_request.xml';
 
       var onEpicDataUploaded = function(e) {
         try {
@@ -146,19 +146,6 @@ function upload()
           alert(error);
         }
       };
-    
-      /* check remote file */
-
-      checkButton.addEventListener('click', function(e){
-        e.preventDefault();
-        app.checkData({
-          path: remotePath,
-        }, this);
-      });
-      
-      checkButton.addEventListener('epicDataChecked', (e) => {
-        onEpicDataUploaded(e);
-      });
 
       /* jQuery */
 
