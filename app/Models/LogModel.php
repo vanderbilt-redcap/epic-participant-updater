@@ -127,6 +127,7 @@ class LogModel {
             {
                 $request_log .= "{$type}:\n\n";
                 foreach ($request as $key => $value) {
+                    if(is_array($value)) $value = print_r($value, true);
                     $request_log .= "\t\t{$key}: {$value}\n\n";
                 }
             }else
