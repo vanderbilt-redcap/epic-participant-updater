@@ -110,13 +110,15 @@ class EpicModel extends BaseModel {
      */
     private static function createSOAPResponse($xml_string)
     {
+        $request = EpicXMLParser::getNodeMetadata($xml_string, 'EnrollPatientRequestRequest');
+        $patient = EpicXMLParser::getNodeMetadata($request->xml_string, 'patient');
         $stripped_xml = EpicXMLParser::strip_XML_namespaces($xml_string); // remove namespace prefixes
         $xml = @simplexml_load_string($stripped_xml);
         /* $nameSpaces = $xml->getNameSpaces(true);
         foreach($nameSpaces as $namespace => $uri) {
             $xml->registerXPathNamespace($namespace, $uri);
         }*/
-        $patientRequest = $xml->Body->CallService->requestBody->EnrollPatientRequestRequest;
+        $patientRequest = $xml->Body->EnrollPatientRequestRequest;
         $responseXML = new \SimpleXMLElement($patientRequest->asXML());
         Header('Content-type: text/xml');
         echo $responseXML->asXML();
