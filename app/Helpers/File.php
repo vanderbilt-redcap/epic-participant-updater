@@ -14,6 +14,7 @@ class File {
 		'image/gif',
 		'application/xml',
 		'text/xml',
+		'text/plain',
 	);
 
 	/**
