@@ -1,8 +1,6 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater;
 
-require_once join(['vendor','autoload.php'],DIRECTORY_SEPARATOR);
-
 require join([__DIR__, 'app', 'Helpers', 'DependencyHelper.php'],DIRECTORY_SEPARATOR);
 
 use ExternalModules\AbstractExternalModule;
