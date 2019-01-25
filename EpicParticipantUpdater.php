@@ -18,7 +18,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         $autoload = join([__DIR__,'vendor','autoload.php'],DIRECTORY_SEPARATOR);
         if(!file_exists($autoload))
         {
-            $dh = new \Vanderbilt\EHRAccessTokenManager\App\Helpers\DependencyHelper(__DIR__);
+            $dh = new \Vanderbilt\EpicParticipantUpdater\App\Helpers\DependencyHelper(__DIR__);
             $dh->installDependencies();
         }
     }
