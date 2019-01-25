@@ -3,18 +3,18 @@
         <rpe:EnrollPatientRequestRequest xmlns:rpe="urn:ihe:qrph:rpe:2009" xmlns="urn:hl7-org:v3">
             <rpe:processState>On Study</rpe:processState>
             <rpe:patient>
-                <rpe:candidateID extension="002001545" root="1.2.840.114350.1.13.478.3.7.5.737384.14"/>
+                <rpe:candidateID extension="2000108" root="1.2.840.114350.1.13.478.3.7.5.737384.14"/>
                 <rpe:name>
-                    <given>Patient</given>
-                    <given>A</given>
-                    <family>Fake</family>
+                    <given>Lavendar</given>
+                    <family>Herb</family>
                 </rpe:name>
-                <rpe:dob value="10192016"/>
+                <rpe:dob value="11012008"/>
             </rpe:patient>
             <study>
                 <instantiation>
                     <plannedStudy>
-                        <id extension="5949382" root="1.2.3.4"/>
+                        <id extension="12345" root="1.2.3.4"/>
+                        <id extension="98765" root="1.2.3.4"/>
                     </plannedStudy>
                 </instantiation>
             </study>

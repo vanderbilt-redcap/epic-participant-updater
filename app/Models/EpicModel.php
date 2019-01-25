@@ -3,6 +3,8 @@
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\XMLNode;
+
 
 class EpicModel extends BaseModel {
 
@@ -110,18 +112,12 @@ class EpicModel extends BaseModel {
      */
     private static function createSOAPResponse($xml_string)
     {
-        $request = EpicXMLParser::getNodeMetadata($xml_string, 'EnrollPatientRequestRequest');
-        $patient = EpicXMLParser::getNodeMetadata($request->xml_string, 'patient');
-        $stripped_xml = EpicXMLParser::strip_XML_namespaces($xml_string); // remove namespace prefixes
-        $xml = @simplexml_load_string($stripped_xml);
-        /* $nameSpaces = $xml->getNameSpaces(true);
-        foreach($nameSpaces as $namespace => $uri) {
-            $xml->registerXPathNamespace($namespace, $uri);
-        }*/
-        $patientRequest = $xml->Body->EnrollPatientRequestRequest;
-        $responseXML = new \SimpleXMLElement($patientRequest->asXML());
+        $response_xml_string = preg_replace("/EnrollPatientRequestRequest/i",'EnrollPatientRequestResponse', $xml_string);
+        $response = new XMLNode($response_xml_string, 'EnrollPatientRequestResponse'); //get the request tag
+
         Header('Content-type: text/xml');
-        echo $responseXML->asXML();
+        // echo $header;
+        echo $response->xml->asXml();
         exit(0);
     }
 
@@ -176,7 +172,7 @@ class EpicModel extends BaseModel {
             // set the context of the project
             // $_GET['pid'] = $project_id;
             $project_id = $project['project_id'];
-            $projectIsInResearch = $this->checkIRB($project_id, $xml_data['irbNumber']); // check for existing
+            $projectIsInResearch = $this->checkIRB($project_id, $xml_data['irbNumbers']); // check for existing
             
             if(!$projectIsInResearch) continue; //continue to next project loop
             
@@ -278,14 +274,14 @@ class EpicModel extends BaseModel {
      /**
      * @return mixed checks if the project is connected to a research
      */
-    private function checkIRB($project_id, $irbNumber)
+    private function checkIRB($project_id, $irbNumbers)
     {
         $Project = new \Project($project_id);
         $project_irb_number = $Project->project['project_irb_number'];
         if ( !isset($project_irb_number) || is_null($project_irb_number) )
             return false; // no IRB number set for this project
 
-        return ($irbNumber === $project_irb_number);
+        return in_array($project_irb_number, $irbNumbers);
     }
     
     /**

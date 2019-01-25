@@ -14,17 +14,14 @@ class EpicXMLParser
      */
     static function parse($xml_string)
     {
-        $stripped_xml = self::strip_XML_namespaces($xml_string);
-        $xml = @simplexml_load_string($stripped_xml);
+        // check if the receive xml is valid
+        $xml = @simplexml_load_string($xml_string);
         if($xml===false){
             throw new \RuntimeException('The file format is not valid.');
         }
         try {
-            /* $data['status'] = (string) $xml->children('s', true)->Body->children('rpe', true)->EnrollPatientRequestRequest->processState;
-            $data['MRN'] = (string) $xml->children('s', true)->Body->children('rpe', true)->EnrollPatientRequestRequest->patient->candidateID->attributes()['extension'][0];
-            $data['irbNumber'] = (string) $xml->children('s', true)->Body->children('rpe', true)->EnrollPatientRequestRequest->children()->study->instantiation->plannedStudy->id->attributes()['extension']; */
             
-            $data = self::extract($xml);
+            $data = self::extract($xml_string);
 
             foreach ($data as $key => $value) {
                 if(empty($value)) throw new \RuntimeException("'{$key}' cannot be empty.");
@@ -34,71 +31,6 @@ class EpicXMLParser
 			$error = $e->getMessage();
 			return array();
 		}
-    }
-
-
-    /**
-     * extract 
-     *
-     * @param [type] $xml_string
-     * @param [type] $tag_name if omitted gets the first available tag (useful in recursion)
-     * @param boolean $ignore_namespace
-     * @return void
-     */
-    public static function getNodeMetadata($xml_string, $tag_name='\w+', $ignore_namespace=true)
-    {
-        $regex = "/<(?P<ns_tag>(?:(?P<ns>\w+)(?::))?(?P<tag>{$tag_name}))(?P<attr>[^>]*)?>(?P<children>.*)<\/(?P=ns_tag)>/is";
-        preg_match_all($regex, $xml_string, $matches);
-        $nodes_metadata = array();
-        $indexes = array_keys($matches['ns_tag']);
-        if(count($indexes)>0)
-        {
-            foreach ($indexes as $index) {
-                # code...
-                $node_metadata = array();
-                $match = $matches[0][$index]; // the current matched element
-                $node_metadata['xml_string'] = $match;
-                $node_metadata['xml'] = new \SimpleXMLElement($match);
-                $node_metadata['namespaced_tag'] = $matches['ns_tag'][$index];
-                $node_metadata['tag'] = $matches['tag'][$index];
-                $node_metadata['namespace'] = $matches['ns'][$index];
-                $node_metadata['attributes'] = self::getAttributes($matches['attr'][$index]);
-
-                $node_metadata['children'] = self::getNodeMetadata($matches['children'][$index]);
-                $children = array();
-                foreach($node_metadata['children'] as $child)
-                {
-                    $children[$child->tag] = $child;
-                }
-                $node_metadata['test'] = $children;
-
-                $nodes_metadata[$index] = (object)$node_metadata;
-            }
-            return $nodes_metadata;
-        }else 
-        {
-            return $xml_string;
-        }
-    }
-
-    /**
-     * extract attributes from a string of attributes
-     *
-     * @param [string] $attributes_as_string
-     * @return void
-     */
-    private static function getAttributes($attributes_as_string)
-    {
-        $regex = "/(?P<name>\S+)=['\"](?P<value>.*?)['\"]/is";
-        preg_match_all($regex, $attributes_as_string, $matches);
-        $attributes = array();
-        if(isset($matches['name']))
-        {
-            foreach ($matches['name'] as $index => $name) {
-                $attributes[$name] = $matches['value'][$index];
-            }
-        }
-        return $attributes;
     }
 
     /**
@@ -119,26 +51,29 @@ class EpicXMLParser
     /**
      * extract data from an epic xml
      *
-     * @param SimpleXMLElement $xml
+     * @param string $xml_string
      * @return void
      */
-    private static function extract($xml)
+    private static function extract($xml_string)
     {
         try {
-            $patientRequest = $xml->Body->EnrollPatientRequestRequest;
-            $study = $patientRequest->study;
-            $study_id = $study->instantiation->plannedStudy->id->attributes()['extension'][0];
-
-            $processState = $patientRequest->processState; // status
-
-            $patient = $patientRequest->patient;
-
-            $candidateID = $patient->candidateID->attributes()['extension'][0];
+            $processState = new XMLNode($xml_string, 'processState');
+            $candidateID = new XMLNode($xml_string, 'candidateID');
+            $plannedStudy = new XMLNode($xml_string, 'plannedStudy');
+            $studies = $plannedStudy->find('id');
+            
+            $MRN = $candidateID->attributes['extension']; // the MRN is in the "extension" attribute
+            $processState = $processState->value; // status
+            $study_ids = array(); // sometimes we can get multiple studies in a single xml
+            foreach($studies as $study)
+            {
+                $study_ids[] = $study->attributes['extension']; // the ID is in the "extension" attribute
+            }
 
             $data = array();
             $data['status'] = (string) $processState;
-            $data['MRN'] = (string) $candidateID;
-            $data['irbNumber'] = (string) $study_id;
+            $data['MRN'] = (string) $MRN;
+            $data['irbNumbers'] = $study_ids;
         }catch (\RuntimeException $e) {
 			$error = $e->getMessage();
 			return array();

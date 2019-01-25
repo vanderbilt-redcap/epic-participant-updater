@@ -77,10 +77,10 @@ function upload()
     <i class="fas fa-file-download"></i>
     <a style="font-size:20px;" href="<?= $module->getUrl('data/request_DEV.xml'); ?>" download="request_DEV.xml">download epic xml file example (DEV)</a>
   </h3>
-  <!-- <h3 style="text-transform:uppercase;">
+  <h3 style="text-transform:uppercase;">
     <i class="fas fa-file-download"></i>
-    <a style="font-size:20px;" href="<?= $module->getUrl('data/altdev_request.xml'); ?>" download="sample_altdev.xml">download epic xml file example (ALT DEV)</a>
-  </h3> -->
+    <a style="font-size:20px;" href="<?= $module->getUrl('data/request_DEV_multiple_studies.xml'); ?>" download="request_DEV_multiple_studies.xml">download epic xml file example (DEV, multiple studies)</a>
+  </h3>
   
   <hr>
   
