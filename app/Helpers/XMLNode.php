@@ -62,9 +62,8 @@ class XMLNode
         
 		$node_metadata = array();
 		$match = $matches[0]; // the current matched element
-
 		$node_metadata['xml_string'] = $match;
-		$node_metadata['xml'] = new \SimpleXMLElement($match);
+		$node_metadata['xml'] = @simplexml_load_string($match);
 		$node_metadata['namespaced_tag'] = $matches['ns_tag'];
 		$node_metadata['tag'] = $matches['tag'];
 		$node_metadata['namespace'] = $matches['ns'];
@@ -86,7 +85,7 @@ class XMLNode
 	 * @param string $tag_nme
 	 * @return void
 	 */
-	public function find($tag_nme)
+	public function find($tag_name)
 	{
 		return  self::getNodes($this->xml_string, $tag_name);
 	}
@@ -125,7 +124,7 @@ class XMLNode
 	 */
 	private static function getRegularExpression($tag_name)
 	{
-		return "/<(?P<ns_tag>(?:(?P<ns>\w+)(?::))?(?P<tag>{$tag_name}))(?P<attr>[^>]*)?(>(?P<children>.*)<\/(?P=ns_tag)>|\/>)/is";
+		return "/<(?P<ns_tag>(?:(?P<ns>\w+)(?::))?(?P<tag>{$tag_name}))(?P<attr>[^>]*)?(>(?P<children>.*?)<\/(?P=ns_tag)>|\/>)/is";
 	}
 
     /**
