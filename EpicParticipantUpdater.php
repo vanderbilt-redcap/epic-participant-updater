@@ -15,11 +15,15 @@ class EpicParticipantUpdater extends AbstractExternalModule {
     }
 
     function redcap_module_system_enable($version) {
-        $autoload = join([__DIR__,'vendor','autoload.php'],DIRECTORY_SEPARATOR);
-        if(!file_exists($autoload))
-        {
-            $dh = new \Vanderbilt\EpicParticipantUpdater\App\Helpers\DependencyHelper(__DIR__);
-            $dh->installDependencies();
+        try {
+            $autoload = join([__DIR__,'vendor','autoload.php'],DIRECTORY_SEPARATOR);
+            if(!file_exists($autoload))
+            {
+                $dh = new \Vanderbilt\EpicParticipantUpdater\App\Helpers\DependencyHelper(__DIR__);
+                $dh->installDependencies();
+            }
+        } catch (\Throwable $th) {
+            echo $th->getMessage();
         }
     }
 
