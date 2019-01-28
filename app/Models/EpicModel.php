@@ -112,7 +112,9 @@ class EpicModel extends BaseModel {
      */
     private static function createSOAPResponse($xml_string)
     {
+        //switch from request to response
         $response_xml_string = preg_replace("/EnrollPatientRequestRequest/i",'EnrollPatientRequestResponse', $xml_string);
+        // create the XML
         $response = new XMLNode($response_xml_string, 'EnrollPatientRequestResponse'); //get the request tag
 
         Header('Content-type: text/xml');
