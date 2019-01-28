@@ -83,7 +83,7 @@
           var a = document.createElement('a');
           a.classList.add('dropdown-item');
           a.href = `${projects_base_url}${project.project_id}`;
-          var text = document.createTextNode(`${project.project_name} (ID ${project.project_id})`);
+          var text = document.createTextNode(`(ID ${project.project_id}) ${project.project_name}`);
           a.appendChild(text);
           menu_item.appendChild(a);
         });
