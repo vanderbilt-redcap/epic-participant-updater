@@ -28,8 +28,11 @@ class Router {
      * extract the route from the request uri.
      * If $get_param is defined get the route
      * from the corresponding $_GET param
-     **/
-    static function extractRoute($get_param)
+     *
+     * @param string $get_param
+     * @return string
+     */
+    static function extractRoute($get_param=null)
     {
         if(isset($get_param))
         {
