@@ -26,6 +26,14 @@
      "no-auth-pages": [
         "api"
      ],
+     "system-settings": [
+        {
+            "key": "api_token",
+            "name": "API token (must be sent with every request)",
+            "type": "text",
+            "required": true
+         }
+     ],
      "project-settings": [
         {
            "key": "descriptive-text",

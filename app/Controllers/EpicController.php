@@ -24,6 +24,7 @@ class EpicController extends BaseController
     */
 	public function check()
 	{
+        $this->checkAPIToken();
         $response = $this->app->check();
         $this->printJSON($response);
     }
@@ -48,6 +49,31 @@ class EpicController extends BaseController
 	{
         $response = $this->app->getFetchingEnabledProjects();
         $this->printJSON($response);
-	}
+    }
+
+    /**
+     * check if the provided API token is valid
+     *
+     * @return void
+     */
+    private function checkAPIToken()
+    {
+        $api_token = $this->module->getAPIToken();
+        $request_api_token = $this->getRequestToken();
+        if(empty($request_api_token) || ($api_token != $request_api_token) )
+        {
+            return $this->unauthorized();
+        }
+    }
+    
+    /**
+     * get the API token from the request
+     *
+     * @return string
+     */
+    private function getRequestToken()
+    {
+        return $_REQUEST['api_token'];
+    }
 
 }

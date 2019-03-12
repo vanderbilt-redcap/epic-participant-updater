@@ -65,10 +65,21 @@ class BaseController
 	// error 405
 	function notAllowed()
 	{
-		header("HTTP/1.0 405 Method Not Allowed"); 
+		header("HTTP/1.0 405 Method Not Allowed");
 		$response = array(
 			"error" => true,
 			"message" => "method not allowed",
+		);
+		$this->printJSON($response);
+	}
+
+	// error 401
+	function unauthorized()
+	{
+		header("HTTP/1.1 401 Unauthorized");
+		$response = array(
+			"error" => true,
+			"message" => "not authorized",
 		);
 		$this->printJSON($response);
 	}
