@@ -29,7 +29,7 @@
      "system-settings": [
         {
             "key": "api_token",
-            "name": "API token (must be sent with every request)",
+            "name": "API token (needed for protected methods)",
             "type": "text",
             "required": true
          }
