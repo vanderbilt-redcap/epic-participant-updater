@@ -62,7 +62,7 @@
       _setActiveLink: function(menu_element) {
         var links = menu_element.querySelectorAll('.navbar-nav li.nav-item a');
         links.forEach(element => {
-          if(element.href == location.href) {
+          if(element.search == location.search) {
             element.parentNode.classList.add('active');
           }else {
             element.parentNode.classList.remove('active');

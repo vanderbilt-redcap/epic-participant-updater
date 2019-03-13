@@ -53,11 +53,14 @@
         regenerateAPIToken: function() {
             var dfd = $.Deferred();
             var redcap_csrf_token = window.redcap_csrf_token || '';
-
+            var api_token = this.options.api_token || '';
             $.ajax({
                 url: `${this.options.api_base_url}/regenerate_api`,
                 type: 'POST',
-                data: {redcap_csrf_token:redcap_csrf_token},
+                data: {
+                    redcap_csrf_token: redcap_csrf_token,
+                    api_token: api_token,
+                },
                 dataType: 'json',
             }).done( ( data, textStatus, jqXHR ) => {
                 dfd.resolve(data);
