@@ -1,5 +1,5 @@
 {
-    "name": "Vanderbilt/EpicParticipantUpdater",
+    "name": "vanderbilt/epic-participant-updater",
     "description": "Fetch data from Epic",
     "type": "project",
     "license": "MIT",
