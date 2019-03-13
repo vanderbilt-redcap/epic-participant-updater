@@ -12,7 +12,6 @@ use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 class EpicParticipantUpdater extends AbstractExternalModule {
     
     private $api_token_key = 'api_token';
-    private $min_API_token_length = 32;
 
     function __construct()
     {
