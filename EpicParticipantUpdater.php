@@ -36,23 +36,51 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         if(empty($api_token))
         {
             // set a random API key if none has been set
-            $random_string = RandomString::generate();
-            $this->setSystemSetting($this->api_token_key, $random_string);
+            $this->regenerateAPIToken();        
         }
     }
 
+    /**
+     * generate an API token with a random string
+     *
+     * @return void
+     */
+    public function generateAPIToken()
+    {
+        $random_string = RandomString::generate();
+        $this->setSystemSetting($this->api_token_key, $random_string);
+        return $random_string;
+    }
+
+    /**
+     * function executed when the module is enabled
+     *
+     * @param string $version
+     * @return void
+     */
     function redcap_module_system_enable($version) {
         try {
             $this->checkAPIToken();
-
-            $autoload = join([__DIR__,'vendor','autoload.php'],DIRECTORY_SEPARATOR);
-            if(!file_exists($autoload))
-            {
-                $dh = new \Vanderbilt\EpicParticipantUpdater\App\Helpers\DependencyHelper(__DIR__);
-                $dh->installDependencies();
-            }
+            // $this->installDependencies();
         } catch (\Throwable $th) {
             echo $th->getMessage();
+        }
+    }
+
+    /**
+     * download composer and install dependencies
+     * if the autoload directory is not found
+     *
+     * @return void
+     */
+    private function installDependencies()
+    {
+        $current_directory = __DIR__;
+        $autoload = join([$current_directory,'vendor','autoload.php'],DIRECTORY_SEPARATOR);
+        if(!file_exists($autoload))
+        {
+            $dh = new \Vanderbilt\EpicParticipantUpdater\App\Helpers\DependencyHelper($current_directory);
+            $dh->installDependencies();
         }
     }
 

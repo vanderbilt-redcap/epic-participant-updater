@@ -15,5 +15,13 @@ body {
 
 
 #logs table tbody tr td:last-child {
-    white-space: pre;
+    /* white-space: pre; */
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 100px;
+}
+
+.card + .card {
+    margin-top: 10px;
 }

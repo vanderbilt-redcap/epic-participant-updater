@@ -49,6 +49,24 @@
             
             return dfd;
         },
+
+        regenerateAPIToken: function() {
+            var dfd = $.Deferred();
+            var redcap_csrf_token = window.redcap_csrf_token || '';
+
+            $.ajax({
+                url: `${this.options.api_base_url}/regenerate_api`,
+                type: 'POST',
+                data: {redcap_csrf_token:redcap_csrf_token},
+                dataType: 'json',
+            }).done( ( data, textStatus, jqXHR ) => {
+                dfd.resolve(data);
+            }).fail( ( jqXHR, textStatus, errorThrown ) => {
+                console.log(arguments);
+                dfd.reject(errorThrown);
+            });
+            return dfd;
+        },
         
         /**
          * check if the app should load a page or not

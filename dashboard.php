@@ -12,10 +12,19 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   <hr>
   <h3>Dashboard</h3>
   <hr>
-  <section>
-    <h6>ENDPOINT</h6>
-    <em id="endpoint-container"><?=APP_PATH_WEBROOT_FULL?>api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&route=/epic/check</em>
-    <input class="btn btn-primary" type="button" value="copy to clipboard" id="copy-button">
+  <section>    
+    <div class="card">
+      <div class="card-body">
+        <p><strong>Endpoint:</strong> <em id="endpoint-container"><?=APP_PATH_WEBROOT_FULL?>api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&route=/epic/check</em></p>
+        <input class="btn btn-primary" type="button" value="copy to clipboard" id="copy-button">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <p><strong>API Token:</strong> <em id="api-token"><?php echo $module->getAPIToken()?></em></p>
+        <input class="btn btn-primary" type="button" value="regenerate" id="regenerate-api">
+      </div>
+    </div>
   </section>
   
   <hr>
@@ -68,7 +77,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         var refreshButton = document.getElementById('refresh-button');
 
         /** refresh the data */
-        refreshButton.addEventListener('click', function(e){
+        refreshButton.addEventListener('click', function(e) {
           refreshButton.style.pointerEvents = 'none'; //disable the button
           // add animation
           var icon = refreshButton.querySelector('i');
@@ -79,6 +88,22 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
             icon.classList.remove(animationClass); // remove animation
             refreshButton.style.pointerEvents = 'all'; //enable the button
           });
+        });
+
+        var regenerate_api_button = document.getElementById('regenerate-api');
+        var apiTokenText = document.getElementById('api-token');
+        /** regenerate the API token */
+        regenerate_api_button.addEventListener('click', function(e) {
+          if(confirm("Are you really sure you want to regenerate the API token?"))
+          {
+            regenerate_api_button.style.pointerEvents = 'none'; //disable the button
+            app.regenerateAPIToken().done(function(response) {
+              apiTokenText.innerHTML = response;
+            }).always(function(){
+              // icon.classList.remove(animationClass); // remove animation
+              regenerate_api_button.style.pointerEvents = 'all'; //enable the button
+            });
+          }
         });
 
         /**
@@ -140,7 +165,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
           <td>{{MRN}}</td>
           <td>{{irb_number}}</td>
           <td>{{message}}</td>
-          <td>{{description}}</td>
+          <td title="{{description}}">{{description}}</td>
         </tr>
         {{else}}
           <tr class="entry {{class status}}">

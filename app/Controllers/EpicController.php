@@ -51,6 +51,13 @@ class EpicController extends BaseController
         $this->printJSON($response);
     }
 
+    public function regenerateAPIToken()
+    {
+        $this->checkAPIToken();
+        $response = $this->module->generateAPIToken();
+        $this->printJSON($response);
+    }
+
     /**
      * check if the provided API token is valid
      *
