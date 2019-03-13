@@ -35,8 +35,8 @@ body {
     top: 0;
     right: 0;
     z-index: 100;
-    width: 50vw;
-    height: 50vh;
+    max-width: 50vw;
+    max-height: 50vh;
     padding: 10px;
     border-radius: 5px;
     border: solid 1px rgb(222, 226, 229);
