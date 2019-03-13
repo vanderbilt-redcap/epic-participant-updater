@@ -13,9 +13,7 @@ body {
     opacity: inherit;
 }
 
-
 #logs table tbody tr td:last-child section {
-    /* white-space: pre; */
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
@@ -44,29 +42,6 @@ body {
     border: solid 1px rgb(222, 226, 229);
     box-shadow: -5px 5px 5px 0px rgba(0,0,0,0.15);
 }
-/* #logs table tbody tr td:last-child:hover:after {
-    display: block;
-    opacity: 1.0;
-}
-#logs table tbody tr td:last-child:after {
-    content: attr(title);
-    white-space: pre;
-    background-color: #fafafa;
-    display: block;
-    overflow: auto;
-    position: absolute;
-    right: 0;
-    z-index: 100;
-    width: 50vw;
-    height: 50vh;
-    padding: 50px;
-    border-radius: 10px;
-    border: solid 1px rgb(222, 226, 229);
-    opacity: 0;
-    transition-duration: 300ms;
-    transition-property: opacity;
-    transition-timing-function: ease-in-out;
-} */
 
 .card + .card {
     margin-top: 10px;
