@@ -18,10 +18,10 @@ $api_token = $module->getAPIToken();
     <div class="card">
       <div class="card-body">
         <p><strong>Endpoint:</strong> <em id="endpoint-container"><?=APP_PATH_WEBROOT_FULL?>api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&route=/epic/check&api_token=<?php echo $api_token?></em></p>
-        <a href="#"  id="copy-button" class="btn btn-primary">
+        <button  id="copy-button" class="btn btn-primary">
           <i class="far fa-clipboard"></i>
           <span>copy to clipboard</span>
-        </a>
+        </button>
       </div>
     </div>
     <div class="card">
@@ -31,12 +31,13 @@ $api_token = $module->getAPIToken();
           The API token is required when using the <em>/epic/check</em> endpoint.
         </p>
         <div class="alert alert-warning" >
-          <p>Warning: regenerate the API token only if necessary.<br/>
-          Once regenerated, the new API token must be communicated to the Epic technical team.</p>
-          <a href="#" id="regenerate-api" class="btn btn-warning">
+          <p><strong>Warning: regenerate the API token only if necessary.</strong></p>
+          <p>Once regenerated, the new API token must be communicated to the Epic technical team.</p>
+          <p><em>NOTE: If the API token is blank, you must set it manually from the module settings system configuration</em></p>
+          <button id="regenerate-api" class="btn btn-warning">
             <i class="fas fa-sync"></i>
             <span>regenerate</span>
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -50,10 +51,10 @@ $api_token = $module->getAPIToken();
             <span>LOGS</span>
           </div>
           <div class="col col-md-auto">
-            <a href="#" id="refresh-button" class="btn btn-primary">
+            <button id="refresh-button" class="btn btn-primary">
               <i class="fas fa-sync"></i>
               <span>refresh</span>
-            </a>
+            </button>
           </div>
       </h6>
     </div>
@@ -84,6 +85,7 @@ $api_token = $module->getAPIToken();
       var copyToClipboard = Tools.copyToClipboard;
 
       copyButton.addEventListener('click', function(e){
+        e.preventDefault();
         var el = e.target;
         var endpoint = endpointContainer.textContent;
         
@@ -98,8 +100,10 @@ $api_token = $module->getAPIToken();
     UserInterface.prototype.enableRefreshButton = function() {
       var _this = this;
       var refreshButton = document.getElementById('refresh-button');
+
       /** refresh the data */
       refreshButton.addEventListener('click', function(e) {
+        e.preventDefault();
         refreshButton.style.pointerEvents = 'none'; //disable the button
         // add animation
         var icon = this.querySelector('i');
@@ -119,8 +123,12 @@ $api_token = $module->getAPIToken();
       var _this = this;
       var regenerate_api_button = document.getElementById('regenerate-api');
       var apiTokenText = document.getElementById('api-token');
+      var api_token = apiTokenText.innerHTML.trim();
+      if(api_token=='') regenerate_api_button.disabled = true;
+      
       /** regenerate the API token */
       regenerate_api_button.addEventListener('click', function(e) {
+        e.preventDefault();
         if(confirm("Are you sure you want to regenerate the API token?"))
         {
           var icon = this.querySelector('i');
@@ -130,6 +138,9 @@ $api_token = $module->getAPIToken();
           regenerate_api_button.style.pointerEvents = 'none'; //disable the button
           _this.app.regenerateAPIToken().done(function(response) {
             location.reload();
+          }).fail(function(response){
+            var error = response.responseJSON;
+            alert(error.message);
           }).always(function(){
             if(icon) icon.classList.remove(animationClass); // remove animation
             regenerate_api_button.style.pointerEvents = 'all'; //enable the button
