@@ -17,7 +17,7 @@ $api_token = $module->getAPIToken();
   <section>    
     <div class="card">
       <div class="card-body">
-        <p><strong>Endpoint:</strong> <em id="endpoint-container"><?=APP_PATH_WEBROOT_FULL?>api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&route=/epic/check?api_token=<?php echo $api_token?></em></p>
+        <p><strong>Endpoint:</strong> <em id="endpoint-container"><?=APP_PATH_WEBROOT_FULL?>api/index.php?NOAUTH=&type=module&prefix=epic_participant_updater&page=api&route=/epic/check&api_token=<?php echo $api_token?></em></p>
         <a href="#"  id="copy-button" class="btn btn-primary">
           <i class="far fa-clipboard"></i>
           <span>copy to clipboard</span>
