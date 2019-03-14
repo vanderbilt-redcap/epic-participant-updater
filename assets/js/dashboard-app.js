@@ -62,11 +62,10 @@
                     api_token: api_token,
                 },
                 dataType: 'json',
-            }).done( ( data, textStatus, jqXHR ) => {
+            }).done( function( data, textStatus, jqXHR ) {
                 dfd.resolve(data);
-            }).fail( ( jqXHR, textStatus, errorThrown ) => {
-                console.log(arguments);
-                dfd.reject(errorThrown);
+            }).fail( function( jqXHR, textStatus, errorThrown ) {
+                dfd.reject(jqXHR, textStatus, errorThrown);
             });
             return dfd;
         },
@@ -99,13 +98,13 @@
                 url: `${this.options.api_base_url}/epic/logs`,
                 type: 'GET',
                 data: data
-            }).done( ( data, textStatus, jqXHR ) => {
+            }).done( function( data, textStatus, jqXHR ) {
                 self.cachedData[self.page] = data; //save data
                 dfd.resolve(data);
-            }).fail( ( jqXHR, textStatus, errorThrown ) => {
+            }).fail( function( jqXHR, textStatus, errorThrown ) {
                 console.log(arguments);
                 dfd.reject(errorThrown);
-            }).always(() =>{
+            }).always(function() {
                 self.loading = false; // no more loading
             });
             return dfd;
@@ -134,7 +133,7 @@
             else {
                 this.page = this.page+1;
                 
-                this._loadData({p:this.page}).done(() => {
+                this._loadData({p:this.page}).done(function() {
                     var data = self._getCachedData();
                     dfd.resolve(data);
                 }).fail(()=>{
