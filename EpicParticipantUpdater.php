@@ -35,7 +35,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         if(empty($api_token))
         {
             // set a random API key if none has been set
-            $this->regenerateAPIToken();        
+            $this->generateAPIToken();        
         }
     }
 
