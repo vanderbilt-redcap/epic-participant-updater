@@ -33,7 +33,7 @@ $api_token = $module->getAPIToken();
         <div class="alert alert-warning" >
           <p><strong>Warning: regenerate the API token only if necessary.</strong></p>
           <p>Once regenerated, the new API token must be communicated to the Epic technical team.</p>
-          <p><em>NOTE: If the API token is blank, you must set it manually from the module settings system configuration</em></p>
+          <p><em>NOTE: If the API token is blank, you must set it manually from the module settings system configuration.</em></p>
           <button id="regenerate-api" class="btn btn-warning">
             <i class="fas fa-sync"></i>
             <span>regenerate</span>
