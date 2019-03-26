@@ -66,6 +66,8 @@ class EpicController extends BaseController
     private function checkAPIToken()
     {
         $api_token = $this->module->getAPIToken();
+        // disable control if the API token is not set
+        if(empty($api_token)) return;
         $request_api_token = $this->getRequestToken();
         if(empty($request_api_token) || ($api_token != $request_api_token) )
         {
