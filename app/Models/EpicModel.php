@@ -243,13 +243,16 @@ class EpicModel extends BaseModel {
         $mrn_field_name = $this->module->getProjectSetting($this->mrn_mapping_key, $project_id);
         $status_field_name = $this->module->getProjectSetting($this->status_mapping_key, $project_id);
         
+        $record_id = $this->module->addAutoNumberedRecord($project_id);
         $data = array(
-            $record_id_field => $this->module->addAutoNumberedRecord($project_id),
-            $mrn_field_name => $xml_data['MRN'],
-            $status_field_name => trim($xml_data['status']),
+            $record_id => array(
+                $record_id_field => $record_id,
+                $mrn_field_name => $xml_data['MRN'],
+                $status_field_name => trim($xml_data['status']),
+            )
         );
         
-        $response = \RedCap::saveData($project_id, 'json', json_encode(array($data)));
+        $response = \RedCap::saveData($project_id, 'array', array($data));
         $record_id = implode(', ', $response['ids']);
         $log = new LogModel(__FUNCTION__, [
             'project_id' => $project_id,
