@@ -16,13 +16,11 @@ class RandomString
         if($length<self::$min_length) throw new Exception(sprintf("Error: the random string must be at least %s characters", self::$min_length), 1);
         
         $characters_array = array_merge(range('A', 'Z'), range('a', 'z'),range(0, 9));
-        $characters = implode('', $characters_array);
-        $characters_length = strlen($characters);
+        $characters_length = count($characters_array);
         $random_string = '';
-
         for ($i = 0; $i < $length; $i++)
         {
-            $random_string .= $characters[mt_rand(0, $characters_length)];
+            $random_string .= $characters_array[mt_rand(0, $characters_length-1)];
         }
         return $random_string;
     }
