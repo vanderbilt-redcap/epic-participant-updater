@@ -169,7 +169,7 @@ class EpicModel extends BaseModel {
         {
             // set the context of the project
             // $_GET['pid'] = $project_id;
-            $project_id = $project['project_id'];
+            $project_id = $project->project_id;
             $projectIsInResearch = $this->checkIRB($project_id, $xml_data['irbNumbers']); // check for existing
             
             if(!$projectIsInResearch) continue; //continue to next project loop
@@ -186,7 +186,7 @@ class EpicModel extends BaseModel {
             }
         }
         $project_ids = array_map(function($project) {
-            return $project['project_id'];
+            return $project->project_id;
         }, $projects);
         $response = [
             'status' => 'info',
@@ -202,11 +202,15 @@ class EpicModel extends BaseModel {
     
     /**
      * update the status of an existing record
+     * 
+     * @param \Project $project
+     * @param array $xml_data
+     * @return void
      */
     private function updateRecord($project, $record, $xml_data)
     {
-        $project_id = $project['project_id'];
-        $irb_number = $project['project_irb_number'];
+        $project_id = $project->project_id;
+        $irb_number = $this->getIrbNumberFromProject($project);
         $status_field_name = $this->module->getProjectSetting($this->status_mapping_key, $project_id);
         foreach($record as $record_id => &$data)
         {
@@ -231,14 +235,35 @@ class EpicModel extends BaseModel {
             $log->save($this->module);
         }
     }
+
+    /**
+     * get IRB number from a project
+     *
+     * @param \Project|integer $project
+     * @return string
+     */
+    private function getIrbNumberFromProject($project)
+    {
+        $project_info = $project->project;
+        return $project_info['project_irb_number'];
+    }
             
     /**
      * create a new record
+     *
+     * @param \Project $project
+     * @param array $xml_data
+     * @return void
      */
     private function createRecord($project, $xml_data)
     {
-        $project_id = $project['project_id'];
-        $irb_number = $project['project_irb_number'];
+        $project_id = $project->project_id;
+
+        /* $db = new \RedCapDB();
+        $info =  $db->getProject($project_id);
+        $eventInfo = $project->eventInfo; */
+
+        $irb_number = $this->getIrbNumberFromProject($project);
         $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
         $mrn_field_name = $this->module->getProjectSetting($this->mrn_mapping_key, $project_id);
         $status_field_name = $this->module->getProjectSetting($this->status_mapping_key, $project_id);
@@ -277,8 +302,8 @@ class EpicModel extends BaseModel {
      */
     private function checkIRB($project_id, $irbNumbers)
     {
-        $Project = new \Project($project_id);
-        $project_irb_number = $Project->project['project_irb_number'];
+        $project = new \Project($project_id);
+        $project_irb_number = $this->getIrbNumberFromProject($project);
         if ( !isset($project_irb_number) || is_null($project_irb_number) )
             return false; // no IRB number set for this project
 
@@ -325,7 +350,7 @@ class EpicModel extends BaseModel {
         {
             $project_id =  $row['project_id'];
             $project = new \Project($project_id);
-            $projects[] = $project->project; // Array with project's basic values
+            $projects[] = $project; // Array with projects
         }
 
         return $projects;
