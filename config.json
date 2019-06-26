@@ -47,23 +47,17 @@
             "type": "field-list"
         },
         {
-            "key": "mrn-mapping-event",
-            "name": "MRN event",
-            "required": true,
-            "type": "event-list"
-        },
-        {
             "key": "status-mapping-field",
             "name": "Status",
             "required": true,
             "type": "field-list"
         },
         {
-            "key": "status-mapping-event",
-            "name": "Status event",
+            "key": "event-id",
+            "name": "Fields event",
             "required": true,
             "type": "event-list"
-        }
+        },
      ],
     "log-file": "log.txt"
  }

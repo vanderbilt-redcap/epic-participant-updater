@@ -17,25 +17,38 @@ class EpicModel extends BaseModel {
     private $mrn_field_key = 'mrn-mapping-field';
 
     /**
-     * setting key to retrieve the MRN event
-     *
-     * @var string
-     */
-    private $mrn_event_key = 'mrn-mapping-event';
-    
-    /**
      * setting key to retrieve the study status field
      *
      * @var string
      */
     private $status_field_key = 'status-mapping-field';
+
+    /**
+     * setting key to retrieve the event containing the module fields (mrn, patient status, dates)
+     *
+     * @var string
+     */
+    private $event_ID_key = 'event-id';
+
+    /**
+     * setting key to retrieve the MRN event
+     *
+     * @var string
+     */
+    // private $mrn_event_key = 'mrn-mapping-event';
     
     /**
      * setting key to retrieve the study status event
      *
      * @var string
      */
-    private $status_event_key = 'status-mapping-event';
+    // private $status_event_key = 'status-mapping-event';
+
+    const XML_MAPPING = array(
+        'irbNumbers' => '',
+        'mrn' => 'MRN',
+        'status' => '',
+    );
 	
 	function __construct(EpicParticipantUpdater $module)
 	{
@@ -285,60 +298,29 @@ class EpicModel extends BaseModel {
     {
         $project_id = $project->project_id;
 
-        /* $db = new \RedCapDB();
-        $info =  $db->getProject($project_id);
-        $eventInfo = $project->eventInfo; */
-
         $irb_number = $this->getIrbNumberFromProject($project);
-        $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
+        // $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
+
+        $event_id = $this->module->getProjectSetting($this->event_ID_key, $project_id);
         $mrn_field_name = $this->module->getProjectSetting($this->mrn_field_key, $project_id);
         $status_field_name = $this->module->getProjectSetting($this->status_field_key, $project_id);
-        $mrn_event_id = $this->module->getProjectSetting($this->mrn_event_key, $project_id);
-        $status_event_id = $this->module->getProjectSetting($this->status_event_key, $project_id);
-        
+
         $record_id = $this->module->addAutoNumberedRecord($project_id);
-        
 
-        $mrn_record = new Record(
+        $record = new Record(
             $project_id, 
-            $mrn_event_id, 
+            $event_id, 
             $record_id, 
-            array($mrn_field_name => $xml_data['MRN'])
-        );
-
-        $status_record = new Record(
-            $project_id,
-            $status_event_id,
-            $record_id,
-            array($status_field_name => trim($xml_data['status']))
-        );
-
-        $mrn_data = $mrn_record->getData();
-        $status_data = $status_record->getData();
-        $test = array_merge_recursive($mrn_data, $status_data);
-
-        if($mrn_event_id === $status_event_id)
-        {
-            $data = array(
-                $mrn_event_id => array_merge($mrn_data, $status_data)
-            );
-        }else {
-            $data = array(
-                $mrn_event_id => $mrn_data,
-                $status_event_id => $status_data,
-            );
-        }
-
-
-        /* $data = array(
-            $record_id => array(
-                $record_id_field => $record_id,
+            array(
                 $mrn_field_name => $xml_data['MRN'],
                 $status_field_name => trim($xml_data['status']),
             )
-        ); */
+        );
+
+        $data = $record->getData();
+
         
-        $response = \RedCap::saveData($project_id, 'array', array($data));
+        $response = \RedCap::saveData($project_id, 'array', $record->getData());
         $record_id = implode(', ', $response['ids']);
         $log = new LogModel(__FUNCTION__, [
             'project_id' => $project_id,
