@@ -213,16 +213,10 @@ class EpicModel extends BaseModel {
             
             if(!$projectIsInResearch) continue; //continue to next project loop
             
-            $record = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
+            $record_id = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
             
-            if($record)
-            {
-                $this->updateRecord($project, $record, $xml_data);
-            }
-            else
-            {
-                $this->createRecord($project, $xml_data);
-            }
+            $this->saveData($project, $xml_data, $record_id);
+
         }
         $project_ids = array_map(function($project) {
             return $project->project_id;
@@ -278,7 +272,7 @@ class EpicModel extends BaseModel {
     /**
      * get IRB number from a project
      *
-     * @param \Project|integer $project
+     * @param \Project $project
      * @return string
      */
     private function getIrbNumberFromProject($project)
@@ -286,47 +280,64 @@ class EpicModel extends BaseModel {
         $project_info = $project->project;
         return $project_info['project_irb_number'];
     }
+
+    /**
+     * get object with module setting for a project
+     *
+     * @param integer $project_id
+     * @return object
+     */
+    private function getModuleSettingsForProject($project_id)
+    {
+        $settings = array(
+            event_id => $this->module->getProjectSetting($this->event_ID_key, $project_id),
+            mrn_field_name => $this->module->getProjectSetting($this->mrn_field_key, $project_id),
+            status_field_name => $this->module->getProjectSetting($this->status_field_key, $project_id),
+        );
+        return (object)$settings;
+    }
             
     /**
-     * create a new record
+     * insert a new record or update an existing one
      *
      * @param \Project $project
      * @param array $xml_data
+     * @param string $existing_record_id
      * @return void
      */
-    private function createRecord($project, $xml_data)
+    private function saveData($project, $xml_data, $existing_record_id=false)
     {
         $project_id = $project->project_id;
-
         $irb_number = $this->getIrbNumberFromProject($project);
         // $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
+        $settings = $this->getModuleSettingsForProject($project_id);
 
-        $event_id = $this->module->getProjectSetting($this->event_ID_key, $project_id);
-        $mrn_field_name = $this->module->getProjectSetting($this->mrn_field_key, $project_id);
-        $status_field_name = $this->module->getProjectSetting($this->status_field_key, $project_id);
+        $record_id = ($existing_record_id===false) ? $this->module->addAutoNumberedRecord($project_id) : $existing_record_id;
 
-        $record_id = $this->module->addAutoNumberedRecord($project_id);
+        $data = array($settings->status_field_name => trim($xml_data['status']));
+        if(!$existing_record_id)
+        {
+            // when creating also insert MRN and date range
+            $data[$settings->mrn_field_name] = $xml_data['MRN'];
+            // $data[$settings->date_start_field_name] = $xml_data['date_start'];
+            // $data[$settings->date_end_field_name] = $xml_data['date_end'];
+        }
 
-        $record = new Record(
-            $project_id, 
-            $event_id, 
-            $record_id, 
-            array(
-                $mrn_field_name => $xml_data['MRN'],
-                $status_field_name => trim($xml_data['status']),
-            )
-        );
+        $record = new Record($project_id, $settings->event_id, $record_id, $data);
 
         $data = $record->getData();
+        $response = \RedCap::saveData($project_id, 'array', $data);
+        $this->logSaveAction($project_id, $record_id, $irb_number, $MRN=$xml_data['MRN'], $response);
+    }
 
-        
-        $response = \RedCap::saveData($project_id, 'array', $record->getData());
+    private function logSaveAction($project_id, $record_id, $irb_number, $MRN, $response)
+    {
         $record_id = implode(', ', $response['ids']);
         $log = new LogModel(__FUNCTION__, [
             'project_id' => $project_id,
             'record_id' => $record_id,
             'irb_number' => $irb_number,
-            'MRN' => $xml_data['MRN'],
+            'MRN' => $MRN,
         ]);
         if($error = $response['errors'])
         {
@@ -359,14 +370,12 @@ class EpicModel extends BaseModel {
     private function checkMRN($project_id, $MRN)
     {
         $mrn_field_name = $this->module->getProjectSetting($this->mrn_field_key, $project_id);
-        $data = \REDCap::getData($project_id); // get records as array ov events
-        foreach($data as $events)
+        $query_string = sprintf("SELECT record FROM redcap_data WHERE field_name='%s' AND value='%s'", db_real_escape_string($mrn_field_name), db_real_escape_string($MRN));
+        $result = db_query($query_string);
+        if($result && $row = db_fetch_assoc($result))
         {
-            foreach($events as $eventId => $record)
-            {
-                if($record[$mrn_field_name] == $MRN)
-                return array($record['record_id'] => $record); //return an associative array with the record_id and the record data
-            }
+            $record_id = $row['record'];
+            return $record_id;
         }
         return false;
     }

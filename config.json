@@ -57,7 +57,7 @@
             "name": "Fields event",
             "required": true,
             "type": "event-list"
-        },
+        }
      ],
     "log-file": "log.txt"
  }

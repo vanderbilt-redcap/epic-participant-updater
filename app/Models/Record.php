@@ -95,37 +95,18 @@ class Record extends BaseModel implements \JsonSerializable
 			// create a spot for repeated instruments data
 			$record[$this->record_id][self::REPEATED_INSTRUMENTS_CONTAINER_KEY] = $events_schema;
 		}
-		$this->schema = $record;
-		return $record;
-	}
-
-	/**
-	 * get the instruments part of the structure along with the data
-	 *
-	 * @return void
-	 */
-	public function getInstruments()
-	{
-		$instruments = array();
-		foreach ($this->data as $key => $value) {
-			$instrument_key = $this->getFieldInstrument($key);
-			// $project_primary_key = $this->project->table_pk;
-			if(!array_key_exists($instrument_key, $instruments))
-			{
-				$instruments[$instrument_key] = array($this->record_id=>array());
-			}
-			$instruments[$instrument_key][$this->record_id][$key] = $value;
-		}
-		return $instruments;
+		$this->schema = self::arrayToObject($record); // save the schema as an object
+		return $this->schema;
 	}
 
 	/**
 	 * get a record witha a data structure suitable for being used in REDCap::saveData
 	 *
-	 * @return array record structure
+	 * @return array|object record structure
 	 */
-	public function getData()
+	public function getData($as_array=true)
 	{
+		if($as_array) return self::objectToArray($this->schema);
 		return $this->schema;
 	}
 
@@ -155,6 +136,26 @@ class Record extends BaseModel implements \JsonSerializable
 	}
 
 	/**
+	 * get a reference to the data container
+	 *
+	 * @return object the record schema by reference
+	 */
+	private function &getDataContainer()
+	{
+		return $this->schema->{$this->record_id}->{$this->event_id};
+	}
+
+	/**
+	 * get a reference to the repeated data container
+	 *
+	 * @return object the record schema by reference
+	 */
+	private function &getRepeatedDataContainer()
+	{
+		return $this->schema->{$this->record_id}->{self::REPEATED_INSTRUMENTS_CONTAINER_KEY}->{$this->event_id};
+	}
+
+	/**
 	 * add data to the non repeatable data container of the record
 	 * 
 	 * @param string $key
@@ -163,8 +164,8 @@ class Record extends BaseModel implements \JsonSerializable
 	 */
 	private function addData($key, $value)
 	{
-		$record = &$this->schema;
-		$record[$this->record_id][$this->event_id][$key] = $value;
+		$container = &$this->getDataContainer();
+		$container[$key] = $value;
 	}
 
 	/**
@@ -173,15 +174,14 @@ class Record extends BaseModel implements \JsonSerializable
 	 * @param string $key
 	 * @param string $value
 	 * @param string $instrument_key
+	 * @param string $instance_number defaults to first instance
 	 * @return void
 	 */
-	private function addDataToRepeatedInstances($key, $value, $instrument_key)
+	private function addDataToRepeatedInstances($key, $value, $instrument_key, $instance_number = 1)
 	{
-		$record = &$this->schema;
-
-		$instrument_container = &$record[$this->record_id][self::REPEATED_INSTRUMENTS_CONTAINER_KEY][$this->event_id];
-		$form_entry = array( $instrument_key => array($this->record_id => array($key=>$value)) );
-		$instrument_container = array_merge($instrument_container, $form_entry);
+		$container = &$this->getRepeatedDataContainer();
+		$form_entry = array($instrument_key => array($instance_number => array($key=>$value)) );
+		$container = array_merge($container, $form_entry);
 	}
 
 	public function jsonSerialize()
