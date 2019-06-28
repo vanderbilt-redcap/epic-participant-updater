@@ -1,15 +1,25 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
-
+ 
+ /**
+  * exposed properties:
+  * @property integer $project_id
+  * @property integer $event_id
+  * @property string $record
+  * @property string $field_name
+  * @property string $value
+  * @property string $instance
+  */
 class Record extends BaseModel implements \JsonSerializable
 {
 
-	const REPEATED_INSTRUMENTS_CONTAINER_KEY = 'repeat_instances';
+	const DB_TABLE = 'redcap_data';
+
 	/**
-	 * project of the record
+	 * event ID of the record
 	 *
-	 * @var \Project
+	 * @var integer
 	 */
-	private $project;
+	private $project_id;
 
 	/**
 	 * event ID of the record
@@ -23,166 +33,186 @@ class Record extends BaseModel implements \JsonSerializable
 	 *
 	 * @var integer
 	 */
-	private $record_id;
+	private $id;
 
 	/**
-	 * the actual record data in key => value pairs
+	 * list of fields in this record
 	 *
-	 * @var array
+	 * @var Field[]
 	 */
-	private $data;
+	private $fields;
 
 	/**
-	 * holds the schema of the record:
-	 * 
-	 * $schema = array(
-	 *	'record_id' => array(
-	 *		'event_id' => $fields=array(), // if standard project
-	 *		// if hasRepeatingFormsEvents
-	 *		'repeat_instances' => array(
-	 *			'event_id' => array(
-	 *				'form_name' => array(
-	 *					'record_id' => $fields=array(),
-	 *				)
-	 *			)
-	 *		)
-	 *	)
-	 * );
+	 * create a record
 	 *
-	 * @var array
+	 * @param integer $project_id
+	 * @param integer $event_id
+	 * @param string $record_id
+	 * @param Field[] $fields
+	 * 	
 	 */
-	private $schema = array();
-
-
-	/**
-	 * schema of a record
-	 
-	*/
-					
-
-	function __construct($project_id, $event_id, $record_id, $data)
+	private function __construct($project_id, $event_id, $id=null, $fields=array())
 	{
-		
-		$this->project = new \Project($project_id);
+		$this->project_id = $project_id;
 		$this->event_id = $event_id;
-		$this->record_id = $record_id;
-
-		$this->build();
-		$this->setData($data);
+		$this->id = $id;
+		$this->fields = $fields;
 	}
 
-	private function getFieldInstrument($field_name)
-    {
-        $metadata = $this->project->metadata;
-        $field_info = $metadata[$field_name];
-        if(!$field_info) return false;
-        return $field_info['form_name'];
-	}
-	
+
 	/**
-	 * get the record structure
+	 * get next available record ID for a project
 	 *
-	 * @return array
+	 * @param integer $project_id
+	 * @return string|integer
 	 */
-	private function build()
+	public static function getNextAutoNumberedRecordId($project_id)
 	{
-		// container schema for the events used both for repeatable an non repeatable instruments
-		$events_schema = array( $this->event_id => array() );
-		// create a spot for non repeatable instruments data
-		$record = array( $this->record_id => $events_schema );
-		if($this->project->hasRepeatingFormsEvents())
+		$query_string = sprintf(
+			"SELECT record FROM %s
+			WHERE project_id = %u
+			GROUP BY record
+			ORDER BY CAST(record AS UNSIGNED INTEGER) DESC limit 1",
+			self::DB_TABLE,
+			$project_id
+		);
+		$result=db_query($query_string);
+		if($row = db_fetch_assoc($result))
 		{
-			// create a spot for repeated instruments data
-			$record[$this->record_id][self::REPEATED_INSTRUMENTS_CONTAINER_KEY] = $events_schema;
+			$record = $row['record'];
+			$next_record = $record+1;
+			// add elading zeroes if any
+			if(preg_match('/^0+/', $record, $matches))
+				$next_record = str_pad($next_record, strlen($record), '0', STR_PAD_LEFT);
+				return $next_record;
 		}
-		$this->schema = self::arrayToObject($record); // save the schema as an object
-		return $this->schema;
+		return 1;
 	}
 
 	/**
-	 * get a record witha a data structure suitable for being used in REDCap::saveData
+	 * create a new record and save it to the database
 	 *
-	 * @return array|object record structure
+	 * @param [type] $project_id
+	 * @param [type] $event_id
+	 * @param array $fields
+	 * @return void
 	 */
-	public function getData($as_array=true)
+	public static function create($project_id, $event_id)
 	{
-		if($as_array) return self::objectToArray($this->schema);
-		return $this->schema;
+		$project = new \Project($project_id);
+		$project_primary_key =  $project->table_pk;
+		
+		$id = self::getNextAutoNumberedRecordId($project_id);
+        // return key($proj->metadata);
+		$field = new Field(array(
+			'project_id' => $project_id,
+			'event_id' => $event_id,
+			'record' => $id,
+			'field_name' => $project_primary_key,
+			'value' => $id
+		));
+		$field->save();
+		$record = new self($project_id, $event_id, $id, array($field));
+		return $record;
 	}
 
-	/**
-	 * set data in the record structure
-	 *
-	 * @param array $data key => value
-	 * @return array record structure
-	 */
-	private function setData($data)
+	public function getFields($record_id)
 	{
-		// get all events and relative instruments
-		$repeatingFormsEvents = $this->project->getRepeatingFormsEvents();
-		// get intruments for the event of this record
-		$formsForEvent = $repeatingFormsEvents[$this->event_id];
-
-		foreach ($data as $key => $value) {
-			$instrument_key = $this->getFieldInstrument($key);
-			if(in_array($instrument_key, array_keys($formsForEvent)))
-			{
-				$this->addDataToRepeatedInstances($key, $value, $instrument_key);
-			}else {
-				$this->addData($key, $value);
-			}
+		$query_string = sprintf(
+			"SELECT %s FROM %s
+			WHERE project_id=%u AND event_id=%u
+			AND record='%s'",
+			implode(',', Field::DB_COLUMNS),
+			self::DB_TABLE,
+			$this->project_id,
+			$this->event_id
+		);
+		$result = db_query($query_string);
+		if(!$result) return false;
+		while($row = db_fetch_assoc($result))
+		{
+			$this->fields[] = new Field($row);
 		}
-		return $this->schema;
 	}
 
 	/**
-	 * get a reference to the data container
+	 * TODO: add a field to the record
 	 *
-	 * @return object the record schema by reference
+	 * @return void
 	 */
-	private function &getDataContainer()
+	public function addField()
 	{
-		return $this->schema->{$this->record_id}->{$this->event_id};
+
+	}
+
+	private static function createInstanceFromDBQueryString($query_string)
+	{
+		$result = db_query($query_string);
+		if(!$result) return false;
+		$fields = array();
+		while($row = db_fetch_assoc($result))
+		{
+			$fields[] = new Field($row);
+		}
+		if(empty($fields)) return false; // no record
+
+		$field = $fields[0];
+		$record = new self($field->project_id, $field->event_id, $field->record, $fields);
+		return $record;
 	}
 
 	/**
-	 * get a reference to the repeated data container
+	 * get a record instance from database
+	 * using project_id, event_id and record_id
 	 *
-	 * @return object the record schema by reference
+	 * @param integer $project_id
+	 * @param integer $event_id
+	 * @param string $record_id
+	 * @return Record
 	 */
-	private function &getRepeatedDataContainer()
+	public static function get($project_id, $event_id, $record_id)
 	{
-		return $this->schema->{$this->record_id}->{self::REPEATED_INSTRUMENTS_CONTAINER_KEY}->{$this->event_id};
+		$query_string = sprintf(
+			"SELECT %s FROM %s
+			WHERE project_id=%u AND event_id=%u
+			AND record='%s'",
+			implode(',',Field::DB_COLUMNS), self::DB_TABLE,
+			$project_id, $event_id,
+			$record_id
+		);
+
+		return self::createInstanceFromDBQueryString($query_string);
 	}
 
 	/**
-	 * add data to the non repeatable data container of the record
-	 * 
-	 * @param string $key
+	 * find a record instance from the database seraching for a specific field_name => value pair
+	 *
+	 * @param integer $project_id
+	 * @param integer $event_id
+	 * @param string $field_name
 	 * @param string $value
 	 * @return void
 	 */
-	private function addData($key, $value)
+	public static function find($project_id, $event_id, $field_name, $value)
 	{
-		$container = &$this->getDataContainer();
-		$container[$key] = $value;
+		$query_string = sprintf(
+			'SELECT %1$s FROM %2$s
+			WHERE project_id=%3$u AND event_id=%4$u
+			AND record =
+			(SELECT record FROM %2$s
+			WHERE project_id=%3$u AND event_id=%4$u
+			AND field_name=\'%5$s\' AND value=\'%6$s\' LIMIT 1)',
+			implode(',',Field::DB_COLUMNS),
+			self::DB_TABLE,
+			$project_id,
+			$event_id,
+			$field_name,
+			$value
+		);
+
+		return self::createInstanceFromDBQueryString($query_string);
 	}
 
-	/**
-	 * add data to the repeatable data container of the record
-	 *
-	 * @param string $key
-	 * @param string $value
-	 * @param string $instrument_key
-	 * @param string $instance_number defaults to first instance
-	 * @return void
-	 */
-	private function addDataToRepeatedInstances($key, $value, $instrument_key, $instance_number = 1)
-	{
-		$container = &$this->getRepeatedDataContainer();
-		$form_entry = array($instrument_key => array($instance_number => array($key=>$value)) );
-		$container = array_merge($container, $form_entry);
-	}
 
 	public function jsonSerialize()
 	{

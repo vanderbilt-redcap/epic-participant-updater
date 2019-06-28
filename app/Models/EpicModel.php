@@ -5,6 +5,7 @@ use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\XMLNode;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Record;
+// use Vanderbilt\EpicParticipantUpdater\App\Models\Field;
 
 
 class EpicModel extends BaseModel {
@@ -213,8 +214,13 @@ class EpicModel extends BaseModel {
             
             if(!$projectIsInResearch) continue; //continue to next project loop
             
-            $record_id = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
-            
+            $field = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
+            if($field)
+            {
+
+            }else{
+
+            }
             $this->saveData($project, $xml_data, $record_id);
 
         }
@@ -365,18 +371,16 @@ class EpicModel extends BaseModel {
     }
     
     /**
-     * @return mixed returns the record if MRN is found or false otherwise
+     * @return Record|false returns the record if MRN is found or false otherwise
      */
     private function checkMRN($project_id, $MRN)
     {
-        $mrn_field_name = $this->module->getProjectSetting($this->mrn_field_key, $project_id);
-        $query_string = sprintf("SELECT record FROM redcap_data WHERE field_name='%s' AND value='%s'", db_real_escape_string($mrn_field_name), db_real_escape_string($MRN));
-        $result = db_query($query_string);
-        if($result && $row = db_fetch_assoc($result))
-        {
-            $record_id = $row['record'];
-            return $record_id;
-        }
+        $settings = $this->getModuleSettingsForProject($project_id);
+        $mrn_field_name =$settings->mrn_field_name;
+        $event_id = $settings->event_id;
+        $record = Record::find($project_id, $event_id, $mrn_field_name, $MRN);
+        // $field = Field::find(array('event_id' => $event_id,'field_name' => $mrn_field_name,'value' => $MRN));
+        if($record) return $record;
         return false;
     }
 
