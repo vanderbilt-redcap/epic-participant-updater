@@ -192,7 +192,7 @@ class EpicModel extends BaseModel {
         }
         
         // check if any project is enabled
-        $projects = $this->getFetchingEnabledProjects();
+        $projects = $this->getModuleEnabledProjects();
         if(empty($projects))
         {
             $response = [
@@ -214,14 +214,14 @@ class EpicModel extends BaseModel {
             
             if(!$projectIsInResearch) continue; //continue to next project loop
             
-            $field = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
-            if($field)
+            $record = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
+            if($record)
             {
 
             }else{
 
             }
-            $this->saveData($project, $xml_data, $record_id);
+            // $this->saveData($project, $xml_data, $record_id);
 
         }
         $project_ids = array_map(function($project) {
@@ -387,22 +387,24 @@ class EpicModel extends BaseModel {
     /**
      * @return array ids of the projects which have enabled this module
      */
-    public function getFetchingEnabledProjects()
+    public function getModuleEnabledProjects()
     {
-        $sql="SELECT s.project_id
+        $query_string = sprintf(
+            "SELECT s.project_id
                 FROM redcap_external_modules m, redcap_external_module_settings s
                 WHERE m.external_module_id = s.external_module_id
-                AND m.directory_prefix = '{$this->module->PREFIX}'
+                AND m.directory_prefix = '%s'
                 AND s.`key` = 'enabled'
-                AND s.value = 'true'";
-        $query = $this->module->query($sql);
+                AND s.value = 'true'
+            ", $this->module->PREFIX);
+        $result = $this->module->query($query_string);
 
         if($error = db_error()){
-            throw new \Exception($sql.': '.$error);
+            throw new \Exception($query_string.': '.$error);
         }
 
         $projects = array();
-        while($row = db_fetch_assoc($query))
+        while($row = db_fetch_assoc($result))
         {
             $project_id =  $row['project_id'];
             $project = new \Project($project_id);
