@@ -2,6 +2,7 @@
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
+use DateTime;
 
 class EpicXMLParser
 {
@@ -48,6 +49,16 @@ class EpicXMLParser
         return $stripped_xml;
     }
 
+    private static function extractDates($xml_string)
+    {
+        $dates = new XMLNode($xml_string, 'effectiveTime');
+        $start_date_value = $dates->find('low')->attributes['value'];
+        $end_date_value = $dates->find('high')->attributes['value'];
+        $dates = array();
+        if($start_date_value) $dates['start'] = new DateTime($start_date_value);
+        if($end_date_value) $dates['end'] = new DateTime($end_date_value);
+    }
+
     /**
      * extract data from an epic xml
      *
@@ -60,6 +71,8 @@ class EpicXMLParser
             $processState = new XMLNode($xml_string, 'processState');
             $candidateID = new XMLNode($xml_string, 'candidateID');
             $plannedStudy = new XMLNode($xml_string, 'plannedStudy');
+            $dates = self::extractDates($xml_string);
+            
             $studies = $plannedStudy->find('id');
             
             $MRN = $candidateID->attributes['extension']; // the MRN is in the "extension" attribute

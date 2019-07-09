@@ -4,8 +4,8 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\XMLNode;
-use Vanderbilt\EpicParticipantUpdater\App\Models\Record;
-// use Vanderbilt\EpicParticipantUpdater\App\Models\Field;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
+use Vanderbilt\EpicParticipantUpdater\App\Models\Settings;
 
 
 class EpicModel extends BaseModel {
@@ -214,14 +214,15 @@ class EpicModel extends BaseModel {
             
             if(!$projectIsInResearch) continue; //continue to next project loop
             
-            $record = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
-            if($record)
+            $record_id = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
+            if($record_id)
             {
-
+                //update
+                $this->updateRecord($project, $record_id, $xml_data);
             }else{
-
+                //create
+                $this->createRecord($project, $xml_data);
             }
-            // $this->saveData($project, $xml_data, $record_id);
 
         }
         $project_ids = array_map(function($project) {
@@ -243,36 +244,46 @@ class EpicModel extends BaseModel {
      * update the status of an existing record
      * 
      * @param \Project $project
+     * @param integer $record_id
      * @param array $xml_data
      * @return void
      */
-    private function updateRecord($project, $record, $xml_data)
+    private function updateRecord($project, $record_id, $xml_data)
     {
         $project_id = $project->project_id;
         $irb_number = $this->getIrbNumberFromProject($project);
-        $status_field_name = $this->module->getProjectSetting($this->status_field_key, $project_id);
-        foreach($record as $record_id => &$data)
-        {
-            $data[$status_field_name] = trim($xml_data['status']);
-            $response = \REDCap::saveData($project_id, 'array', array($record));
-            $log = new LogModel(__FUNCTION__, [
-                'project_id' => $project_id,
-                'record_id' => $record_id,
-                'irb_number' => $irb_number,
-                'MRN' => $xml_data['MRN'],
-            ]);
-            if($error = $response['errors'])
-            {
-                $log->status = 'error';
-                $log->description = "error updating record {$record_id}: {$error}";
-            }else
-            {
+        $settings = new Settings($this->module, $project_id);
+        $status_field_name = $settings->getStatusFieldName();
+        $event_id = $settings->getEventID();
+        /* $records = \REDCap::getData(array(
+            'project_id' => $project_id,
+            'records'=> array($record_id),
+            'events'=> array($event_id),
+            'fields'=> array($status_field_name),
+        )); */
+        $record = RecordHelper::getRecordSchema($project_id, $event_id, $record_id, array(
+            $status_field_name  => trim($xml_data['status']),
+        ));
+        $result = \REDCap::saveData($project_id, 'array', $record);
 
-                $log->status = 'success';
-                $log->description = "record {$record_id} has been updated";
-            }
-            $log->save($this->module);
+        $log = new LogModel(__FUNCTION__, [
+            'project_id' => $project_id,
+            'record_id' => $record_id,
+            'irb_number' => $irb_number,
+            'MRN' => $xml_data['MRN'],
+        ]);
+        if($error = $result['errors'])
+        {
+            $log->status = 'error';
+            $log->description = "error updating record {$record_id}: {$error}";
+        }else
+        {
+
+            $log->status = 'success';
+            $log->description = "record {$record_id} has been updated";
         }
+        $log->save($this->module);
+
     }
 
     /**
@@ -286,22 +297,6 @@ class EpicModel extends BaseModel {
         $project_info = $project->project;
         return $project_info['project_irb_number'];
     }
-
-    /**
-     * get object with module setting for a project
-     *
-     * @param integer $project_id
-     * @return object
-     */
-    private function getModuleSettingsForProject($project_id)
-    {
-        $settings = array(
-            event_id => $this->module->getProjectSetting($this->event_ID_key, $project_id),
-            mrn_field_name => $this->module->getProjectSetting($this->mrn_field_key, $project_id),
-            status_field_name => $this->module->getProjectSetting($this->status_field_key, $project_id),
-        );
-        return (object)$settings;
-    }
             
     /**
      * insert a new record or update an existing one
@@ -311,29 +306,34 @@ class EpicModel extends BaseModel {
      * @param string $existing_record_id
      * @return void
      */
-    private function saveData($project, $xml_data, $existing_record_id=false)
+    private function createRecord($project, $xml_data)
     {
         $project_id = $project->project_id;
         $irb_number = $this->getIrbNumberFromProject($project);
         // $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
-        $settings = $this->getModuleSettingsForProject($project_id);
+        // get the settings fot the current project
+        $settings = new Settings($this->module, $project_id);
+        $status_field_name = $settings->getStatusFieldName();
+        $mrn_field_name = $settings->getMrnFieldName();
+        $date_start_field_name = $settings->getStartDateFieldName();
+        $date_end_field_name = $settings->getEndDateFieldName();
+        $event_ID = $settings->getEventID();
 
-        $record_id = ($existing_record_id===false) ? $this->module->addAutoNumberedRecord($project_id) : $existing_record_id;
+        // get the first available record_id
+        $record_id = $this->module->addAutoNumberedRecord($project_id);
+        // set the mandatory fields
+        $fields = array(
+            $mrn_field_name => trim($xml_data['MRN']),
+            $status_field_name  => trim($xml_data['status']),
+        );
+        // add dates if mapped
+        if(!empty($date_start_field_name)) $fields[$date_start_field_name] = trim($xml_data['date-start']);
+        if(!empty($date_end_field_name)) $fields[$date_end_field_name] = trim($xml_data['date-end']);
+        
+        $record = RecordHelper::getRecordSchema($project_id, $event_ID, $record_id, $fields);
+        $result = \REDCap::saveData($project_id, 'array', $record);
 
-        $data = array($settings->status_field_name => trim($xml_data['status']));
-        if(!$existing_record_id)
-        {
-            // when creating also insert MRN and date range
-            $data[$settings->mrn_field_name] = $xml_data['MRN'];
-            // $data[$settings->date_start_field_name] = $xml_data['date_start'];
-            // $data[$settings->date_end_field_name] = $xml_data['date_end'];
-        }
-
-        $record = new Record($project_id, $settings->event_id, $record_id, $data);
-
-        $data = $record->getData();
-        $response = \RedCap::saveData($project_id, 'array', $data);
-        $this->logSaveAction($project_id, $record_id, $irb_number, $MRN=$xml_data['MRN'], $response);
+        $this->logSaveAction($project_id, $record_id, $irb_number, $MRN=$xml_data['MRN'], $result);
     }
 
     private function logSaveAction($project_id, $record_id, $irb_number, $MRN, $response)
@@ -371,17 +371,15 @@ class EpicModel extends BaseModel {
     }
     
     /**
-     * @return Record|false returns the record if MRN is found or false otherwise
+     * @return string|false returns the record if MRN is found or false otherwise
      */
     private function checkMRN($project_id, $MRN)
     {
-        $settings = $this->getModuleSettingsForProject($project_id);
-        $mrn_field_name =$settings->mrn_field_name;
-        $event_id = $settings->event_id;
-        $record = Record::find($project_id, $event_id, $mrn_field_name, $MRN);
-        // $field = Field::find(array('event_id' => $event_id,'field_name' => $mrn_field_name,'value' => $MRN));
-        if($record) return $record;
-        return false;
+        $settings = new Settings($this->module, $project_id);
+        $mrn_field_name = $settings->getMrnFieldName();
+        $event_id = $settings->getEventID();
+        $record_id = RecordHelper::find($project_id, $event_id, $mrn_field_name, $MRN);
+        return $record_id;
     }
 
     /**

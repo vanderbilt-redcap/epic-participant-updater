@@ -1,14 +1,5 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
  
- /**
-  * exposed properties:
-  * @property integer $project_id
-  * @property integer $event_id
-  * @property string $record
-  * @property string $field_name
-  * @property string $value
-  * @property string $instance
-  */
 class Record extends BaseModel implements \JsonSerializable
 {
 
@@ -116,7 +107,7 @@ class Record extends BaseModel implements \JsonSerializable
 		return $record;
 	}
 
-	public function getFields($record_id)
+	public function getFields()
 	{
 		$query_string = sprintf(
 			"SELECT %s FROM %s

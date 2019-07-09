@@ -79,6 +79,33 @@ class Record
     }
 
     /**
+	 * find a record ID from the database seraching for a specific field_name => value pair
+	 *
+	 * @param integer $project_id
+	 * @param integer $event_id
+	 * @param string $field_name
+	 * @param string $value
+	 * @return string|false
+	 */
+	public static function find($project_id, $event_id, $field_name, $value)
+	{
+		$query_string = sprintf(
+			"SELECT record FROM %s
+			WHERE project_id=%u AND event_id=%u
+			AND field_name='%s' AND value='%s' LIMIT 1",
+			self::DB_TABLE,
+			$project_id,
+			$event_id,
+			$field_name,
+			$value
+        );
+        
+        $result = db_query($query_string);
+        if($row = db_fetch_object($result)) return $row->record;
+        return false;
+	}
+
+    /**
 	 * get next available record ID for a project
 	 *
 	 * @param integer $project_id

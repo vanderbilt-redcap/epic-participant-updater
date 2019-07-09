@@ -83,31 +83,34 @@ class XMLNode
 	 * find a node children with the specified tag
 	 *
 	 * @param string $tag_nme
-	 * @return void
+	 * @return XMLNode|XMLNode[]
 	 */
 	public function find($tag_name)
 	{
-		return  self::getNodes($this->xml_string, $tag_name);
+		$nodes = self::getNodes($this->xml_string, $tag_name);
+		if(empty($nodes)) return false;
+		if(count($nodes)===1) return $nodes[0];
+		return $nodes;
 	}
 	
 	/**
-	 * Undocumented function
+	 * get nodes using a regular expression
 	 *
 	 * @param string $xml_string
 	 * @param string $tag_name
-	 * @return void
+	 * @return XMLNode[]|false matched nodes or false if nothing is found
 	 */
 	private static function getNodes($xml_string, $tag_name='\w+')
 	{
 		$regex = self::getRegularExpression($tag_name);
 		preg_match_all($regex, $xml_string, $matches);
 
-		if(empty($matches[0])) return $xml_string;
-		$children = array();
+		if(empty($matches[0])) return false;
+		$nodes = array();
 		foreach ($matches[0] as $match) {
-			$children[] = self::factory($match);
+			$nodes[] = self::factory($match);
 		}
-		return $children;
+		return $nodes;
 	}
 
 	/**
