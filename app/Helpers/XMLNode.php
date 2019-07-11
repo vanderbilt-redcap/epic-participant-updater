@@ -98,14 +98,14 @@ class XMLNode
 	 *
 	 * @param string $xml_string
 	 * @param string $tag_name
-	 * @return XMLNode[]|false matched nodes or false if nothing is found
+	 * @return XMLNode[]|string matched nodes or the value of the node as a string
 	 */
 	private static function getNodes($xml_string, $tag_name='\w+')
 	{
 		$regex = self::getRegularExpression($tag_name);
 		preg_match_all($regex, $xml_string, $matches);
 
-		if(empty($matches[0])) return false;
+		if(empty($matches[0])) return $xml_string;
 		$nodes = array();
 		foreach ($matches[0] as $match) {
 			$nodes[] = self::factory($match);

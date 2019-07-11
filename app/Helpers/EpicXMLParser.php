@@ -72,11 +72,12 @@ class EpicXMLParser
             $candidateID = new XMLNode($xml_string, 'candidateID');
             $plannedStudy = new XMLNode($xml_string, 'plannedStudy');
             $dates = self::extractDates($xml_string);
-            
-            $studies = $plannedStudy->find('id');
-            
             $MRN = $candidateID->attributes['extension']; // the MRN is in the "extension" attribute
             $processState = $processState->value; // status
+
+            // get study ids
+            $studies = $plannedStudy->find('id');
+            if(!is_array($studies)) $studies = [$studies]; // make sure it is an array
             $study_ids = array(); // sometimes we can get multiple studies in a single xml
             foreach($studies as $study)
             {

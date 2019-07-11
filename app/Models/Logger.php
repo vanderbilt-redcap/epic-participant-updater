@@ -2,17 +2,17 @@
 
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
-class LogModel {
+class Logger {
 
-    private $message;
-    private $parameters;
-
-    private $reserved_keys = [
+    private static $reserved_keys = [
         'project_id' => '_project_id',
         'record_id' => '_record_id',
         'message' => 'description',
+        'status' => 'status',
+        'MRN' => 'MRN',
+        'irb_number' => 'irb_number',
     ]; // list of reserved keys and key to use as sobstitute
-    private $reserved_keys_prefix = '_'; // prefix to use in front of reserved keys
+    private static $reserved_keys_prefix = '_'; // prefix to use in front of reserved keys
 
     const STATUS_INFO = 'info';
     const STATUS_SUCCESS = 'success';
@@ -20,10 +20,10 @@ class LogModel {
     const STATUS_ERROR = 'error';
 
     const STATUS_LIST = [
-        'info' => 1, // generic log not related to a specific project or record
-        'success' => 2, // success updating or creating a record
-        'warning' => 3, // generic warning
-        'error' => 4, // project or record specific error
+        self::STATUS_INFO,
+        self::STATUS_SUCCESS,
+        self::STATUS_WARNING,
+        self::STATUS_ERROR,
     ]; // list of available status
 
      //fields to get from database 
@@ -32,24 +32,30 @@ class LogModel {
         'message', 'status', 'description', 'MRN', 'irb_number'];
 
 
-    public function __construct($message, $parameters=[])
+    public function __construct($module)
     {
-        $this->message = $message;
-        foreach ($parameters as $key => $value) {
-            $this->{$key} = $value;
-        };
+        $this->module = $module;
     }
 
     /**
-     * save the log using a module
-     * in 
+     * save the log using the module log function
+     * the parameters keys are transformed to a safe version before logging
      *
      * @param EpicParticipantUpdater $module
      * @return void
      */
-    public function save($module)
+    public function log($message, $parameters)
     {
-        $module->log($this->message, $this->parameters);
+        $safe_parameters = [];
+        foreach($parameters as $key => $value)
+        {
+            if(array_key_exists($key, self::$reserved_keys))
+            {
+                $safe_key = self::$reserved_keys[$key];
+                $safe_parameters[$safe_key] = $value;
+            }
+        }
+        $this->module->log($message, $safe_parameters);
     }
 
     /**
@@ -75,20 +81,6 @@ class LogModel {
 		return $logs;
     }
     
-    /**
-     * normalize status with specific values
-     *
-     * @param string $value
-     * @return void
-     */
-    private function setStatus($value)
-    {
-        if(!array_key_exists($value, self::STATUS_LIST))
-            $value = self::STATUS_LIST[1]; //set the default status to 'info'
-
-        $this->parameters['status'] = $value;
-    }
-
     /**
      * dump the current request in a log file
      *
@@ -150,54 +142,6 @@ class LogModel {
 
         return $d->format($format); // note at point on "u"
     }
- 
-    /**
-     * setter magic function
-     *
-     * @param string $name
-     * @param mixed $value
-     */
-	public function __set($name, $value)
-    {
-        if($name=='status')
-        {
-            // normalize the status
-            $this->setStatus($value);
-            return;
-        }
-        if(array_key_exists($name, $this->reserved_keys))
-        {
-            // use different key as specified in $this->reserved_keys
-            $name = $this->reserved_keys[$name];
-        }
-        if(is_array($value)) $value = implode(', ',$value); // arrays must be converted to strings
-		$this->parameters[$name] = $value;
-    }
-
-	/**
-	 * getter for params values
-     * converts underscores to dashes
-	 */
-    /**
-     * Undocumented function
-     *
-     * @param string $name
-     * @return void
-     */
-	public function __get($name)
-    {
-        if (array_key_exists($name, $this->parameters)) {
-            return $this->parameters[$name];
-        }
-
-        $trace = debug_backtrace();
-        trigger_error(
-            'Undefined property via __get(): ' . $name .
-            ' in ' . $trace[0]['file'] .
-            ' on line ' . $trace[0]['line'],
-            E_USER_NOTICE);
-        return null;
-	}
 
     
 }

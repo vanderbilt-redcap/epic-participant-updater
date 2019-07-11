@@ -52,7 +52,13 @@ class Settings extends BaseModel {
      */
 	private $event_id;
 
-	function __construct(EpicParticipantUpdater $module, $project_id)
+	/**
+	 * constructor
+	 *
+	 * @param EpicParticipantUpdater $module
+	 * @param integer $project_id
+	 */
+	function __construct($module, $project_id)
 	{
 		$this->module = $module;
 

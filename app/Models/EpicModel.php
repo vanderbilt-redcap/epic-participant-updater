@@ -62,69 +62,21 @@ class EpicModel extends BaseModel {
         
         try {
             $HTTP_RAW_POST_DATA = file_get_contents("php://input"); // SOAP request
-			$params = json_decode(file_get_contents("php://input"),true); //get the params
-			$params = array_merge($params, $_POST);
-			$method = $_SERVER['REQUEST_METHOD'];
-			if ('PUT' === $method) {
-				$_PUT = array();
-				FileHelper::parse_raw_http_request($_PUT);
-			}
-
-
-			$response = array();
-			if(empty($HTTP_RAW_POST_DATA) && empty($params) && empty($_FILES) && empty($_PUT)) {
-				// no params and no files; exit
-				$response = array(
-					"error" => true,
-					"message" => "no params specified",
-				);
-			}
-			else if( empty($_PUT) && !empty($HTTP_RAW_POST_DATA) ){
-                self::handleSOAPRequest($HTTP_RAW_POST_DATA);
+			
+            if(empty($HTTP_RAW_POST_DATA) )
+            {
+                $this->log($message='no SOAP request detected', [
+                    'status' => Logger::STATUS_ERROR
+                ]);
+                return ['error' => true, 'message' => $message];
             }
-			else if( !empty($_FILES) ){
-				/**
-				 * data is coming from an upload form
-				 * NOTE: ONLY ONE FILE IS GOING TO BE PROCESSED
-				 */
-				$files = FileHelper::getFormFiles();
-				// $file = array_shift($files); //PROCESS ONLY THE FIRST FILE
-				foreach ($files as $file) {
-					$string = FileHelper::getContents($file);
-					$xml_data = EpicXMLParser::parse($string);
-					$current_response = $this->checkXML($xml_data);
-					$response = array_merge($response, $current_response);
-				}
-			}
-			// check if getting xml file from a $_PUT
-			else if( !empty($_PUT) ){
-				$files = $_PUT['files'];
-				// $file = array_shift($files); //PROCESS ONLY THE FIRST FILE
-				foreach ($files as $file) {
-					$string = $file;
-					$xml_data = EpicXMLParser::parse($string);
-					$current_response = $this->checkXML($xml_data);
-					$response = array_merge($response, $current_response);
-				}
-			}
-			// check if getting xml file from a path
-			else if (isset($params['path']))
-			{
-				$path = $params['path'];
-				$xml_data = EpicXMLParser::parseFromPath($path);
-				$response = $this->checkXML($xml_data);
-            }
+            return self::handleSOAPRequest($HTTP_RAW_POST_DATA);
 
-			return $response;
 		} catch (\Exception $e) {
-			$response = array(
-				"error" => true,
-                "message" => $e->getMessage(),
-            );
-            $log = new LogModel(__FUNCTION__, $response);
-            $log->save($this->module);
-			// header('HTTP/1.1 500 Internal Server Error');
-			return $response;
+            $this->log($message=$e->getMessage(), [
+                'status' => Logger::STATUS_ERROR
+            ]);
+            return ['error' => true, 'message' => $message];
 		}
     }
     
@@ -180,28 +132,25 @@ class EpicModel extends BaseModel {
     private function checkXML($xml_data=[])
     {
         // check the data
+        $log_message = 'checked XML';
         if(empty($xml_data))
         {
-            $response = [
-				'status' => 'info', // generic message
+            $this->log($log_message, [
+				'status' => Logger::STATUS_INFO, // generic message
 				'description' => 'no data',
-            ];
-            $log = new LogModel(__FUNCTION__, $response);
-            $log->save($this->module);
-            return $response;
+            ]);
+            return false;
         }
         
         // check if any project is enabled
         $projects = $this->getModuleEnabledProjects();
         if(empty($projects))
         {
-            $response = [
-				'status' => 'info', // generic message
+            $this->log($log_message, [
+				'status' => Logger::STATUS_INFO, // generic message
 				'description' => 'no projects enabled',
-            ];
-            $log = new LogModel(__FUNCTION__, $response);
-            $log->save($this->module);
-            return $response;
+            ]);
+            return false;
         }
         
         // check for projects that are using the same irb number of the XML
@@ -228,64 +177,16 @@ class EpicModel extends BaseModel {
         $project_ids = array_map(function($project) {
             return $project->project_id;
         }, $projects);
-        $response = [
-            'status' => 'info',
-            'message' => 'xml checked for all projects',
-            'description' => implode(', ', $project_ids),
-        ];
-        $log = new LogModel(__FUNCTION__, $response);
-        $log->save($this->module);
 
-        $response['projects'] = $projects; // do not want to log an array in the DB, but need it in JSON
-        return $response;
+
+        $this->log($log_message, [
+            'status' => Logger::STATUS_INFO, // generic message
+            'description' => sprintf("xml checked for projects %s", implode(', ', $project_ids)),
+        ]);
+
+        return $project_ids;
     }
     
-    /**
-     * update the status of an existing record
-     * 
-     * @param \Project $project
-     * @param integer $record_id
-     * @param array $xml_data
-     * @return void
-     */
-    private function updateRecord($project, $record_id, $xml_data)
-    {
-        $project_id = $project->project_id;
-        $irb_number = $this->getIrbNumberFromProject($project);
-        $settings = new Settings($this->module, $project_id);
-        $status_field_name = $settings->getStatusFieldName();
-        $event_id = $settings->getEventID();
-        /* $records = \REDCap::getData(array(
-            'project_id' => $project_id,
-            'records'=> array($record_id),
-            'events'=> array($event_id),
-            'fields'=> array($status_field_name),
-        )); */
-        $record = RecordHelper::getRecordSchema($project_id, $event_id, $record_id, array(
-            $status_field_name  => trim($xml_data['status']),
-        ));
-        $result = \REDCap::saveData($project_id, 'array', $record);
-
-        $log = new LogModel(__FUNCTION__, [
-            'project_id' => $project_id,
-            'record_id' => $record_id,
-            'irb_number' => $irb_number,
-            'MRN' => $xml_data['MRN'],
-        ]);
-        if($error = $result['errors'])
-        {
-            $log->status = 'error';
-            $log->description = "error updating record {$record_id}: {$error}";
-        }else
-        {
-
-            $log->status = 'success';
-            $log->description = "record {$record_id} has been updated";
-        }
-        $log->save($this->module);
-
-    }
-
     /**
      * get IRB number from a project
      *
@@ -333,32 +234,81 @@ class EpicModel extends BaseModel {
         $record = RecordHelper::getRecordSchema($project_id, $event_ID, $record_id, $fields);
         $result = \REDCap::saveData($project_id, 'array', $record);
 
-        $this->logSaveAction($project_id, $record_id, $irb_number, $MRN=$xml_data['MRN'], $result);
-    }
-
-    private function logSaveAction($project_id, $record_id, $irb_number, $MRN, $response)
-    {
-        $record_id = implode(', ', $response['ids']);
-        $log = new LogModel(__FUNCTION__, [
-            'project_id' => $project_id,
-            'record_id' => $record_id,
-            'irb_number' => $irb_number,
-            'MRN' => $MRN,
-        ]);
-        if($error = $response['errors'])
+        // log results
+        if($error = $result['errors'])
         {
-            $log->status = 'error';
-            $log->description = "error creating new record: {$error}";
+            $status = Logger::STATUS_ERROR;
+            $description = "error creating new record: {$error}";
         }else
         {
-            $log->status = 'success';
-            $log->description = "new record created";
+            $status = Logger::STATUS_SUCCESS;
+            $description = "new record created";
         }
-        $log->save($this->module);
+
+        $this->log($message='created record', $parameters = [
+            'status' => $status,
+            'description' => $description,
+            'project_id'=> $project_id,
+            'record_id' => $record_id,
+            'irb_number' => $irb_number,
+            'MRN' => $MRN=$xml_data['MRN']
+        ]);
+    }
+
+    /**
+     * update the status of an existing record
+     * 
+     * @param \Project $project
+     * @param integer $record_id
+     * @param array $xml_data
+     * @return void
+     */
+    private function updateRecord($project, $record_id, $xml_data)
+    {
+        $project_id = $project->project_id;
+        $irb_number = $this->getIrbNumberFromProject($project);
+        $settings = new Settings($this->module, $project_id);
+        $status_field_name = $settings->getStatusFieldName();
+        $event_id = $settings->getEventID();
+        /* $records = \REDCap::getData(array(
+            'project_id' => $project_id,
+            'records'=> array($record_id),
+            'events'=> array($event_id),
+            'fields'=> array($status_field_name),
+        )); */
+        $record = RecordHelper::getRecordSchema($project_id, $event_id, $record_id, array(
+            $status_field_name  => trim($xml_data['status']),
+        ));
+        $result = \REDCap::saveData($project_id, 'array', $record);
+
+        if($error = $result['errors'])
+        {
+            $status = Logger::STATUS_ERROR;
+            $description = "error updating record {$record_id}: {$error}";
+        }else
+        {
+            $status = Logger::STATUS_SUCCESS;
+            $description = "record {$record_id} has been updated";
+        }
+        $this->log($message='updated record', $parameters = [
+            'status' => $status,
+            'description' => $description,
+            'project_id'=> $project_id,
+            'record_id' => $record_id,
+            'irb_number' => $irb_number,
+            'MRN' => $MRN=$xml_data['MRN']
+        ]);
+    }
+
+    private function log($message, $parameters=[])
+    {
+        $logger = new Logger($this->module);
+        $logger->log($message, $parameters);
     }
 
      /**
-     * @return mixed checks if the project is connected to a research
+      * checks if the project is connected to a research
+      * @return boolean
      */
     private function checkIRB($project_id, $irbNumbers)
     {
@@ -371,6 +321,8 @@ class EpicModel extends BaseModel {
     }
     
     /**
+     * check if the MRN is available in the specified project
+     * 
      * @return string|false returns the record if MRN is found or false otherwise
      */
     private function checkMRN($project_id, $MRN)
@@ -383,7 +335,9 @@ class EpicModel extends BaseModel {
     }
 
     /**
-     * @return array ids of the projects which have enabled this module
+     * get a list of projects using the module
+     * 
+     * @return \Project[] ids of the projects which have enabled this module
      */
     public function getModuleEnabledProjects()
     {
