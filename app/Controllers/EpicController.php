@@ -2,7 +2,7 @@
 
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater as EPU;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
-use Vanderbilt\EpicParticipantUpdater\App\Models\LogModel;
+use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
 
 class EpicController extends BaseController
 {
@@ -37,7 +37,8 @@ class EpicController extends BaseController
 	{
         $page = isset($_GET['p']) ? $_GET['p'] : 1;
         $limit = isset($_GET['limit']) ? $_GET['p'] : $this->defaults['logs_per_page'];
-        $response = LogModel::getList($this->module, $page, $limit);
+        $logger = new Logger($this->module);
+        $response = $logger->getList($page, $limit);
         $this->printJSON($response);
     }
     
@@ -47,7 +48,7 @@ class EpicController extends BaseController
     */
 	public function getProjects()
 	{
-        $response = $this->app->getFetchingEnabledProjects();
+        $response = $this->app->getModuleEnabledProjects();
         $this->printJSON($response);
     }
 

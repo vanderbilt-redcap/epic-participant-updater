@@ -53,6 +53,9 @@ class Logger {
             {
                 $safe_key = self::$reserved_keys[$key];
                 $safe_parameters[$safe_key] = $value;
+            }else
+            {
+                $safe_parameters[$key] = $value;
             }
         }
         $this->module->log($message, $safe_parameters);
@@ -62,17 +65,16 @@ class Logger {
      * list the logs using pagination
      * set $limit to -1 to skip pagination
      *
-     * @param EpicParticipantUpdater $module
      * @param int $page
      * @param int $limit
      * @return void
      */
-	public static function getList($module, $page, $limit)
+	public function getList($page, $limit)
 	{
         $offset = ($page-1)*$limit; // when page is 1 the offset is 0
 		$sql = "SELECT ".implode(',',self::$DB_fields)." ORDER BY timestamp DESC";
 		if($limit>0) $sql .= " LIMIT {$offset}, {$limit}";
-		$result = $module->queryLogs($sql);
+		$result = $this->module->queryLogs($sql);
 		$logs = [];
 		while($row = mysqli_fetch_assoc($result)){
 			$logs[] = $row;

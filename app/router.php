@@ -3,7 +3,7 @@ namespace Vanderbilt\EpicParticipantUpdater\App;
 
 use Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\Router;
-use Vanderbilt\EpicParticipantUpdater\App\Models\LogModel;
+use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
 
 require_once __DIR__."/bootstrap.php";
 
@@ -42,15 +42,16 @@ if(defined("MODULE_DIRECT_ACCESS"))
  */
 function logRequest()
 {
-    global $module; //$module is expose globally
-    $request_log = LogModel::getRequestLog();
+    global $module; //$module is exposed globally
+
+    $request_log = Logger::getRequestLog();
     $message = 'API';
     $parameters = array(
         'status' => 'info',
         'description' => $request_log,
     );
-    $log = new LogModel($message, $parameters);
-    $log->save($module);
+    $logger = new Logger($module);
+    $logger->log($message, $parameters);
 }
 
 $is_API_Page = preg_match('/^api$/i', $_GET['page'], $matches); // do not log other pages access

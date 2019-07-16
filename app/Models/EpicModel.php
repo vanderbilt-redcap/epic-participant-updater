@@ -11,53 +11,22 @@ use Vanderbilt\EpicParticipantUpdater\App\Models\Settings;
 class EpicModel extends BaseModel {
 
     /**
-     * setting key to retrieve the MRN field
+     * constructor
      *
-     * @var string
+     * @param EpicParticipantUpdater $module
      */
-    private $mrn_field_key = 'mrn-mapping-field';
-
-    /**
-     * setting key to retrieve the study status field
-     *
-     * @var string
-     */
-    private $status_field_key = 'status-mapping-field';
-
-    /**
-     * setting key to retrieve the event containing the module fields (mrn, patient status, dates)
-     *
-     * @var string
-     */
-    private $event_ID_key = 'event-id';
-
-    /**
-     * setting key to retrieve the MRN event
-     *
-     * @var string
-     */
-    // private $mrn_event_key = 'mrn-mapping-event';
-    
-    /**
-     * setting key to retrieve the study status event
-     *
-     * @var string
-     */
-    // private $status_event_key = 'status-mapping-event';
-
-    const XML_MAPPING = array(
-        'irbNumbers' => '',
-        'mrn' => 'MRN',
-        'status' => '',
-    );
-	
-	function __construct(EpicParticipantUpdater $module)
+	function __construct($module)
 	{
 		$this->module = $module;
 		parent::__construct();
 	}
 
-	public function check()
+    /**
+     * check the XML
+     *
+     * @return void
+     */
+    public function check()
 	{
         
         try {
@@ -172,7 +141,6 @@ class EpicModel extends BaseModel {
                 //create
                 $this->createRecord($project, $xml_data);
             }
-
         }
         $project_ids = array_map(function($project) {
             return $project->project_id;
@@ -288,7 +256,7 @@ class EpicModel extends BaseModel {
         }else
         {
             $status = Logger::STATUS_SUCCESS;
-            $description = "record {$record_id} has been updated";
+            $description = "record {$record_id} updated";
         }
         $this->log($message='updated record', $parameters = [
             'status' => $status,
