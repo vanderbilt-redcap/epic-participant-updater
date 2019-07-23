@@ -81,9 +81,10 @@
         menu_item.innerHTML = ''; // reset the menu
         projects.forEach(project => {
           var a = document.createElement('a');
+          var project_info = project.project
           a.classList.add('dropdown-item');
-          a.href = `${projects_base_url}${project.project_id}`;
-          var text = document.createTextNode(`(ID ${project.project_id}) ${project.project_name}`);
+          a.href = `${projects_base_url}${project_info.project_id}`;
+          var text = document.createTextNode(`#${project_info.project_id} - ${project_info.app_title}`);
           a.appendChild(text);
           menu_item.appendChild(a);
         });
