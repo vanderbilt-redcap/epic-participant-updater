@@ -7,6 +7,8 @@ use DateTime;
 class EpicXMLParser
 {
 
+    const DATE_FORMAT = 'Y-m-d'; // format of dates
+
     /**
      * parse the XML file
      * @throws RuntimeException if file format is not valid
@@ -49,14 +51,28 @@ class EpicXMLParser
         return $stripped_xml;
     }
 
+    /**
+     * Undocumented function
+     *
+     * @param string $xml_string
+     * @return object contains properties 'start' and 'end'
+     */
     private static function extractDates($xml_string)
     {
+        // helper function to get formatted date string
+        $getDate = function($string) {
+            if(empty($string)) return '';
+            $date = new DateTime($string);
+            return $date->format(self::DATE_FORMAT);
+        };
+
         $dates = new XMLNode($xml_string, 'effectiveTime');
         $start_date_value = $dates->find('low')->attributes['value'];
         $end_date_value = $dates->find('high')->attributes['value'];
         $dates = array();
-        if($start_date_value) $dates['start'] = new DateTime($start_date_value);
-        if($end_date_value) $dates['end'] = new DateTime($end_date_value);
+        $dates['start'] = $getDate($start_date_value);
+        $dates['end'] = $getDate($end_date_value);
+        return (object)$dates;
     }
 
     /**
@@ -88,6 +104,8 @@ class EpicXMLParser
             $data['status'] = (string) $processState;
             $data['MRN'] = (string) $MRN;
             $data['irbNumbers'] = $study_ids;
+            $data['date-start'] = $dates->start;
+            $data['date-end'] = $dates->end;
         }catch (\RuntimeException $e) {
 			$error = $e->getMessage();
 			return array();

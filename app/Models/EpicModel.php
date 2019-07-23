@@ -166,6 +166,37 @@ class EpicModel extends BaseModel {
         $project_info = $project->project;
         return $project_info['project_irb_number'];
     }
+
+    /**
+     * TODO
+     *
+     * @param [type] $project_id
+     * @param [type] $record_id
+     * @param [type] $xml_data
+     * @return void
+     */
+    private function getRecord($project_id, $record_id, $xml_data)
+    {
+        // $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
+        // get the settings fot the current project
+        $settings = new Settings($this->module, $project_id);
+        $status_field_name = $settings->getStatusFieldName();
+        $mrn_field_name = $settings->getMrnFieldName();
+        $date_start_field_name = $settings->getStartDateFieldName();
+        $date_end_field_name = $settings->getEndDateFieldName();
+        $event_ID = $settings->getEventID();
+
+        // set the mandatory fields
+        $fields = array(
+            $mrn_field_name => trim($xml_data['MRN']),
+            $status_field_name  => trim($xml_data['status']),
+        );
+        // add dates if mapped
+        if(!empty($date_start_field_name)) $fields[$date_start_field_name] = trim($xml_data['date-start']);
+        if(!empty($date_end_field_name)) $fields[$date_end_field_name] = trim($xml_data['date-end']);
+        $record = RecordHelper::getRecordSchema($project_id, $event_ID, $record_id, $fields);
+        return $record;
+    }
             
     /**
      * insert a new record or update an existing one
@@ -179,27 +210,10 @@ class EpicModel extends BaseModel {
     {
         $project_id = $project->project_id;
         $irb_number = $this->getIrbNumberFromProject($project);
-        // $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
-        // get the settings fot the current project
-        $settings = new Settings($this->module, $project_id);
-        $status_field_name = $settings->getStatusFieldName();
-        $mrn_field_name = $settings->getMrnFieldName();
-        $date_start_field_name = $settings->getStartDateFieldName();
-        $date_end_field_name = $settings->getEndDateFieldName();
-        $event_ID = $settings->getEventID();
-
         // get the first available record_id
         $record_id = $this->module->addAutoNumberedRecord($project_id);
-        // set the mandatory fields
-        $fields = array(
-            $mrn_field_name => trim($xml_data['MRN']),
-            $status_field_name  => trim($xml_data['status']),
-        );
-        // add dates if mapped
-        if(!empty($date_start_field_name)) $fields[$date_start_field_name] = trim($xml_data['date-start']);
-        if(!empty($date_end_field_name)) $fields[$date_end_field_name] = trim($xml_data['date-end']);
         
-        $record = RecordHelper::getRecordSchema($project_id, $event_ID, $record_id, $fields);
+        $record = $this->getRecord($project_id, $record_id, $xml_data);
         $result = \REDCap::saveData($project_id, 'array', $record);
 
         // log results
@@ -235,18 +249,8 @@ class EpicModel extends BaseModel {
     {
         $project_id = $project->project_id;
         $irb_number = $this->getIrbNumberFromProject($project);
-        $settings = new Settings($this->module, $project_id);
-        $status_field_name = $settings->getStatusFieldName();
-        $event_id = $settings->getEventID();
-        /* $records = \REDCap::getData(array(
-            'project_id' => $project_id,
-            'records'=> array($record_id),
-            'events'=> array($event_id),
-            'fields'=> array($status_field_name),
-        )); */
-        $record = RecordHelper::getRecordSchema($project_id, $event_id, $record_id, array(
-            $status_field_name  => trim($xml_data['status']),
-        ));
+
+        $record = $this->getRecord($project_id, $record_id, $xml_data);
         $result = \REDCap::saveData($project_id, 'array', $record);
 
         if($error = $result['errors'])
