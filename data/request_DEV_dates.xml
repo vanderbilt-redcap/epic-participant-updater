@@ -1,0 +1,52 @@
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+	<s:Body>
+		<rpe:EnrollPatientRequestRequest xmlns:rpe="urn:ihe:qrph:rpe:2009" xmlns="urn:hl7-org:v3">
+			<rpe:processState>MegaCompleted Study Protocol – No future activity planned</rpe:processState>
+			<rpe:patient>
+				<rpe:candidateID extension="012446432" root="1.2.840.114350.1.13.478.2.7.5.737384.14"/>
+				<rpe:subjectID extension="02-037"/>
+				<rpe:name>
+					<given>Candace</given>
+					<family>Jones</family>
+				</rpe:name>
+				<rpe:address>
+					<streetAddressLine>3025 KINGS LANE</streetAddressLine>
+					<city>NASHVILLE</city>
+					<state>TN</state>
+					<postalCode>37218</postalCode>
+					<country>US</country>
+				</rpe:address>
+				<rpe:dob value="19690608"/>
+			</rpe:patient>
+			<study>
+				<instantiation>
+					<plannedStudy>
+						<id extension="180272"/>
+					</plannedStudy>
+				</instantiation>
+				<component1>
+					<studyActivitiesAtSite>
+						<subject1>
+							<experimentalUnit>
+								<effectiveTime>
+									<low value="20180629"/>
+									<high value="20190618"/>
+								</effectiveTime>
+							</experimentalUnit>
+						</subject1>
+						<secondaryPerformer>
+							<serviceProvider>
+								<id extension="REEDAW"/>
+							</serviceProvider>
+						</secondaryPerformer>
+					</studyActivitiesAtSite>
+				</component1>
+			</study>
+			<rpe:actDefinition>
+				<armStub>
+					<id extension="23824"/>
+				</armStub>
+			</rpe:actDefinition>
+		</rpe:EnrollPatientRequestRequest>
+	</s:Body>
+</s:Envelope>
