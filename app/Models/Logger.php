@@ -103,7 +103,7 @@ class Logger {
             $fp = fopen($path, 'c');
             fwrite($fp, $request_log);
             fclose($fp);
-        } catch (\Throwable $th) {
+        } catch (\Exception $th) {
             error_log('Epic participant updater - LogModel cannot write dump file');
         }
     }

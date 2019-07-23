@@ -61,8 +61,8 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         try {
             $this->checkAPIToken();
             // $this->installDependencies();
-        } catch (\Throwable $th) {
-            echo $th->getMessage();
+        } catch (\Exception $e) {
+            echo $e->getMessage();
         }
     }
 

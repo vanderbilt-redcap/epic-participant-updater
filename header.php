@@ -11,12 +11,13 @@ function printVersion($module)
 <link rel="stylesheet" type="text/css" href="<?= $module->getUrl('./assets/css/fontawesome/css/all.css'); ?>">
   
 <nav id="epu_menu" class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="#">Epic Participant Updater <?php printVersion($module)?></a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
+  <a class="navbar-brand" href="#">Epic Participant Updater <?php printVersion($module)?></a>
+
   <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav">
+    <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
       <li class="nav-item">
         <a class="nav-link" href="<?= $module->getUrl('dashboard.php'); ?>">DASHBOARD</a>
       </li>
@@ -26,6 +27,8 @@ function printVersion($module)
       <li class="nav-item">
         <a class="nav-link" href="<?= $module->getUrl('examples.php'); ?>">EXAMPLES</a>
       </li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
       <!-- projects -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
