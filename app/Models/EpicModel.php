@@ -168,12 +168,12 @@ class EpicModel extends BaseModel {
     }
 
     /**
-     * TODO
+     * get a record compatible with REDCap::saveData
      *
-     * @param [type] $project_id
-     * @param [type] $record_id
-     * @param [type] $xml_data
-     * @return void
+     * @param integer $project_id
+     * @param string $record_id
+     * @param string $xml_data
+     * @return array
      */
     private function getRecord($project_id, $record_id, $xml_data)
     {
