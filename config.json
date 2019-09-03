@@ -55,13 +55,13 @@
         {
             "key": "date-start-mapping-field",
             "name": "Study start date",
-            "required": true,
+            "required": false,
             "type": "field-list"
         },
         {
             "key": "date-end-mapping-field",
             "name": "Study end date",
-            "required": true,
+            "required": false,
             "type": "field-list"
         },
         {
