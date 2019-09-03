@@ -233,7 +233,7 @@ class EpicModel extends BaseModel {
             'project_id'=> $project_id,
             'record_id' => $record_id,
             'irb_number' => $irb_number,
-            'MRN' => $MRN=$xml_data['MRN']
+            'MRN' => $xml_data['MRN']
         ]);
     }
 
@@ -268,7 +268,7 @@ class EpicModel extends BaseModel {
             'project_id'=> $project_id,
             'record_id' => $record_id,
             'irb_number' => $irb_number,
-            'MRN' => $MRN=$xml_data['MRN']
+            'MRN' => $xml_data['MRN']
         ]);
     }
 
