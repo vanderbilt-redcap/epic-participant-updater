@@ -10,10 +10,10 @@ require_once __DIR__."/bootstrap.php";
 // httpMethod, route, handler
 $routes = [
     [['POST','PUT'], "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check'],
-    ['GET', "/epic/logs", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs'],
-    ['GET', "/epic/projects", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getProjects'],
+    ['GET', "logs", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs'],
+    ['GET', "projects", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getProjects'],
     ['GET', "/test[/{id:\d+}]", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test'],
-    ['POST', "/regenerate_api", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/regenerateAPIToken'],
+    ['POST', "regenerate_token", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/regenerateAPIToken'],
 ];
 
 // create a BaseController to manage common routes or errors
@@ -21,17 +21,7 @@ $baseController = new BaseController();
 
 $router = new Router($routes, $baseController);
 
-if(defined("MODULE_DIRECT_ACCESS"))
-{
-    // standard routing with url rewrite
-    $route = Router::extractRoute();
-}else{
-    /**
-     * redcap routing
-     * {APP_PATH_WEBROOT_FULL}/api?type=module&prefix={PREFIX}&page=api&route=/route_name
-     **/
-    $route = Router::extractRoute('route');
-}
+$route = Router::extractRoute('route');
 
 
 /**
@@ -55,7 +45,7 @@ function logRequest()
 }
 
 $is_API_Page = preg_match('/^api$/i', $_GET['page'], $matches); // do not log other pages access
-$no_log_routes = array('/epic/logs','/epic/projects'); // do not log these routes
+$no_log_routes = array('logs','projects'); // do not log these routes
 $skip_route = in_array($route, $no_log_routes);
 
 if($is_API_Page && !$skip_route) logRequest();

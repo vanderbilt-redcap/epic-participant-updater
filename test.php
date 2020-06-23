@@ -22,7 +22,7 @@ function getTestUrl()
     'prefix' => $module->PREFIX, //epic_participant_updater
     'page' => 'api',
     'route' => '/epic/check',
-    'api_token' => $module->getAPIToken(),
+    'api_token' => $module->getApiToken(),
     'redcap_csrf_token' => \System::getCsrfToken(),
   );
   

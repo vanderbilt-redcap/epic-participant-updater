@@ -7,7 +7,7 @@ if(file_exists($autoload)) require_once($autoload);
 require join([__DIR__, 'app', 'Helpers', 'DependencyHelper.php'],DIRECTORY_SEPARATOR);
 
 use ExternalModules\AbstractExternalModule;
-use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
+use Firebase\JWT\JWT;
 
 class EpicParticipantUpdater extends AbstractExternalModule {
     
@@ -18,7 +18,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         parent::__construct();
     }
 
-    public function getAPIToken()
+    public function getApiToken()
     {
         return $this->getSystemSetting($this->api_token_key);
     }
@@ -29,7 +29,7 @@ class EpicParticipantUpdater extends AbstractExternalModule {
      * @param string $token
      * @return void
      */
-    function checkAPIToken()
+    function checkApiToken()
     {
         $api_token = $this->getSystemSetting($this->api_token_key);
         if(empty($api_token))
@@ -40,15 +40,26 @@ class EpicParticipantUpdater extends AbstractExternalModule {
     }
 
     /**
-     * generate an API token with a random string
+     * generate a JWT token to use with the protected API
      *
      * @return void
      */
     public function generateAPIToken()
     {
-        $random_string = RandomString::generate();
-        $this->setSystemSetting($this->api_token_key, $random_string);
-        return $random_string;
+        $issuer_claim = APP_PATH_WEBROOT_FULL ?: 'REDCap';
+        $expiration_date = new \DateTime("+ 10 years");
+        // generate access token
+        $data = array(
+            "iss" => $issuer_claim, // this can be the server name or url
+            "aud" => $audience_claim = "EPIC", // the referrer website
+            "iat" => $issuedat_claim = time(), // issued at
+            "nbf" => $notbefore_claim = $issuedat_claim, //not before in seconds
+            "exp" => $expire_claim = $expiration_date->getTimestamp(), // expire time in seconds
+        );
+        $token = JWT::encode($data, $this->secret);
+
+        $this->setSystemSetting($this->api_token_key, $token);
+        return $token;
     }
 
     /**
@@ -59,27 +70,10 @@ class EpicParticipantUpdater extends AbstractExternalModule {
      */
     function redcap_module_system_enable($version) {
         try {
-            $this->checkAPIToken();
+            $this->checkApiToken();
             // $this->installDependencies();
         } catch (\Exception $e) {
             echo $e->getMessage();
-        }
-    }
-
-    /**
-     * download composer and install dependencies
-     * if the autoload directory is not found
-     *
-     * @return void
-     */
-    private function installDependencies()
-    {
-        $current_directory = __DIR__;
-        $autoload = join([$current_directory,'vendor','autoload.php'],DIRECTORY_SEPARATOR);
-        if(!file_exists($autoload))
-        {
-            $dh = new \Vanderbilt\EpicParticipantUpdater\App\Helpers\DependencyHelper($current_directory);
-            $dh->installDependencies();
         }
     }
 

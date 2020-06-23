@@ -12,7 +12,7 @@ $query_params = array(
   'prefix' => $module->PREFIX, //epic_participant_updater
   'page' => 'api',
   'route' => '/epic/check',
-  'api_token' => $module->getAPIToken(),
+  'api_token' => $module->getApiToken(),
   'redcap_csrf_token' => \System::getCsrfToken(),
 );
 
@@ -125,7 +125,7 @@ $url = sprintf("%s/api/index.php?%s", APP_PATH_WEBROOT_FULL, $query_string);
   <code data-language="php">
 
   $MODULE_PREFIX = $module->PREFIX; // epic_participant_updater
-  $API_TOKEN = '<?=$module->getAPIToken();?>';
+  $API_TOKEN = '<?=$module->getApiToken();?>';
 
   $redcap_URL = '<?=APP_PATH_WEBROOT_FULL;?>api/index.php';
   
