@@ -79,7 +79,7 @@ class EpicXMLParser
      * extract data from an epic xml
      *
      * @param string $xml_string
-     * @return void
+     * @return array
      */
     private static function extract($xml_string)
     {
@@ -111,22 +111,6 @@ class EpicXMLParser
 			return array();
 		}
         return $data;
-    }
-
-    static function parseFromPath($path)
-    {
-        if(empty($path)) return array("message" => "no path specified");
-
-        if (filter_var($path, FILTER_VALIDATE_URL)) {
-            // the path is a url: load the remote data
-            $xml_string = FileHelper::loadRemoteFile($path);
-        }else {
-            $xml_string = file_get_contents($path);
-        }
-        if(!$xml_string) return false;
-
-        $xml_data = self::parse($xml_string);
-        return $xml_data;
     }
 
 }

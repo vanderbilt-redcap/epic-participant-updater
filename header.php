@@ -1,62 +1,91 @@
-
-<?php
-function printVersion($module)
-{
-  $version = $module->VERSION ? sprintf("(%s)", $module->VERSION) : '';
-  echo $version;
-}
-?>
-
-<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('./assets/css/style.css'); ?>">
-<link rel="stylesheet" type="text/css" href="<?= $module->getUrl('./assets/css/fontawesome/css/all.css'); ?>">
-  
-<nav id="epu_menu" class="navbar navbar-expand-lg navbar-light bg-light">
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  <a class="navbar-brand" href="#">Epic Participant Updater <?php printVersion($module)?></a>
-
-  <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
-      <li class="nav-item">
-        <a class="nav-link" href="<?= $module->getUrl('dashboard.php'); ?>">DASHBOARD</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="<?= $module->getUrl('test.php'); ?>">TEST</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="<?= $module->getUrl('examples.php'); ?>">EXAMPLES</a>
-      </li>
-    </ul>
-    <ul class="nav navbar-nav navbar-right">
-      <!-- projects -->
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          ENABLED PROJECTS
-        </a>
-        <div id="projects-list" class="dropdown-menu" aria-labelledby="navbarDropdown">
-          <!-- <a class="dropdown-item" href="#">Action</a> -->
-          <!-- <div class="dropdown-divider"></div> -->
-        </div>
-      </li>
-    </ul>
-  </div>
-</nav>
- <!-- MAIN SCRIPT - exposes HeaderApp -->
-<script src="<?= $module->getUrl('./assets/js/header-app.js'); ?>"></script>
+<script src="<?= $module->getUrl('./assets/js/axios/dist/axios.min.js'); ?>"></script>
+<script src="<?= $module->getUrl('./assets/js/alpine/dist/alpine.js'); ?>"></script>
 <script>
-(function($, window, document){
+  // API client
+  var api_client = axios.create({
+      baseUrl: '/api/',
+      // params,
+      paramsSerializer: params => {
+        const search_params =  new URLSearchParams()
+        search_params.append('type', 'module')
+        search_params.append('page', 'api')
+        search_params.append('prefix', '<?= $module->PREFIX; ?>')
+        if(window.redcap_csrf_token) search_params.append('redcap_csrf_token',window.redcap_csrf_token) // csrf token for post requests
+        if(pid) search_params.append('pid', pid) //inject pid
 
-  $(function(){
-    var module_prefix = '<?= $module->PREFIX; ?>';
-    var app_base_path = '<?= APP_PATH_WEBROOT; ?>';
-    var api_base_path = '/api/?type=module&prefix='+module_prefix+'&page=api&route=';
+        for(let [key, value] of Object.entries(params)) {
+          search_params.append(key, value)
+        }
+        return search_params.toString()
+      },
+      headers: {common: {'X-Requested-With': 'XMLHttpRequest'}}
+    })
+</script>
 
-    var app = HeaderApp.init({
+<header class="mt-5 mb-2" x-data="Header()" x-init="init">
+  <nav class="navbar navbar-expand-sm navbar-light bg-light ">
+    <a class="navbar-brand" href="<?= $module->getUrl('index.php') ?>">Epic Participant Updater (<span x-text="module_version"></span>)</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-between" id="navbarNavDropdown">
+      <ul class="navbar-nav">
+        <li class="nav-item active">
+          <a class="nav-link" href="<?= $module->getUrl('test.php') ?>">Test</a>
+        </li>
+        <!-- <li class="nav-item">
+          <a class="nav-link" href="#">Features</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Pricing</a>
+        </li> -->
+      </ul>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span>Enabled Projects</span>
+        </button>
+        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+          <template x-for="(project, index) in projects" :key="index">
+            <a class="dropdown-item" :href="`${app_base_path}?pid=${project.project_id}`">
+              <span class="badge badge-secondary" x-text="`PID ${project.project_id}`"></span>  
+              <span> - </span>
+              <span x-text="project.app_title"></span>
+          </a>
+          </template>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<script>
+
+  function Header() {
+    var app_base_path = '<?= APP_PATH_WEBROOT; ?>'
+    var module_version = '<?= $module->VERSION ?>'
+  
+    // public methods and properties
+    return {
+      module_version: module_version,
       app_base_path: app_base_path,
-      api_base_path: api_base_path,
-    });
+      projects: [], // list of projects using the module
 
-  });
-})(jQuery, window, document);
+      init() {
+        this.getProjects()
+      },
+
+      /**
+       * load list of projects using the module
+       */
+      async getProjects() {
+        const params = {
+          route: 'projects'
+        }
+        const response = await api_client.get('', {params})
+        const projects = response.data
+        this.projects = projects.map(project => project.project)
+      },
+      
+    }
+  }
 </script>

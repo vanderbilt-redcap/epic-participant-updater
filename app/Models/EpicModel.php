@@ -1,9 +1,7 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
 
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
-use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
-use Vanderbilt\EpicParticipantUpdater\App\Helpers\XMLNode;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Settings;
 
@@ -39,7 +37,7 @@ class EpicModel extends BaseModel {
                 ]);
                 return ['error' => true, 'message' => $message];
             }
-            return self::handleSOAPRequest($HTTP_RAW_POST_DATA);
+            return $this->handleSOAPRequest($HTTP_RAW_POST_DATA);
 
 		} catch (\Exception $e) {
             $this->log($message=$e->getMessage(), [
@@ -194,6 +192,14 @@ class EpicModel extends BaseModel {
         // add dates if mapped
         if(!empty($date_start_field_name)) $fields[$date_start_field_name] = trim($xml_data['date-start']);
         if(!empty($date_end_field_name)) $fields[$date_end_field_name] = trim($xml_data['date-end']);
+
+        /* $recorcdTest = \Records::getData(
+			$project_id,
+			$return_format='array',
+            $records=$record_id, // current record
+            $fields,
+            $events=array($event_ID)
+		); */
         $record = RecordHelper::getRecordSchema($project_id, $event_ID, $record_id, $fields);
         return $record;
     }

@@ -33,7 +33,7 @@ class XMLNode
 	}
 
 	/**
-	 * facory to create a new instance of this class
+	 * factory to create a new instance of this class
 	 *
 	 * @param string $xml_string
 	 * @param string $tag_name
