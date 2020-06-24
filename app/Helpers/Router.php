@@ -1,7 +1,12 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
+use Authentication;
+
 class Router {
+
+    const API_TOKEN_PROTECTED = 'api_token_protected';
+    const REDCAP_USER_PROTECTED = 'redcap_user_protected';
     
     function __construct($routes=[], $baseController)
     {
@@ -71,6 +76,12 @@ class Router {
                 break;
             case \FastRoute\Dispatcher::FOUND:
                 $handler = $routeInfo[1];
+                $route_data = $routeInfo[1];
+                $handler = $route_data[0]; // extract the handler
+                // extract the 'protected' attribute
+                $protection = isset($route_data[1]) ? boolval($route_data[1]) : false;
+                if($protection == self::API_TOKEN_PROTECTED) $this->checkApiToken();
+                if($protection == self::REDCAP_USER_PROTECTED) $this->checkRedcapUser();
                 $vars = $routeInfo[2];
                 // ... call $handler with $vars
                 list($class, $method) = explode("/", $handler, 2);
@@ -78,6 +89,43 @@ class Router {
                 break;
         } 
     }
+
+    private function checkRedcapUser()
+    {
+        try {
+            return Authentication::authenticate();
+        } catch (\Exception $e) {
+            $message = $e->getMEssage();
+            $status_code = $e->getCode() ?: 401;
+            $response = array(
+                "error" => true,
+                "message" => $message,
+            );
+            $this->baseController->printJSON($response, $status_code);
+        }
+    }
+
+    private function checkApiToken()
+    {
+        global $module;
+        try {
+            $api_token = $module->getApiToken();
+            // disable control if the API token is not set
+            if(empty($api_token)) return;
+            $request_api_token = $_REQUEST['api_token'];
+            if(empty($request_api_token)) throw new \Exception("An API token must be provided", 1);
+            if($api_token != $request_api_token) throw new \Exception("Invalid API token", 1);
+        } catch (\Exception $e) {
+            $message = $e->getMEssage();
+            $status_code = $e->getCode() ?: 401;
+            $response = array(
+                "error" => true,
+                "message" => $message,
+            );
+            $this->baseController->printJSON($response, $status_code);
+        }
+    }
+
 
     /**
      * can be useful for debugging purposes

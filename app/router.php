@@ -9,11 +9,11 @@ require_once __DIR__."/bootstrap.php";
 
 // httpMethod, route, handler
 $routes = [
-    [['POST','PUT'], "/epic/check", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check'],
-    ['GET', "logs", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs'],
-    ['GET', "projects", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getProjects'],
-    ['GET', "/test[/{id:\d+}]", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test'],
-    ['POST', "regenerate_token", 'Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/regenerateAPIToken'],
+    [['POST','PUT'], "check", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check', Router::API_TOKEN_PROTECTED]],
+    ['GET', "logs", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs']],
+    ['GET', "projects", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getProjects']],
+    ['GET', "/test[/{id:\d+}]", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test']],
+    ['POST', "regenerate_token", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/regenerateAPIToken', Router::REDCAP_USER_PROTECTED]],
 ];
 
 // create a BaseController to manage common routes or errors
