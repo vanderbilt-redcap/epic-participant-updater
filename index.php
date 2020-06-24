@@ -30,10 +30,40 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
 <div x-data="Logs()" x-init="init">
     <!-- logs -->
+
+  <div class="d-flex justify-content-start align-items-center">
+
+    <template x-if="total>limit">
+      <nav aria-label="Page navigation example">
+        <ul class="pagination">
+          <li class="page-item" :class="{disabled: start==0}">
+            <a class="page-link" href="#" @click.prevent="getLogs(start-limit,limit)">Previous</a>
+          </li>
+          <template x-for="(page, index) in getPages()">
+            <li class="page-item" :class="{active: page.start==start}">
+              <a class="page-link" href="#" @click.prevent="getLogs(page.start,limit)"x-text="index+1"></a>
+            </li>
+          </template>
+          <li class="page-item" :class="{disabled: start>total-limit}">
+            <a class="page-link" href="#" @click.prevent="getLogs(start+limit,limit)">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </template>
+
+    <template x-if="loading">
+      <div class="ml-2 my-auto">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>loading...</span>
+      </div>  
+    </template>
+  </div>
+
   <template x-if="logs.length>0">
   <table class="table table-bordered table-striped">
     <thead>
       <tr>
+        <td>ID</td>
         <td>MRN</td>
         <td>description</td>
         <td>ip</td>
@@ -47,12 +77,14 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         <td>user</td>
       </tr>
     </thead>
-    <tbody>
-      <template x-for="(row, index) in logs" :key="index">
+
+    <tbody x-ref="tbody">
+      <template x-for="(row, index) in logs" :key="`row.log_id`">
       <tr>
+        <td x-text="row.log_id"></td>
         <td x-text="row.MRN"></td>
         <td>
-          <template x-if="(row.description).length>100">
+          <template x-if="row.description && (row.description).length>100">
             <details>
               <summary>Expand...</summary>
               <pre x-text="row.description"></pre>
@@ -74,6 +106,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       </tr>
       </template>
     </tbody>
+
   </table>
   </template>
 
@@ -122,23 +155,60 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   
     // public methods and properties
     return {
+      limit: 25,
+      start: 0,
       logs: [], // list of logs
+      total: null,
+      loading: false,
 
+      
       init() {
-        this.getLogs()
+        this.getLogs(this.start, this.limit)
       },
 
       /**
        * load the logs
        */
-      async getLogs() {
-        const params = {
-          route: 'logs'
+      async getLogs(start, limit) {
+        try {
+          const params = {
+            route: 'logs',
+            _start: start,
+            _limit: limit,
+          }
+          this.loading = true
+          /* if(this.$refs.tbody) {
+            const rows = this.$refs.tbody.querySelectorAll('tr')
+            rows.forEach(row => {
+              this.$refs.tbody.removeChild(row)
+              console.log(row)
+            })
+          } */
+          const response = await api_client.get('', {params})
+          const data = response.data || {}
+          const logs = data.data || []          
+          this.logs = logs
+          this.start = start
+          this.total = (data.metadata && data.metadata.total) ? data.metadata.total : 0
+        } catch (error) {
+          console.log(error)
+        }finally {
+          this.loading = false
         }
-        const response = await api_client.get('', {params})
-        const logs = response.data
-        this.logs = logs
       },
+
+      getPages() {
+        let total_pages = Math.floor(this.total/this.limit)
+        if(total_pages*this.limit<this.total) total_pages += 1
+        const pages = []
+        for(let i=0 ; i<total_pages ; i++) {
+          pages.push({
+            start: i*this.limit,
+            limit: this.limit
+          })
+        }
+        return pages
+      }
 
     }
   }

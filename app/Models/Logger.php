@@ -69,18 +69,42 @@ class Logger {
      * @param int $limit
      * @return void
      */
-	public function getList($page, $limit)
+	public function getList($start, $limit)
 	{
-        $offset = ($page-1)*$limit; // when page is 1 the offset is 0
-		$sql = "SELECT ".implode(',',self::$DB_fields)." ORDER BY timestamp DESC";
-		if($limit>0) $sql .= " LIMIT {$offset}, {$limit}";
-		$result = $this->module->queryLogs($sql);
+		$query_string = "SELECT ".implode(',',self::$DB_fields)." ORDER BY timestamp DESC";
+		if($limit>0) $query_string .= " LIMIT {$start}, {$limit}";
+		$result = $this->module->queryLogs($query_string);
 		$logs = [];
-		while($row = mysqli_fetch_assoc($result)){
+		while($row = db_fetch_object($result)){
 			$logs[] = $row;
-		}
+        }
+        $response = array(
+            'data' => $logs,
+            'metadata' => array(
+                'total' => $this->getTotalCount(),
+            ),
+        );
 
-		return $logs;
+		return $response;
+    }
+
+
+    /**
+     * get the total count of results (ignore limit and filters)
+     *
+     * @param [array $params
+     * @return integer
+     */
+    private function getTotalCount()
+    {
+        $query_string = sprintf("SELECT COUNT(*) AS total");
+        $result = $this->module->queryLogs($query_string);
+        if($result && $row=db_fetch_assoc($result))
+        {
+
+            return intval($row['total']);
+        }
+        return 0;
     }
     
     /**

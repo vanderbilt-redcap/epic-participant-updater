@@ -30,7 +30,10 @@
     </button>
     <div class="collapse navbar-collapse justify-content-between" id="navbarNavDropdown">
       <ul class="navbar-nav">
-        <li class="nav-item active">
+        <li class="nav-item">
+          <a class="nav-link" href="<?= $module->getUrl('index.php') ?>">Home</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="<?= $module->getUrl('test.php') ?>">Test</a>
         </li>
         <!-- <li class="nav-item">

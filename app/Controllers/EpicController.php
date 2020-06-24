@@ -35,10 +35,10 @@ class EpicController extends BaseController
     */
 	public function getLogs()
 	{
-        $page = isset($_GET['p']) ? $_GET['p'] : 1;
-        $limit = isset($_GET['limit']) ? $_GET['p'] : $this->defaults['logs_per_page'];
+        $start = $_GET['_start'] ?: 0;
+        $limit = $_GET['_limit'] ?: $this->defaults['logs_per_page'];
         $logger = new Logger($this->module);
-        $response = $logger->getList($page, $limit);
+        $response = $logger->getList($start, $limit);
         $this->printJSON($response);
     }
     
