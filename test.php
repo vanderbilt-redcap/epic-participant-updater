@@ -12,7 +12,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
 <h5>Test the API endpoint</h5>
 
-<div class="alert alert-light" style="border-color: rgba(0,0,0,0.2) !important">
+<div class="alert alert-light">
   <a href="<?= $module->getUrl('data/request_DEV_dates.xml') ?>" download="epu_demo.xml">
   <i class="fas fa-file-download"></i>
   <span>download demo file</span>
@@ -20,20 +20,27 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 </div>
 
 
-<div x-data="Test()">
-  <form action="" @submit.prevent="onSubmit" @drop.prevent="onDrop($event)" @dragover.prevent>
-    <input class="hidden" x-ref="file" type="file" @change="onFileChange">
-    <button class="btn btn-outline-secondary" type="button" @click="$refs.file.click()" >Choose File...</button>
-    <button class="btn btn-outline-primary" type="submit" :disabled="loading">Test</button>
-  </form>
+<div x-data="Test()" >
+  <div x-ref="drop_target" class="alert alert-light drop-target" @drop.prevent="onDrop($event)" @dragover.prevent="onDragOver" @dragleave.prevent="onDragLeave">
+    <div class="drag-indicator">
+      <i class="fas fa-arrow-down"></i>
+      <span>Drop here</span>
+    </div>
+    <form  id="upload-form" @submit.prevent="onSubmit">
+      <input class="hidden" x-ref="file" type="file" @change="onFileChange">
+      <button class="btn btn-outline-secondary" type="button" @click="$refs.file.click()" >Choose File...</button>
+      <button class="btn btn-outline-primary" type="submit" :disabled="loading">Test</button>
+    </form>
+    
+    <div class="mt-2">
+      <template x-if="file_content">
+        <details>
+          <summary>Show file content</summary>
+          <pre x-text="file_content"></pre>
+        </details>
+      </template>
+    </div>
 
-  <div class="mt-2">
-    <template x-if="file_content">
-      <details>
-        <summary>Show file content</summary>
-        <pre x-text="file_content"></pre>
-      </details>
-    </template>
   </div>
 
   <div class="mt-2">
@@ -62,15 +69,19 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         this.getLogs()
       },
 
+      onDragOver() {
+        this.$refs.drop_target.classList.add('dragover')
+      },
+      onDragLeave() {
+        this.$refs.drop_target.classList.remove('dragover')
+      },
+      
       onDrop(event) {
+        this.$refs.drop_target.classList.remove('dragover')
         let droppedFiles = event.dataTransfer.files
         if(!droppedFiles) return
         this.$refs.file.files = droppedFiles
         this.onFileChange()
-        // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
-       /*  ([...droppedFiles]).forEach(f => {
-          this.files.push(f);
-        }); */
       },
 
       /**
@@ -120,6 +131,27 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
     }
   }
 </script>
-  
+<style>
+.drop-target {
+  position: relative;
+}
+.drop-target.dragover {
+  box-shadow: 0 0 3px rgb(201,255,0);
+}
+.drag-indicator {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+  transition-property: opacity;
+  transition-duration: 300ms;
+  transition-timing-function: ease-in-out;
+}
+.dragover .drag-indicator {
+  opacity: 1;
+}
+</style>
 <?php $page->PrintFooterExt();
 

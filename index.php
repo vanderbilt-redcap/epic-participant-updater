@@ -14,13 +14,13 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 <!-- API token -->
 <div x-data="ApiToken()" >
 
-  <div class="alert alert-light" style="border-color: rgba(0,0,0,0.2) !important">
+  <div class="alert alert-light">
     <span>API token: </span>
     <pre class="my-2" style="white-space:pre-wrap;" x-text="api_token"></pre>
     <button class="btn btn-outline-secondary" @click="regenerateToken($event)">Regenerate token</button>
   </div>
 
-  <div class="alert alert-light" style="border-color: rgba(0,0,0,0.2) !important">
+  <div class="alert alert-light">
     <span>Check URL: </span>
     <pre class="my-2" style="white-space:pre-wrap;" x-text="check_url()"></pre>
   </div>

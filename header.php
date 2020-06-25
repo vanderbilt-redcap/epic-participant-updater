@@ -1,5 +1,6 @@
 <script src="<?= $module->getUrl('./assets/js/axios/dist/axios.min.js'); ?>"></script>
 <script src="<?= $module->getUrl('./assets/js/alpine/dist/alpine.js'); ?>"></script>
+<link rel="stylesheet" href="<?= $module->getUrl('./assets/css/style.css'); ?>">
 <script>
   // API client
   var api_client = axios.create({
@@ -22,7 +23,7 @@
     })
 </script>
 
-<header class="mt-5 mb-2" x-data="Header()" x-init="init">
+<header class="mb-2" x-data="Header()" x-init="init">
   <nav class="navbar navbar-expand-sm navbar-light bg-light ">
     <a class="navbar-brand" href="<?= $module->getUrl('index.php') ?>">Epic Participant Updater (<span x-text="module_version"></span>)</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
