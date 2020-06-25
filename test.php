@@ -35,7 +35,9 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
     <div class="mt-2">
       <template x-if="file_content">
         <details>
-          <summary>Show file content</summary>
+          <summary>
+            <template x-if="file && file.name"><span x-text="file.name"></span></template>
+          </summary>
           <pre x-text="file_content"></pre>
         </details>
       </template>
@@ -61,14 +63,18 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   
     // public methods and properties
     return {
-      response: null,
-      file_content: null,
       loading: false,
+      response: null, // response from the server
+      file: null, // reference to the selected file
+      file_content: null, //content of the selected file
 
       init() {
         this.getLogs()
       },
 
+      /**
+       * show UI interactions with drag & drop
+       */
       onDragOver() {
         this.$refs.drop_target.classList.add('dragover')
       },
@@ -90,14 +96,14 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       async onFileChange() {
         const files = this.$refs.file.files
         if(files.length>0) {
-          const file = files[0]
+          this.file = files[0]
+          console.log(this.file)
           let file_content = ''
           var reader = new FileReader()
-          reader.readAsText(file, "UTF-8")
+          reader.readAsText(this.file, "UTF-8")
 
           reader.onload = (event) => {
-            const content = event.target.result
-            this.file_content = content
+            this.file_content = event.target.result
           }
 
           reader.onerror = (event) => {
