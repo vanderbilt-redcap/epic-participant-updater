@@ -21,11 +21,6 @@
                 "name": "Epic Participant Updater",
                 "icon": "report",
                 "url": "index.php"
-            },
-            {
-                "name": "Epic Participant Updater backup",
-                "icon": "report",
-                "url": "index_backup.php"
             }
          ]
      },
