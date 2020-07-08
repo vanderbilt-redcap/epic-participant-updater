@@ -13,7 +13,7 @@ class RandomString
      */
     public static function generate($length=64)
     {
-        if($length<self::$min_length) throw new Exception(sprintf("Error: the random string must be at least %s characters", self::$min_length), 1);
+        if($length<self::$min_length) throw new \Exception(sprintf("Error: the random string must be at least %s characters", self::$min_length), 1);
         
         $characters_array = array_merge(range('A', 'Z'), range('a', 'z'),range(0, 9));
         $characters_length = count($characters_array);

@@ -8,6 +8,7 @@ require join([__DIR__, 'app', 'Helpers', 'DependencyHelper.php'],DIRECTORY_SEPAR
 
 use ExternalModules\AbstractExternalModule;
 use Firebase\JWT\JWT;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 
 class EpicParticipantUpdater extends AbstractExternalModule {
     
@@ -50,13 +51,10 @@ class EpicParticipantUpdater extends AbstractExternalModule {
         $expiration_date = new \DateTime("+ 10 years");
         // generate access token
         $data = array(
-            "iss" => $issuer_claim, // this can be the server name or url
-            "aud" => $audience_claim = "EPIC", // the referrer website
             "iat" => $issuedat_claim = time(), // issued at
-            "nbf" => $notbefore_claim = $issuedat_claim, //not before in seconds
-            "exp" => $expire_claim = $expiration_date->getTimestamp(), // expire time in seconds
+            "hash" => RandomString::generate(16),
         );
-        $token = JWT::encode($data, $this->secret);
+        $token = base64_encode(json_encode($data));
 
         $this->setSystemSetting($this->api_token_key, $token);
         return $token;
