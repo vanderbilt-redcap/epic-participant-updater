@@ -16,13 +16,13 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
   <div class="alert alert-light">
     <span>API token: </span>
-    <pre class="my-2" style="white-space:pre-wrap;" x-text="api_token"></pre>
+    <span class="my-2 code" x-text="api_token"></span>
     <button class="btn btn-outline-secondary" @click="regenerateToken($event)">Regenerate token</button>
   </div>
 
   <div class="alert alert-light">
     <span>Check URL: </span>
-    <pre class="my-2" style="white-space:pre-wrap;" x-text="check_url()"></pre>
+    <span class="my-2 code" x-text="check_url()"></span>
   </div>
 </div>
 
@@ -31,83 +31,96 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 <div x-data="Logs()" x-init="init">
     <!-- logs -->
 
-  <div class="d-flex justify-content-start align-items-center">
-
-    <template x-if="total>limit">
+  <div class="d-flex justify-content-between align-items-center">
+      <template x-if="loading">
+        <div class="ml-2 my-auto">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>loading...</span>
+        </div>  
+      </template>
+      <template x-if="!loading">
+        <div>Showing <span x-text="start*limit+1"></span> to <span x-text="start*limit+limit"></span> of <span x-text="total"></span> results</div>
+      </template>
+      <template x-if="total>limit">
       <nav aria-label="Page navigation example">
         <ul class="pagination">
-          <li class="page-item" :class="{disabled: start==0}">
-            <a class="page-link" href="#" @click.prevent="getLogs(start-limit,limit)">Previous</a>
+          <li class="page-item" :class="{disabled: start<=0}">
+            <a class="page-link" href="#" @click.prevent="getLogs(start-1,limit)"><i class="fas fa-angle-left"></i></a>
           </li>
-          <template x-for="(page, index) in getPages()">
-            <li class="page-item" :class="{active: page.start==start}">
-              <a class="page-link" href="#" @click.prevent="getLogs(page.start,limit)"x-text="index+1"></a>
+          <li class="page-item" :class="{active: start==0}">
+            <a class="page-link" href="#" @click.prevent="getLogs(0,limit)">1</a>
+          </li>
+
+          <template x-for="(page, index) in pages">
+            <li class="page-item" :class="{active: page.start==start, disabled: isNaN(page.start)}" >
+            <template x-if="isNaN(page.start)">
+              <a class="page-link" href="#">...</a>
+            </template>
+            <template x-if="!isNaN(page.start)">
+                <a class="page-link" href="#" @click.prevent="getLogs(page.start,limit)" x-text="page.start+1"></a>
+              </template>
             </li>
           </template>
-          <li class="page-item" :class="{disabled: start>total-limit}">
-            <a class="page-link" href="#" @click.prevent="getLogs(start+limit,limit)">Next</a>
+
+          <li class="page-item" :class="{active: start==pages_count-1}">
+            <a class="page-link" href="#" @click.prevent="getLogs(pages_count-1,limit)" x-text="pages_count"></a>
+          </li>
+          <li class="page-item" :class="{disabled: start>=pages_count-1}">
+            <a class="page-link" href="#" @click.prevent="getLogs(start+1,limit)"><i class="fas fa-angle-right"></i></a>
           </li>
         </ul>
       </nav>
     </template>
 
-    <template x-if="loading">
-      <div class="ml-2 my-auto">
-        <i class="fas fa-spinner fa-spin"></i>
-        <span>loading...</span>
-      </div>  
-    </template>
   </div>
 
   <template x-if="logs.length>0">
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-        <td>ID</td>
-        <td>MRN</td>
-        <td>description</td>
-        <td>ip</td>
-        <td>irb_number</td>
-        <td>log_id</td>
-        <td>message</td>
-        <td>project_id</td>
-        <td>record</td>
-        <td>status</td>
-        <td>timestamp</td>
-        <td>user</td>
-      </tr>
-    </thead>
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <td>ID</td>
+          <td>MRN</td>
+          <td>description</td>
+          <td>ip</td>
+          <td>irb_number</td>
+          <td>message</td>
+          <td>project_id</td>
+          <td>record</td>
+          <td>status</td>
+          <td>timestamp</td>
+          <td>user</td>
+        </tr>
+      </thead>
 
-    <tbody x-ref="tbody">
-      <template x-for="(row, index) in logs" :key="`row.log_id`">
-      <tr>
-        <td x-text="row.log_id"></td>
-        <td x-text="row.MRN"></td>
-        <td>
-          <template x-if="row.description && (row.description).length>100">
-            <details>
-              <summary>Expand...</summary>
-              <pre x-text="row.description"></pre>
-            </details>
-          </template>
-          <template x-else>
-            <span x-text="row.description"></span>
-          </template>
-        </td>
-        <td x-text="row.ip"></td>
-        <td x-text="row.irb_number"></td>
-        <td x-text="row.log_id"></td>
-        <td x-text="row.message"></td>
-        <td x-text="row.project_id"></td>
-        <td x-text="row.record"></td>
-        <td x-text="row.status"></td>
-        <td x-text="row.timestamp"></td>
-        <td x-text="row.user"></td>
-      </tr>
-      </template>
-    </tbody>
+      <tbody x-ref="tbody">
+        <template x-for="(row, index) in logs" :key="`row.log_id`">
+        <tr>
+          <td x-text="row.log_id"></td>
+          <td x-text="row.MRN"></td>
+          <td>
+            <template x-if="row.description && (row.description).length>100">
+              <details>
+                <summary>Expand...</summary>
+                <pre x-text="row.description"></pre>
+              </details>
+            </template>
+            <template x-else>
+              <span x-text="row.description"></span>
+            </template>
+          </td>
+          <td x-text="row.ip"></td>
+          <td x-text="row.irb_number"></td>
+          <td x-text="row.message"></td>
+          <td x-text="row.project_id"></td>
+          <td x-text="row.record"></td>
+          <td x-text="row.status"></td>
+          <td x-text="row.timestamp"></td>
+          <td x-text="row.user"></td>
+        </tr>
+        </template>
+      </tbody>
 
-  </table>
+    </table>
   </template>
 
 </div>
@@ -155,15 +168,23 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   
     // public methods and properties
     return {
+      max_pages: 5, //maximum pages except first and last
       limit: 25,
       start: 0,
       logs: [], // list of logs
       total: null,
       loading: false,
+      _pages: null,
 
       
       init() {
         this.getLogs(this.start, this.limit)
+      },
+
+      get pages_count() {
+        let count = Math.floor(this.total/this.limit)
+        if(count*this.limit<this.total) count += 1
+        return count
       },
 
       /**
@@ -173,7 +194,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         try {
           const params = {
             route: 'logs',
-            _start: start,
+            _start: start*limit,
             _limit: limit,
           }
           this.loading = true
@@ -197,22 +218,53 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         }
       },
 
-      getPages() {
-        let total_pages = Math.floor(this.total/this.limit)
-        if(total_pages*this.limit<this.total) total_pages += 1
+      /**
+       * get the pagination parameters
+       */
+      get pages() {
+        
+        if(!this.total) return []
+
         const pages = []
-        for(let i=0 ; i<total_pages ; i++) {
+        for(let i=0 ; i<this.pages_count ; i++) {
           pages.push({
-            start: i*this.limit,
-            limit: this.limit
+            start: i,
+            limit: this.limit,
           })
         }
-        return pages
-      }
+
+        let start = this.start-Math.floor(this.max_pages/2)
+        if(start<1) start = 1
+        let end = start+this.max_pages
+        if(end>this.pages_count-2) {
+          end = this.pages_count-1
+          start = end-this.max_pages
+        }
+
+        const filtered_pages = pages.slice(start, end)
+
+        // manage elllipsis
+        if(start>1) {
+          filtered_pages[0].start = '...'
+        }
+        if(end<this.pages_count-1) {
+          filtered_pages[this.max_pages-1].start = '...'
+        }
+
+
+        return filtered_pages
+      },
 
     }
   }
 </script>
-  
+  <style>
+    .code {
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: black;
+    }
+  </style>
 <?php $page->PrintFooterExt();
 
