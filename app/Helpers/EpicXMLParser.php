@@ -103,7 +103,7 @@ class EpicXMLParser
             $data = array();
             $data['status'] = (string) $processState;
             $data['MRN'] = (string) $MRN;
-            $data['irbNumbers'] = $study_ids;
+            $data['study_ids'] = $study_ids;
             $data['date-start'] = $dates->start;
             $data['date-end'] = $dates->end;
         }catch (\RuntimeException $e) {

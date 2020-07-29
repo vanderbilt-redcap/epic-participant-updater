@@ -9,14 +9,69 @@ require join([__DIR__, 'app', 'Helpers', 'DependencyHelper.php'],DIRECTORY_SEPAR
 use ExternalModules\AbstractExternalModule;
 use Firebase\JWT\JWT;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
+use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 
-class EpicParticipantUpdater extends AbstractExternalModule {
-    
+class EpicParticipantUpdater extends AbstractExternalModule
+{
+
+    /**
+     * module settings keys
+     */
+    const SETTINGS_FIELD_MRN = 'mrn-mapping-field';
+    const SETTINGS_FIELD_STATUS = 'status-mapping-field';
+    const SETTINGS_FIELD_DATE_START = 'date-start-mapping-field';
+    const SETTINGS_FIELD_DATE_END = 'date-end-mapping-field';
+    const SETTINGS_FIELD_EVENT_ID = 'event-id';
+    const SETTINGS_FIELD_STUDY_ID = 'study-id';
+
     private $api_token_key = 'api_token';
 
     function __construct()
     {
         parent::__construct();
+    }
+
+    /**
+     * function executed when the module is enabled at system level
+     *
+     * @param string $version
+     * @return void
+     */
+    function redcap_module_system_enable($version) {
+        try {
+            $this->checkApiToken();
+            // $this->installDependencies();
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    /**
+     * function executed when the module is enabled at project level
+     *
+     * @param string $version
+     * @param integer $project_id
+     * @return void
+     */
+    function redcap_module_project_enable($version, $project_id)
+    {
+        $this->checkStudyID($project_id);
+    }
+
+    /**
+     * set study ID to the project IRB number by default
+     *
+     * @param int $project_id
+     * @return void
+     */
+    function checkStudyID($project_id)
+    {
+        $epic_model = new EpicModel($this);
+        $study_id_setting = $this->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID, $project_id);
+        $irb_number = $epic_model->getIrbNumberFromProject($project_id);
+        if(empty($study_id_setting) && !empty($irb_number)) {
+            $this->setProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID, $irb_number, $project_id);
+        }
     }
 
     public function getApiToken()
@@ -58,21 +113,6 @@ class EpicParticipantUpdater extends AbstractExternalModule {
 
         $this->setSystemSetting($this->api_token_key, $token);
         return $token;
-    }
-
-    /**
-     * function executed when the module is enabled
-     *
-     * @param string $version
-     * @return void
-     */
-    function redcap_module_system_enable($version) {
-        try {
-            $this->checkApiToken();
-            // $this->installDependencies();
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-        }
     }
 
 }

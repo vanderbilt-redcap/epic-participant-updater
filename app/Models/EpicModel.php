@@ -110,8 +110,8 @@ class EpicModel extends BaseModel {
         }
         
         // check if any project is enabled
-        $projects = $this->getModuleEnabledProjects();
-        if(empty($projects))
+        $project_ids = $this->getModuleEnabledProjectsIds();
+        if(empty($project_ids))
         {
             $this->log($log_message, [
 				'status' => Logger::STATUS_INFO, // generic message
@@ -121,12 +121,10 @@ class EpicModel extends BaseModel {
         }
         
         // check for projects that are using the same irb number of the XML
-        foreach($projects as $project)
+        foreach($project_ids as $project_id)
         {
-            // set the context of the project
-            // $_GET['pid'] = $project_id;
-            $project_id = $project->project_id;
-            $projectIsInResearch = $this->checkIRB($project_id, $xml_data['irbNumbers']); // check for existing
+
+            $projectIsInResearch = $this->checkStudyID($project_id, $xml_data['study_ids']); // check for existing
             
             if(!$projectIsInResearch) continue; //continue to next project loop
             
@@ -134,16 +132,12 @@ class EpicModel extends BaseModel {
             if($record_id)
             {
                 //update
-                $this->updateRecord($project, $record_id, $xml_data);
+                $this->updateRecord($project_id, $record_id, $xml_data);
             }else{
                 //create
-                $this->createRecord($project, $xml_data);
+                $this->createRecord($project_id, $xml_data);
             }
         }
-        $project_ids = array_map(function($project) {
-            return $project->project_id;
-        }, $projects);
-
 
         $this->log($log_message, [
             'status' => Logger::STATUS_INFO, // generic message
@@ -159,10 +153,11 @@ class EpicModel extends BaseModel {
      * @param \Project $project
      * @return string
      */
-    private function getIrbNumberFromProject($project)
+    public function getIrbNumberFromProject($project_id)
     {
+        $project = new \Project($project_id);
         $project_info = $project->project;
-        return $project_info['project_irb_number'];
+        return $project_info['project_irb_number'] ?: false;
     }
 
     /**
@@ -177,12 +172,12 @@ class EpicModel extends BaseModel {
     {
         // $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
         // get the settings fot the current project
-        $settings = new Settings($this->module, $project_id);
-        $status_field_name = $settings->getStatusFieldName();
-        $mrn_field_name = $settings->getMrnFieldName();
-        $date_start_field_name = $settings->getStartDateFieldName();
-        $date_end_field_name = $settings->getEndDateFieldName();
-        $event_ID = $settings->getEventID();
+        $settings = new Settings($this->module);
+        $status_field_name = $settings->getStatusFieldName($project_id);
+        $mrn_field_name = $settings->getMrnFieldName($project_id);
+        $date_start_field_name = $settings->getStartDateFieldName($project_id);
+        $date_end_field_name = $settings->getEndDateFieldName($project_id);
+        $event_ID = $settings->getEventID($project_id);
 
         // set the mandatory fields
         $fields = array(
@@ -212,10 +207,9 @@ class EpicModel extends BaseModel {
      * @param string $existing_record_id
      * @return void
      */
-    private function createRecord($project, $xml_data)
+    private function createRecord($project_id, $xml_data)
     {
-        $project_id = $project->project_id;
-        $irb_number = $this->getIrbNumberFromProject($project);
+        $study_id = $this->getProjectStudyID($project_id);
         // get the first available record_id
         $record_id = $this->module->addAutoNumberedRecord($project_id);
         
@@ -238,7 +232,7 @@ class EpicModel extends BaseModel {
             'description' => $description,
             'project_id'=> $project_id,
             'record_id' => $record_id,
-            'irb_number' => $irb_number,
+            'study_id' => $study_id,
             'MRN' => $xml_data['MRN']
         ]);
     }
@@ -251,10 +245,9 @@ class EpicModel extends BaseModel {
      * @param array $xml_data
      * @return void
      */
-    private function updateRecord($project, $record_id, $xml_data)
+    private function updateRecord($project_id, $record_id, $xml_data)
     {
-        $project_id = $project->project_id;
-        $irb_number = $this->getIrbNumberFromProject($project);
+        $study_id = $this->getProjectStudyID($project_id);
 
         $record = $this->getRecord($project_id, $record_id, $xml_data);
         $result = \REDCap::saveData($project_id, 'array', $record);
@@ -273,7 +266,7 @@ class EpicModel extends BaseModel {
             'description' => $description,
             'project_id'=> $project_id,
             'record_id' => $record_id,
-            'irb_number' => $irb_number,
+            'study_id' => $study_id,
             'MRN' => $xml_data['MRN']
         ]);
     }
@@ -288,14 +281,26 @@ class EpicModel extends BaseModel {
       * checks if the project is connected to a research
       * @return boolean
      */
-    private function checkIRB($project_id, $irbNumbers)
+    private function checkStudyID($project_id, $study_ids)
     {
-        $project = new \Project($project_id);
-        $project_irb_number = $this->getIrbNumberFromProject($project);
-        if ( !isset($project_irb_number) || is_null($project_irb_number) )
-            return false; // no IRB number set for this project
+        $project_study_id = $this->getProjectStudyID($project_id);
+        if ( empty($project_study_id) )
+            return false; // no study ID number set for this project
 
-        return in_array($project_irb_number, $irbNumbers);
+        return in_array($project_study_id, $study_ids);
+    }
+
+    /**
+     * helper function to get project ID for a project
+     *
+     * @param [type] $project_id
+     * @return void
+     */
+    private function getProjectStudyID($project_id)
+    {
+        $settings = new Settings($this->module);
+        $project_study_id = $settings->getStudyID($project_id);
+        return $project_study_id;
     }
     
     /**
@@ -305,9 +310,9 @@ class EpicModel extends BaseModel {
      */
     private function checkMRN($project_id, $MRN)
     {
-        $settings = new Settings($this->module, $project_id);
-        $mrn_field_name = $settings->getMrnFieldName();
-        $event_id = $settings->getEventID();
+        $settings = new Settings($this->module);
+        $mrn_field_name = $settings->getMrnFieldName($project_id);
+        $event_id = $settings->getEventID($project_id);
         $record_id = RecordHelper::find($project_id, $event_id, $mrn_field_name, $MRN);
         return $record_id;
     }
@@ -315,9 +320,9 @@ class EpicModel extends BaseModel {
     /**
      * get a list of projects using the module
      * 
-     * @return \Project[] ids of the projects which have enabled this module
+     * @return array ids of the projects which have enabled this module
      */
-    public function getModuleEnabledProjects()
+    public function getModuleEnabledProjectsIds()
     {
         $query_string = sprintf(
             "SELECT s.project_id
@@ -333,15 +338,14 @@ class EpicModel extends BaseModel {
             throw new \Exception($query_string.': '.$error);
         }
 
-        $projects = array();
+        $project_ids = array();
         while($row = db_fetch_assoc($result))
         {
             $project_id =  $row['project_id'];
-            $project = new \Project($project_id);
-            $projects[] = $project; // Array with projects
+            $project_ids[] = $project_id; // Array with project IDs
         }
 
-        return $projects;
+        return $project_ids;
     }
 
 }

@@ -48,8 +48,21 @@ class EpicController extends BaseController
     */
 	public function getProjects()
 	{
-        $response = $this->app->getModuleEnabledProjects();
-        $this->printJSON($response);
+        try {
+            $project_ids = $this->app->getModuleEnabledProjectsIds();
+            $code = 200;
+            $projects = array_map(function($project_id) {
+                return new \Project($project_id);
+            }, $project_ids);
+            $response = $projects;
+        } catch (\Exception $e) {
+            $response = [
+                'message' => $e->getMessage(),
+            ];
+            $code = $e->getCode();
+        }finally {
+            $this->printJSON($response, $code);
+        }
     }
 
     public function regenerateAPIToken()

@@ -28,7 +28,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
 
 
 
-<div x-data="Logs()" x-init="init">
+<div id="epu-logs-wrapper" x-data="Logs()" x-init="init">
     <!-- logs -->
 
   <div class="d-flex justify-content-between align-items-center">
@@ -39,7 +39,10 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         </div>  
       </template>
       <template x-if="!loading">
-        <div>Showing <span x-text="start*limit+1"></span> to <span x-text="start*limit+limit"></span> of <span x-text="total"></span> results</div>
+        <div>
+          <button type="button" class="btn btn-sm btn-outline-secondary" @click="getLogs(start, limit)"><i class="fas fa-sync"></i></button>
+          Showing <span x-text="start*limit+1"></span> to <span x-text="start*limit+limit"></span> of <span x-text="total"></span> results
+        </div>
       </template>
       <template x-if="total>limit">
       <nav aria-label="Page navigation example">
@@ -75,7 +78,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
   </div>
 
   <template x-if="logs.length>0">
-    <table class="table table-bordered table-striped">
+    <table id="epu-logs" class="table table-bordered table-striped">
       <thead>
         <tr>
           <td>ID</td>
@@ -99,10 +102,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
           <td x-text="row.MRN"></td>
           <td>
             <template x-if="row.description && (row.description).length>100">
-              <details>
-                <summary>Expand...</summary>
-                <pre x-text="row.description"></pre>
-              </details>
+              <button class="btn btn-outline-secondary btn-sm" type="button" @click="onShowDescriptionClicked(row.description)">Show</button>
             </template>
             <template x-else>
               <span x-text="row.description"></span>
@@ -121,6 +121,27 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       </tbody>
 
     </table>
+
+    <!-- modal for extended description -->
+    <div class="modal fade" tabindex="-1" role="dialog" id="description-modal" x-ref="modal">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Detail</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" x-ref="modal-body">
+            <pre x-text="selected_description"></pre>
+          </div>
+          <div class="modal-footer">
+            <!-- <button type="button" class="btn btn-primary">OK</button> -->
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </template>
 
 </div>
@@ -175,6 +196,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       total: null,
       loading: false,
       _pages: null,
+      selected_description: '',
 
       
       init() {
@@ -255,6 +277,12 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
         return filtered_pages
       },
 
+      onShowDescriptionClicked(content) {
+        this.selected_description = content
+        const modal = this.$refs.modal
+        $(modal).modal('show')
+      },
+
     }
   }
 </script>
@@ -265,6 +293,9 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
       word-break: break-all;
       color: black;
     }
+   #epu-logs {
+    table-layout: fixed;
+   } 
   </style>
 <?php $page->PrintFooterExt();
 
