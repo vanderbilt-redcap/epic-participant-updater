@@ -17,12 +17,18 @@ class EpicParticipantUpdater extends AbstractExternalModule
     /**
      * module settings keys
      */
-    const SETTINGS_FIELD_MRN = 'mrn-mapping-field';
-    const SETTINGS_FIELD_STATUS = 'status-mapping-field';
-    const SETTINGS_FIELD_DATE_START = 'date-start-mapping-field';
-    const SETTINGS_FIELD_DATE_END = 'date-end-mapping-field';
-    const SETTINGS_FIELD_EVENT_ID = 'event-id';
-    const SETTINGS_FIELD_STUDY_ID = 'study-id';
+    const SETTINGS_STUDY_ID = 'study-id'; // ID list of watched studies
+    const SETTINGS_FIELD_MRN = 'mrn-mapping-field'; // mapped field
+    const SETTINGS_FIELD_STATUS = 'status-mapping-field'; // mapped field
+    const SETTINGS_FIELD_DATE_START = 'date-start-mapping-field'; // mapped field
+    const SETTINGS_FIELD_DATE_END = 'date-end-mapping-field'; // mapped field
+    const SETTINGS_FIELD_STUDY_ID = 'study-id-mapping-field'; // mapped field
+    const SETTINGS_FIELD_EVENT_ID = 'event-id'; // mapped event
+
+    /**
+     * identifier to catch all study IDs
+     */
+    const CATCH_ALL_IDENTIFIER = '*';
 
     private $api_token_key = 'api_token';
 
@@ -67,10 +73,10 @@ class EpicParticipantUpdater extends AbstractExternalModule
     function checkStudyID($project_id)
     {
         $epic_model = new EpicModel($this);
-        $study_id_setting = $this->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID, $project_id);
+        $study_id_setting = $this->getProjectSetting(EpicParticipantUpdater::SETTINGS_STUDY_ID, $project_id);
         $irb_number = $epic_model->getIrbNumberFromProject($project_id);
         if(empty($study_id_setting) && !empty($irb_number)) {
-            $this->setProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID, $irb_number, $project_id);
+            $this->setProjectSetting(EpicParticipantUpdater::SETTINGS_STUDY_ID, $irb_number, $project_id);
         }
     }
 

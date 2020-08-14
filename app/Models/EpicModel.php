@@ -6,8 +6,15 @@ use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Settings;
 
 
-class EpicModel extends BaseModel {
+class EpicModel extends BaseModel
+{
 
+    /**
+     * settings helper
+     *
+     * @var Settings
+     */
+    private $settings;
     /**
      * constructor
      *
@@ -15,7 +22,8 @@ class EpicModel extends BaseModel {
      */
 	function __construct($module)
 	{
-		$this->module = $module;
+        $this->module = $module;
+        $this->settings = new Settings($module);
 		parent::__construct();
 	}
 
@@ -123,19 +131,10 @@ class EpicModel extends BaseModel {
         // check for projects that are using the same irb number of the XML
         foreach($project_ids as $project_id)
         {
-
-            $projectIsInResearch = $this->checkStudyID($project_id, $xml_data['study_ids']); // check for existing
+            $watched_studies = $this->getWatchedStudies($project_id, $xml_data);
             
-            if(!$projectIsInResearch) continue; //continue to next project loop
-            
-            $record_id = $this->checkMRN($project_id, $xml_data['MRN']); // check for existing 
-            if($record_id)
-            {
-                //update
-                $this->updateRecord($project_id, $record_id, $xml_data);
-            }else{
-                //create
-                $this->createRecord($project_id, $xml_data);
+            foreach ($watched_studies as $study_id) {
+                    $this->saveData($project_id, $study_id, $xml_data);
             }
         }
 
@@ -145,6 +144,37 @@ class EpicModel extends BaseModel {
         ]);
 
         return $project_ids;
+    }
+
+    private function saveData($project_id, $study_id, $xml_data) {
+        $record_id = $this->getRecordIdForMrn($project_id, $xml_data['MRN']); // check for existing 
+        if($record_id)
+        {
+            //update
+            $this->updateRecord($project_id, $record_id, $study_id, $xml_data);
+        }else{
+            //create
+            $this->createRecord($project_id, $study_id, $xml_data);
+        }
+    }
+
+    /**
+     * get a list of watched studies for a project
+     *
+     * @param integer $project_id
+     * @param array $xml_data
+     * @return array
+     */
+    private function getWatchedStudies($project_id, $xml_data)
+    {
+        $xml_study_ids = $xml_data['study_ids'] ?: array();
+        $project_study_ids = $this->settings->getStudyIDs($project_id);
+        if($project_study_ids===EpicParticipantUpdater::CATCH_ALL_IDENTIFIER) {
+            $watched_studies = $xml_study_ids;
+        }else {
+            $watched_studies = array_intersect($project_study_ids, $xml_study_ids);
+        }
+        return $watched_studies;
     }
     
     /**
@@ -165,38 +195,92 @@ class EpicModel extends BaseModel {
      *
      * @param integer $project_id
      * @param string $record_id
+     * @param string $study_id used for repeated instances
      * @param string $xml_data
      * @return array
      */
-    private function getRecord($project_id, $record_id, $xml_data)
+    private function getRecord($project_id, $record_id, $study_id, $xml_data)
     {
         // $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
         // get the settings fot the current project
-        $settings = new Settings($this->module);
-        $status_field_name = $settings->getStatusFieldName($project_id);
-        $mrn_field_name = $settings->getMrnFieldName($project_id);
-        $date_start_field_name = $settings->getStartDateFieldName($project_id);
-        $date_end_field_name = $settings->getEndDateFieldName($project_id);
-        $event_ID = $settings->getEventID($project_id);
+        $status_field_name = $this->settings->getStatusFieldName($project_id);
+        $mrn_field_name = $this->settings->getMrnFieldName($project_id);
+        $date_start_field_name = $this->settings->getStartDateFieldName($project_id);
+        $date_end_field_name = $this->settings->getEndDateFieldName($project_id);
+        $study_id_field_name = $this->settings->getStudyIdFieldName($project_id);
+        $event_id = $this->settings->getEventID($project_id);
 
         // set the mandatory fields
         $fields = array(
             $mrn_field_name => trim($xml_data['MRN']),
             $status_field_name  => trim($xml_data['status']),
         );
+        // add study ID if mapped
+        if(!empty($study_id_field_name)) $fields[$study_id_field_name] = $study_id;
         // add dates if mapped
         if(!empty($date_start_field_name)) $fields[$date_start_field_name] = trim($xml_data['date-start']);
         if(!empty($date_end_field_name)) $fields[$date_end_field_name] = trim($xml_data['date-end']);
 
-        /* $recorcdTest = \Records::getData(
-			$project_id,
-			$return_format='array',
-            $records=$record_id, // current record
-            $fields,
-            $events=array($event_ID)
-		); */
-        $record = RecordHelper::getRecordSchema($project_id, $event_ID, $record_id, $fields);
+        $instance = RecordHelper::getInstance($project_id, $event_id, $record_id, $study_id_field_name, $study_id);
+        $form_name = $this->shouldStoreStudyAsRepeatedForm($project_id);
+        $record = RecordHelper::getRecordSchema($project_id, $event_id, $record_id, $fields, $instance, $form_name);
+
         return $record;
+    }
+
+    /**
+     * check if the study related data is set to be stored in a repeatable instrument
+     *
+     * @param integer $project_id
+     * @return string|false return the name of the repeatable form or false if not found
+     */
+    private function shouldStoreStudyAsRepeatedForm($project_id)
+    {
+        /**
+         * helper function to check if all study related fields are in the same instrument
+         */
+        $areStudyFieldsInSameIntrument = function($study_related_fields, $project_metadata) {
+            $form_name = null;
+            foreach ($study_related_fields as $key => $field_name) {
+                $field_data = $project_metadata[$field_name] ?: false;
+                if(!$field_data) return false; //exit if the provided field name is not in the project
+                $current_form_name = $field_data['form_name'];
+                if(empty($form_name)) {
+                    // form name set for the first time; go to next field
+                    $form_name = $current_form_name;
+                    continue;
+                }
+                // return false if any field belongs to a different form
+                if($form_name!==$current_form_name) return false;
+            }
+            return $form_name; // checked that all fields belong to the same form
+        };
+
+        $project = new \Project($project_id);
+        $repeatable_forms = $project->getRepeatingFormsEvents();
+        if(empty($repeatable_forms)) {
+            // no repeatable forms; exit
+            return false;
+        }
+
+        $event_ID = $this->settings->getEventID($project_id); // event containing study related fields
+        $event_repeatable_forms = $repeatable_forms[$event_ID] ?: array();
+        if(empty($event_repeatable_forms)) {
+            // the event ID specified in the module settings does not contain any repeatable form; exit
+            return false;
+        }
+        
+        $project_metadata = $project->metadata; // get list of fields in the project
+        $study_related_fields = array(
+            'study_id' => $this->settings->getStudyIdFieldName($project_id),
+            'status' => $this->settings->getStatusFieldName($project_id),
+            'date_start' => $this->settings->getStartDateFieldName($project_id),
+            'date_end' => $this->settings->getEndDateFieldName($project_id),
+        );
+
+        $repeatable_form_name = $areStudyFieldsInSameIntrument($study_related_fields, $project_metadata);
+        if(!$repeatable_form_name || !array_key_exists($repeatable_form_name, $event_repeatable_forms)) return false;
+        return $repeatable_form_name;
     }
             
     /**
@@ -207,13 +291,12 @@ class EpicModel extends BaseModel {
      * @param string $existing_record_id
      * @return void
      */
-    private function createRecord($project_id, $xml_data)
+    private function createRecord($project_id, $study_id, $xml_data)
     {
-        $study_id = $this->getProjectStudyID($project_id);
         // get the first available record_id
         $record_id = $this->module->addAutoNumberedRecord($project_id);
         
-        $record = $this->getRecord($project_id, $record_id, $xml_data);
+        $record = $this->getRecord($project_id, $record_id, $study_id, $xml_data);
         $result = \REDCap::saveData($project_id, 'array', $record);
 
         // log results
@@ -245,11 +328,10 @@ class EpicModel extends BaseModel {
      * @param array $xml_data
      * @return void
      */
-    private function updateRecord($project_id, $record_id, $xml_data)
+    private function updateRecord($project_id, $record_id, $study_id, $xml_data)
     {
-        $study_id = $this->getProjectStudyID($project_id);
 
-        $record = $this->getRecord($project_id, $record_id, $xml_data);
+        $record = $this->getRecord($project_id, $record_id, $study_id, $xml_data);
         $result = \REDCap::saveData($project_id, 'array', $record);
 
         if($error = $result['errors'])
@@ -276,44 +358,17 @@ class EpicModel extends BaseModel {
         $logger = new Logger($this->module);
         $logger->log($message, $parameters);
     }
-
-     /**
-      * checks if the project is connected to a research
-      * @return boolean
-     */
-    private function checkStudyID($project_id, $study_ids)
-    {
-        $project_study_id = $this->getProjectStudyID($project_id);
-        if ( empty($project_study_id) )
-            return false; // no study ID number set for this project
-
-        return in_array($project_study_id, $study_ids);
-    }
-
-    /**
-     * helper function to get project ID for a project
-     *
-     * @param [type] $project_id
-     * @return void
-     */
-    private function getProjectStudyID($project_id)
-    {
-        $settings = new Settings($this->module);
-        $project_study_id = $settings->getStudyID($project_id);
-        return $project_study_id;
-    }
     
     /**
      * check if the MRN is available in the specified project
      * 
      * @return string|false returns the record if MRN is found or false otherwise
      */
-    private function checkMRN($project_id, $MRN)
+    private function getRecordIdForMrn($project_id, $MRN)
     {
-        $settings = new Settings($this->module);
-        $mrn_field_name = $settings->getMrnFieldName($project_id);
-        $event_id = $settings->getEventID($project_id);
-        $record_id = RecordHelper::find($project_id, $event_id, $mrn_field_name, $MRN);
+        $mrn_field_name = $this->settings->getMrnFieldName($project_id);
+        $event_id = $this->settings->getEventID($project_id);
+        $record_id = RecordHelper::findRecordID($project_id, $event_id, $mrn_field_name, $MRN);
         return $record_id;
     }
 
