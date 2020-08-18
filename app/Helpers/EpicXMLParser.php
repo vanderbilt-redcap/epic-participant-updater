@@ -8,6 +8,7 @@ class EpicXMLParser
 {
 
     const DATE_FORMAT = 'Y-m-d'; // format of dates
+    const MANDATORY_KEYS = array('status','MRN','study_ids');
 
     /**
      * parse the XML file
@@ -26,8 +27,8 @@ class EpicXMLParser
             
             $data = self::extract($xml_string);
 
-            foreach ($data as $key => $value) {
-                if(empty($value)) throw new \RuntimeException("'{$key}' cannot be empty.");
+            foreach (self::MANDATORY_KEYS as $key) {
+                if(!array_key_exists($key, $data)) throw new \RuntimeException("Mandatory key '{$key}' is missing.");
             }
             return $data;
         }catch (\RuntimeException $e) {
