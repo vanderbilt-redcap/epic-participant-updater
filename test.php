@@ -5,10 +5,11 @@ $page = new \HtmlPage();
 $page->PrintHeaderExt();
 
 include APP_PATH_VIEWS . 'HomeTabs.php';
+$module_path = $module->getModulePath();
+$module_path = $module->getModulePath();
+include($module_path.'header.php')
 ?>
 
-
-<?php include('header.php') ?>
 
 <h5>Test the API endpoint</h5>
 

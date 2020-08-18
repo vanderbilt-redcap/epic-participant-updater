@@ -29,7 +29,7 @@ class Logger {
      //fields to get from database 
     private static $DB_fields = ['log_id', 'timestamp', 'user', 'ip',
         '_project_id AS project_id', '_record_id AS record',
-        'message', 'status', 'description', 'MRN', 'irb_number'];
+        'message', 'status', 'description', 'MRN', 'study_id'];
 
 
     public function __construct($module)

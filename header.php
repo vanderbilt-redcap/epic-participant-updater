@@ -37,6 +37,9 @@
         <li class="nav-item">
           <a class="nav-link" href="<?= $module->getUrl('test.php') ?>">Test</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="<?= $module->getUrl('project_templates.php') ?>">Project Templates</a>
+        </li>
         <!-- <li class="nav-item">
           <a class="nav-link" href="#">Features</a>
         </li>

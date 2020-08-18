@@ -5,10 +5,9 @@ $page = new \HtmlPage();
 $page->PrintHeaderExt();
 
 include APP_PATH_VIEWS . 'HomeTabs.php';
+$module_path = $module->getModulePath();
+include($module_path.'header.php')
 ?>
-
-
-<?php include('header.php') ?>
 
 
 <!-- API token -->
@@ -85,7 +84,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
           <td>MRN</td>
           <td>description</td>
           <td>ip</td>
-          <td>irb_number</td>
+          <td>Study ID</td>
           <td>message</td>
           <td>project_id</td>
           <td>record</td>
@@ -109,7 +108,7 @@ include APP_PATH_VIEWS . 'HomeTabs.php';
             </template>
           </td>
           <td x-text="row.ip"></td>
-          <td x-text="row.irb_number"></td>
+          <td x-text="row.study_id"></td>
           <td x-text="row.message"></td>
           <td x-text="row.project_id"></td>
           <td x-text="row.record"></td>
