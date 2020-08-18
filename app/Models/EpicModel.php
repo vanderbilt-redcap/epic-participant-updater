@@ -192,6 +192,7 @@ class EpicModel extends BaseModel
                 $this->log($log_message, [
                     'status' => Logger::STATUS_ERROR, // generic message
                     'description' => "$message - code: $code",
+                    'project_id'=> $project_id,
                 ]);
                 continue;
             }
