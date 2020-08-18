@@ -24,7 +24,7 @@ class Record
             ON m.project_id=a.project_id
             LEFT JOIN redcap_events_metadata AS em
             ON em.arm_id=a.arm_id
-            LEFT JOIN redcap_events_forms AS r
+            LEFT JOIN redcap_events_repeat AS r
             ON r.event_id=em.event_id AND r.form_name=m.form_name
             WHERE m.project_id='%u'
             ORDER BY m.field_order",
@@ -65,8 +65,7 @@ class Record
      */
     public static function getRecordSchema($project_id, $event_id, $record_id, $fields=array() ,$instance_number=1)
     {
-        $field_names = array_keys($fields);
-        $form_data = self::getFormData($project_id, $field_names);
+        $form_data = self::getFormData($project_id);
         
         $data = array();
         $repeatedInstancesData = array();
