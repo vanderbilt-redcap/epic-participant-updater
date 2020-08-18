@@ -5,21 +5,15 @@ class Record
 {
     
     const DB_TABLE = 'redcap_data';
-    const DB_FIELDS = ['project_id','event_id','record','field_name','value','instance'];
     
     /**
      * get the form name of a field
      *
      * @param integer $project_id
-     * @param string $field_name
      * @return array|false 
      */
-    private static function getFormDataForFields($project_id, $field_names)
+    private static function getFormData($project_id)
     {
-        $quoted_fields = array_map(function($field) {
-            return "'{$field}'";
-        }, $field_names);
-        $fields = join(', ', $quoted_fields);
         $query_string = sprintf(
             "SELECT m.project_id,m.field_name,m.form_name
             , a.arm_id
@@ -32,11 +26,9 @@ class Record
             ON em.arm_id=a.arm_id
             LEFT JOIN redcap_events_forms AS r
             ON r.event_id=em.event_id AND r.form_name=m.form_name
-            WHERE m.project_id=%u
-            AND m.field_name IN (%s)
+            WHERE m.project_id='%u'
             ORDER BY m.field_order",
-            $project_id,
-            $fields
+            $project_id
         );
         $result = db_query($query_string);
         $rows = array();
@@ -71,45 +63,36 @@ class Record
      * @param integer $instance_number
      * @return array
      */
-    public static function getRecordSchema($project_id, $event_id, $record_id, $fields=array() ,$instance_number=1, $repeated_form_name=false)
+    public static function getRecordSchema($project_id, $event_id, $record_id, $fields=array() ,$instance_number=1)
     {
-        $project = new \Project($project_id);
-        $repeatingFormsEvents = $project->getRepeatingFormsEvents();
-        $repeatingFormsForEvent = $repeatingFormsEvents[$event_id];
         $field_names = array_keys($fields);
-        $form_data = self::getFormDataForFields($project_id, $field_names);
-
+        $form_data = self::getFormData($project_id, $field_names);
+        
         $data = array();
         $repeatedInstancesData = array();
-
-        $data = $fields;
-
+        
         foreach ($fields as $key => $value) {
-
             if(array_key_exists($key, $form_data))
             {
-                $form_name = ($form_data[$key])->form_name;
+                $field_data = $form_data[$key];
+                $form_name = $field_data->form_name;
+                $is_repeated = boolval($field_data->is_repeated);
 
-                if(empty($repeatedInstancesData[$form_name][$instance_number])) $repeatedInstancesData[$form_name][$instance_number] = array();
-                $repeatedInstancesData[$form_name][$instance_number][$key] = $value;
-            }else {
-                $data[$key] = $value;
+                if($is_repeated) {
+                    if(empty($repeatedInstancesData[$form_name][$instance_number])) $repeatedInstancesData[$form_name][$instance_number] = array();
+                    $repeatedInstancesData[$form_name][$instance_number][$key] = $value;
+                }else {
+
+                    $data[$key] = $value;
+                }
             }
         }
-        /* $schema = [
+        $schema = [
             $record_id => [
                 $event_id => $data,
                 'repeat_instances' => [$event_id => $repeatedInstancesData]
             ]
-        ]; */
-        $schema = [$record_id => []];
-        if($repeated_form_name) {
-            $schema[$record_id] = [
-                'repeat_instances' => [$event_id => [$repeated_form_name => [$instance_number => $data]]]
-            ];
-        }else {
-            $schema[$record_id] = [$event_id => $data];
-        }
+        ];
 
         return $schema;
     }
@@ -125,12 +108,10 @@ class Record
 	 */
 	public static function findRecordID($project_id, $event_id, $field_name, $value)
 	{
-        $fields = join(', ', self::DB_FIELDS);
 		$query_string = sprintf(
-			"SELECT %s FROM %s
-			WHERE project_id=%u AND event_id=%u
+			"SELECT * FROM %s
+			WHERE project_id='%u' AND event_id='%u'
             AND field_name='%s' AND value='%s' LIMIT 1",
-            $fields,
 			self::DB_TABLE,
 			$project_id,
 			$event_id,
@@ -143,6 +124,8 @@ class Record
         return false;
     }
 
+
+
     /**
      * get instance number for a record entry 
      *
@@ -151,19 +134,40 @@ class Record
      * @param integer $record_id
      * @param string $field_name
      * @param mixed $value
-     * @return integer|false
+     * @return integer|null
      */
-    public static function getInstance($project_id, $event_id, $record_id, $field_name, $value)
+    public static function getInstanceNumber($project_id, $event_id, $record_id, $field_name, $value)
     {
-        $fields = join(', ', self::DB_FIELDS);
+        /**
+         * helper function to get the next instance number
+         */
+        $getNextInstanceNumber = function($table, $project_id, $event_id, $record_id, $field_name) {
+            $query_string = sprintf(
+                "SELECT MAX(IFNULL(instance, 1)) AS max_instance
+                FROM %s
+                WHERE project_id='%u'
+                AND event_id='%u'
+                AND record='%u'
+                AND field_name='%s'",
+                $table,
+                $project_id,
+                $event_id,
+                $record_id,
+                $field_name
+            );
+            $result = db_query($query_string);
+            if($row = db_fetch_object($result)) return intval($row->max_instance)+1;
+            else return 1;
+        };
+
+        if(empty($field_name)) return 1;
 		$query_string = sprintf(
-			"SELECT *, IFNULL(insance, 1) AS normalized_instance
+			"SELECT *, IFNULL(instance, 1) AS normalized_instance
             FROM %s
-			WHERE project_id=%u
-            AND event_id=%u
-            AND record_id=%u
+			WHERE project_id='%u'
+            AND event_id='%u'
+            AND record='%u'
             AND field_name='%s' AND value='%s' LIMIT 1",
-            $fields,
 			self::DB_TABLE,
 			$project_id,
 			$event_id,
@@ -173,7 +177,7 @@ class Record
         );
         $result = db_query($query_string);
         if($row = db_fetch_object($result)) return intval($row->normalized_instance);
-        return false;
+        else return $getNextInstanceNumber(self::DB_TABLE, $project_id, $event_id, $record_id, $field_name);
     }
 
     /**
@@ -186,14 +190,14 @@ class Record
 	{
 		$query_string = sprintf(
 			"SELECT record FROM %s
-			WHERE project_id = %u
+			WHERE project_id='%u'
 			GROUP BY record
 			ORDER BY CAST(record AS UNSIGNED INTEGER) DESC limit 1",
 			self::DB_TABLE,
 			$project_id
 		);
-		$result=db_query($query_string);
-		if($row = db_fetch_assoc($result))
+		$result = db_query($query_string);
+		if($row=db_fetch_assoc($result))
 		{
 			$record = $row['record'];
 			$next_record = $record+1;

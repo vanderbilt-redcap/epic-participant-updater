@@ -87,16 +87,66 @@ class EpicModel extends BaseModel
     }
 
     /**
-     * get the primary key of a project
+     * check if the project structure is valid and can
+     * correctly save data
      *
-     * @param int $project_id
-     * @return string the name of the primary key field
+     * @param integer $project_id
+     * @return boolean
      */
-    private function getProjectPrimaryKey($project_id)
-    {
-        $project = new \Project($project_id);
-        // return key($proj->metadata);
-        return $project->table_pk;
+    private function checkProjectFormsStucture($project_id) {
+        // check for mandatory fields (MRN and study status)
+        $mrn_field_name = $this->settings->getMrnFieldName($project_id);
+        if(empty($mrn_field_name)) throw new \Exception("Error: no 'MRN' field has been specified for the project ID {$project_id}", 400);
+        $status_field_name = $this->settings->getStatusFieldName($project_id);
+        if(empty($status_field_name)) throw new \Exception("Error: no 'study status' field has been specified for the project ID {$project_id}", 400);
+
+        // check if studies are being watched and settings are ok
+        $watched_study_ids = $this->settings->getStudyIDs($project_id);
+        if(!is_array($watched_study_ids) && $watched_study_ids!==EpicParticipantUpdater::CATCH_ALL_IDENTIFIER) throw new \Exception("Invalid 'study ID' setting for project ID {$project_id}", 400);
+        if(empty($watched_study_ids)) throw new \Exception("No study is being watched for the project ID {$project_id}", 400);
+
+        $date_start_field_name = $this->settings->getStartDateFieldName($project_id);
+        $date_end_field_name = $this->settings->getEndDateFieldName($project_id);
+        $study_id_field_name = $this->settings->getStudyIdFieldName($project_id);
+        
+        $must_save_as_repeatable = ($watched_study_ids===EpicParticipantUpdater::CATCH_ALL_IDENTIFIER || (is_array($watched_study_ids) && count($watched_study_ids)>1));
+        // mandatory fields are ok and only 1 study is being watched
+        if(!$must_save_as_repeatable) return true;
+
+
+        // group study related fields
+        $study_related_fields = array(
+            'study_id' => $study_id_field_name,
+            'status' => $status_field_name,
+        );
+        // add optional fields
+        if(!empty($date_start_field_name)) $study_related_fieldsπ['date_start'] = $date_start_field_name;
+        if(!empty($date_end_field_name)) $study_related_fieldsπ['date_end'] = $date_end_field_name;
+
+        /**
+         * helper function to check if all study related fields are in the same instrument
+         */
+        $areStudyFieldsInSameIntrument = function($project_id, $study_related_fields) {
+            $project = new \Project($project_id);
+            $project_metadata = $project->metadata;
+            $form_name = null;
+            foreach ($study_related_fields as $key => $field_name) {
+                $field_data = $project_metadata[$field_name] ?: false;
+                if(!$field_data) return false; //exit if the provided field name is not in the project
+                $current_form_name = $field_data['form_name'];
+                if(empty($form_name)) {
+                    // form name set for the first time; go to next field
+                    $form_name = $current_form_name;
+                    continue;
+                }
+                // return false if any field belongs to a different form
+                if($form_name!==$current_form_name) return false;
+            }
+            return $form_name; // checked that all fields belong to the same form
+        };
+
+        if($areStudyFieldsInSameIntrument($project_id, $study_related_fields)) return true;
+        else throw new \Exception("Error: study related fields must be in the same instrument", 400);
     }
 
      /**
@@ -127,14 +177,31 @@ class EpicModel extends BaseModel
             ]);
             return false;
         }
+
+        // get study IDs from XML
+        $study_ids = $xml_data['study_ids'];
         
         // check for projects that are using the same irb number of the XML
         foreach($project_ids as $project_id)
         {
+            try {
+                $this->checkProjectFormsStucture($project_id);
+            } catch (\Exception $e) {
+                $message = $e->getMessage();
+                $code = $e->getCode();
+                $this->log($log_message, [
+                    'status' => Logger::STATUS_ERROR, // generic message
+                    'description' => "$message - code: $code",
+                ]);
+                continue;
+            }
             $watched_studies = $this->getWatchedStudies($project_id, $xml_data);
             
-            foreach ($watched_studies as $study_id) {
+            foreach ($study_ids as $study_id) {
+                $catch_all = $watched_studies===EpicParticipantUpdater::CATCH_ALL_IDENTIFIER;
+                if($catch_all || in_array($study_id, $watched_studies)) {
                     $this->saveData($project_id, $study_id, $xml_data);
+                }
             }
         }
 
@@ -201,7 +268,6 @@ class EpicModel extends BaseModel
      */
     private function getRecord($project_id, $record_id, $study_id, $xml_data)
     {
-        // $record_id_field = $this->getProjectPrimaryKey($project_id); // get the name of the project record id field
         // get the settings fot the current project
         $status_field_name = $this->settings->getStatusFieldName($project_id);
         $mrn_field_name = $this->settings->getMrnFieldName($project_id);
@@ -221,66 +287,10 @@ class EpicModel extends BaseModel
         if(!empty($date_start_field_name)) $fields[$date_start_field_name] = trim($xml_data['date-start']);
         if(!empty($date_end_field_name)) $fields[$date_end_field_name] = trim($xml_data['date-end']);
 
-        $instance = RecordHelper::getInstance($project_id, $event_id, $record_id, $study_id_field_name, $study_id);
-        $form_name = $this->shouldStoreStudyAsRepeatedForm($project_id);
-        $record = RecordHelper::getRecordSchema($project_id, $event_id, $record_id, $fields, $instance, $form_name);
+        $instance = RecordHelper::getInstanceNumber($project_id, $event_id, $record_id, $study_id_field_name, $study_id);
+        $record = RecordHelper::getRecordSchema($project_id, $event_id, $record_id, $fields, $instance);
 
         return $record;
-    }
-
-    /**
-     * check if the study related data is set to be stored in a repeatable instrument
-     *
-     * @param integer $project_id
-     * @return string|false return the name of the repeatable form or false if not found
-     */
-    private function shouldStoreStudyAsRepeatedForm($project_id)
-    {
-        /**
-         * helper function to check if all study related fields are in the same instrument
-         */
-        $areStudyFieldsInSameIntrument = function($study_related_fields, $project_metadata) {
-            $form_name = null;
-            foreach ($study_related_fields as $key => $field_name) {
-                $field_data = $project_metadata[$field_name] ?: false;
-                if(!$field_data) return false; //exit if the provided field name is not in the project
-                $current_form_name = $field_data['form_name'];
-                if(empty($form_name)) {
-                    // form name set for the first time; go to next field
-                    $form_name = $current_form_name;
-                    continue;
-                }
-                // return false if any field belongs to a different form
-                if($form_name!==$current_form_name) return false;
-            }
-            return $form_name; // checked that all fields belong to the same form
-        };
-
-        $project = new \Project($project_id);
-        $repeatable_forms = $project->getRepeatingFormsEvents();
-        if(empty($repeatable_forms)) {
-            // no repeatable forms; exit
-            return false;
-        }
-
-        $event_ID = $this->settings->getEventID($project_id); // event containing study related fields
-        $event_repeatable_forms = $repeatable_forms[$event_ID] ?: array();
-        if(empty($event_repeatable_forms)) {
-            // the event ID specified in the module settings does not contain any repeatable form; exit
-            return false;
-        }
-        
-        $project_metadata = $project->metadata; // get list of fields in the project
-        $study_related_fields = array(
-            'study_id' => $this->settings->getStudyIdFieldName($project_id),
-            'status' => $this->settings->getStatusFieldName($project_id),
-            'date_start' => $this->settings->getStartDateFieldName($project_id),
-            'date_end' => $this->settings->getEndDateFieldName($project_id),
-        );
-
-        $repeatable_form_name = $areStudyFieldsInSameIntrument($study_related_fields, $project_metadata);
-        if(!$repeatable_form_name || !array_key_exists($repeatable_form_name, $event_repeatable_forms)) return false;
-        return $repeatable_form_name;
     }
             
     /**
@@ -323,7 +333,7 @@ class EpicModel extends BaseModel
     /**
      * update the status of an existing record
      * 
-     * @param \Project $project
+     * @param integer $project_id
      * @param integer $record_id
      * @param array $xml_data
      * @return void
