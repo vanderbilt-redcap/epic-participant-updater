@@ -398,7 +398,7 @@ class EpicModel extends BaseModel
                 AND s.`key` = 'enabled'
                 AND s.value = 'true'
             ", $this->module->PREFIX);
-        $result = $this->module->query($query_string, array());
+        $result = db_query($query_string);
 
         if($error = db_error()){
             throw new \Exception($query_string.': '.$error);
