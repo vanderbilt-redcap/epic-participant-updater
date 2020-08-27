@@ -203,8 +203,7 @@ include($module_path.'header.php')
       },
 
       get pages_count() {
-        let count = Math.floor(this.total/this.limit)
-        if(count*this.limit<this.total) count += 1
+        let count = Math.ceil(this.total/this.limit)
         return count
       },
 
