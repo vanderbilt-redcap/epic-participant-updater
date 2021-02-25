@@ -159,13 +159,12 @@ class EpicModel extends BaseModel
         // check if the status is allowed by the project settigs
         $isStatusAllowed = function($project_id, $xml_data) {
             $status = @$xml_data['status'];
+            $lowercase_status = strtolower($status);
             $list = $this->settings->getStatusList($project_id);
             if(empty($list)) return true;
             $match = false;
             foreach ($list as $item) {
-                $escaped = addcslashes($item, '/');
-                $regexp = sprintf('#^%s$#i', $escaped);
-                $match = preg_match($regexp, $status);
+                $match = $lowercase_status===strtolower($item);
                 if($match) break;
             }
             return boolval($match);
@@ -201,7 +200,7 @@ class EpicModel extends BaseModel
             if(!$isStatusAllowed($project_id, $xml_data)) {
                 $this->log('status skipped', [
                     'status' => Logger::STATUS_INFO, // generic message
-                    'description' => sprintf("status '%s' not allowed by project settings", @$xml_data['status']),
+                    'description' => sprintf("status '%s' not allowed in project %u by settings", @$xml_data['status'], $project_id),
                 ]);
                 continue;
             }
