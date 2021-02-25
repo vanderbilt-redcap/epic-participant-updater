@@ -1,0 +1,1 @@
+export {default as api_client} from '@/API/api_client'

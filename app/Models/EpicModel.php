@@ -156,6 +156,20 @@ class EpicModel extends BaseModel
      */
     private function checkXML($xml_data=[])
     {
+        // check if the status is allowed by the project settigs
+        $isStatusAllowed = function($project_id, $xml_data) {
+            $status = @$xml_data['status'];
+            $list = $this->settings->getStatusList($project_id);
+            if(empty($list)) return true;
+            $match = false;
+            foreach ($list as $item) {
+                $escaped = addcslashes($item, '/');
+                $regexp = sprintf('#^%s$#i', $escaped);
+                $match = preg_match($regexp, $status);
+                if($match) break;
+            }
+            return boolval($match);
+        };
         // check the data
         $log_message = 'checked XML';
         if(empty($xml_data))
@@ -184,6 +198,14 @@ class EpicModel extends BaseModel
         // check for projects that are using the same irb number of the XML
         foreach($project_ids as $project_id)
         {
+            if(!$isStatusAllowed($project_id, $xml_data)) {
+                $this->log('status skipped', [
+                    'status' => Logger::STATUS_INFO, // generic message
+                    'description' => sprintf("status '%s' not allowed by project settings", @$xml_data['status']),
+                ]);
+                continue;
+            }
+
             try {
                 $this->checkProjectFormsStucture($project_id);
             } catch (\Exception $e) {

@@ -11,7 +11,7 @@ require_once __DIR__."/bootstrap.php";
 $routes = [
     [['POST','PUT'], "check", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check', Router::API_TOKEN_PROTECTED]],
     ['GET', "logs", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs']],
-    ['GET', "projects", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getProjects']],
+    ['GET', "settings", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getSettings']],
     ['GET', "/test[/{id:\d+}]", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test']],
     ['POST', "regenerate_token", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/regenerateAPIToken', Router::REDCAP_USER_PROTECTED]],
 ];

@@ -46,15 +46,16 @@ class EpicController extends BaseController
     * list the logs
     * @todo add pagination
     */
-	public function getProjects()
+	public function getSettings()
 	{
         try {
-            $project_ids = $this->app->getModuleEnabledProjectsIds();
             $code = 200;
-            $projects = array_map(function($project_id) {
-                return new \Project($project_id);
-            }, $project_ids);
-            $response = $projects;
+
+            $app_settings = $this->appSettings();
+            $projects = $this->projectsData();
+            $api_token_data = $this->apiTokenData();
+
+            $response = compact('app_settings', 'projects', 'api_token_data');
         } catch (\Exception $e) {
             $response = [
                 'message' => $e->getMessage(),
@@ -65,10 +66,59 @@ class EpicController extends BaseController
         }
     }
 
+    private function projectsData()
+    {
+        $project_ids = $this->app->getModuleEnabledProjectsIds();
+        $data = array_map(function($project_id) {
+            return new \Project($project_id);
+        }, $project_ids);
+        return $data;
+    }
+
     public function regenerateAPIToken()
     {
-        $response = $this->module->generateAPIToken();
-        $this->printJSON($response);
+        $this->module->generateAPIToken();
+        $token_data = $this->apiTokenData();
+        $this->printJSON($token_data);
+    }
+
+    private function appSettings()
+    {
+        // get the base URL to the module (for downloads)
+        $getModuleUrl = function() {
+            return strtok($this->module->getUrl(''), '?');
+        };
+        $removeExtraSlashes = function($url) {
+            return preg_replace("/(?<!https:)(?<!http:)\/{2,}/", "/", $url);
+        };
+        $project_templates = [
+            'template for single study' => $this->module->getUrl('data/EPU_single.xml'),
+            'template for multiple studies' => $this->module->getUrl('data/EPU_multiple.xml'),
+        ];
+        $data = [
+            'module_version' => $this->module->VERSION,
+            'module_prefix' => $this->module->PREFIX,
+            'module_url' => $getModuleUrl(),
+            'redcap_root_url' => APP_PATH_WEBROOT_FULL,
+            'redcap_relative_url' => APP_PATH_WEBROOT,
+            'redcap_full_url' => $removeExtraSlashes(APP_PATH_WEBROOT_FULL.APP_PATH_WEBROOT),
+            'project_templates' => $project_templates,
+        ];
+        return $data;
+    }
+
+    private function apiTokenData()
+    {
+        $module_prefix = $this->module->PREFIX;
+        $api_token = $this->module->getApiToken();
+        $listening_url_base = sprintf("%sapi/?NOAUTH&prefix=%s&type=module&page=api&route=check&api_token=",APP_PATH_WEBROOT_FULL, $module_prefix);
+        $listening_url = $listening_url_base.$api_token;
+        $data = [
+            'api_token' => $api_token,
+            'listening_url_base' => $listening_url_base,
+            'listening_url' => $listening_url,
+        ];
+        return $data;
     }
 
 }

@@ -88,6 +88,18 @@
             "name": "Fields event",
             "required": true,
             "type": "event-list"
+        },
+        {
+            "key": "descriptive-status-list",
+            "name": "Enter a list of status (one per line) that will trigger an action. Leave blank for any field. Some valid statuses are 'Interested', 'On Study', 'Pre-Screening'.",
+            "type": "descriptive"
+        },
+        {
+            "key": "status-list",
+            "name": "Status List",
+            "required": false,
+            "type": "textarea",
+            "repeatable": false
         }
      ],
     "log-file": "log.txt"

@@ -7,7 +7,6 @@ if(file_exists($autoload)) require_once($autoload);
 require join([__DIR__, 'app', 'Helpers', 'DependencyHelper.php'],DIRECTORY_SEPARATOR);
 
 use ExternalModules\AbstractExternalModule;
-use Firebase\JWT\JWT;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 
@@ -24,6 +23,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_FIELD_DATE_END = 'date-end-mapping-field'; // mapped field
     const SETTINGS_FIELD_STUDY_ID = 'study-id-mapping-field'; // mapped field
     const SETTINGS_FIELD_EVENT_ID = 'event-id'; // mapped event
+    const SETTINGS_FIELD_STATUS_LIST = 'status-list'; // mapped event
 
     /**
      * identifier to catch all study IDs

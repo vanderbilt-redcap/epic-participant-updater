@@ -60,4 +60,44 @@ class Settings extends BaseModel {
 		return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_EVENT_ID, $project_id);
 	}
 
+	/**
+	 * get a list of status that will trigger an action.
+	 * available status are:
+	 * - Identified - Being Considered for Study
+	 * - Interested
+	 * - Inelegible - May Re-screen
+	 * - Pre-Screening
+	 * - Scheduling, Pending Consent
+	 * - In Screening, Consented
+	 * - On Study
+	 * - Follow-up - With Billing
+	 * - Completed Study Protocol - No future activity planned
+	 * - Whitdrawn from Study - No future activity planned
+	 * - Patient Expired Before Completing Study
+	 * - Excluded - Screen Failure
+	 * - Excluded - Ineligible
+	 * - Not Interested
+	 * - Consent Declined
+	 * - Removed From Consideration During Recruitment
+	 * - Associated in Error - Delete Enrollment
+	 * - Survival Follow-Up (VICC only)
+	 * - (IT Use Only) Interested - Pt answered in MHAV
+	 * - (IT Use Only) Identified - RWB Recruitment Message or Auto DL
+	 * - (IT Use Only) Identified - Data Link File
+	 * - (IT Use Only) Identified - Data Link Query
+	 * - (IT Use Only) Not Interested - Pt answered in MHAV
+	 *
+	 * @param integer $project_id
+	 * @return array
+	 */
+	public function getStatusList($project_id)
+	{
+		$status_list_string =  $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_STATUS_LIST, $project_id);
+		$list = preg_split("/[\r\n]/", $status_list_string);
+		$non_empty_list = array_filter($list, function($item){ return !empty(trim($item));});
+		return $non_empty_list;
+
+	}
+
 }
+
