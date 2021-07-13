@@ -1,10 +1,10 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater;
 
-$autoload = join([__DIR__,'vendor','autoload.php'],DIRECTORY_SEPARATOR);
+$autoload = join(DIRECTORY_SEPARATOR, [__DIR__,'vendor','autoload.php']);
 if(file_exists($autoload)) require_once($autoload);
 
-require join([__DIR__, 'app', 'Helpers', 'DependencyHelper.php'],DIRECTORY_SEPARATOR);
+require join(DIRECTORY_SEPARATOR, [__DIR__, 'app', 'Helpers', 'DependencyHelper.php']);
 
 use ExternalModules\AbstractExternalModule;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;

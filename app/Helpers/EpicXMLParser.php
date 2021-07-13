@@ -1,7 +1,6 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
-use Vanderbilt\EpicParticipantUpdater\App\Helpers\File as FileHelper;
 use DateTime;
 
 class EpicXMLParser
@@ -42,7 +41,7 @@ class EpicXMLParser
      * to avoid having to specify the namespace prefix of nodes when
      * an xml document is parsed for data: $xml->children('soap', true)
      *
-     * @param [type] $xml_string
+     * @param string $xml_string
      * @return void
      */
     public static function strip_XML_namespaces($xml_string)

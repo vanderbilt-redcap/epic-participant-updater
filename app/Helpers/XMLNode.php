@@ -123,7 +123,7 @@ class XMLNode
 	 * children: all what is between the opening and closing tags
 	 *
 	 * @param string $tag_name
-	 * @return void
+	 * @return string
 	 */
 	private static function getRegularExpression($tag_name)
 	{
