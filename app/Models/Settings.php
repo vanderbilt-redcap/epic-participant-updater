@@ -55,6 +55,21 @@ class Settings extends BaseModel {
 		return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_DATE_END, $project_id);
 	}
 
+	public function getFirstNameFieldName($project_id)
+    {
+        return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME,$project_id);
+    }
+
+    public function getLastNameFieldName($project_id)
+    {
+        return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME,$project_id);
+    }
+
+    public function getDOBFieldName($project_id)
+    {
+        return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_DOB,$project_id);
+    }
+
 	public function getEventID($project_id)
 	{
 		return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_EVENT_ID, $project_id);

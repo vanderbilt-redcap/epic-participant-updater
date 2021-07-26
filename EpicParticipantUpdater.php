@@ -22,6 +22,9 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_FIELD_DATE_START = 'date-start-mapping-field'; // mapped field
     const SETTINGS_FIELD_DATE_END = 'date-end-mapping-field'; // mapped field
     const SETTINGS_FIELD_STUDY_ID = 'study-id-mapping-field'; // mapped field
+    const SETTINGS_FIELD_DOB = 'dob-mapping-field'; // mapped field
+    const SETTINGS_FIELD_FIRSTNAME = 'fn-mapping-field'; // mapped field
+    const SETTINGS_FIELD_LASTNAME = 'ln-mapping-field'; // mapped field
     const SETTINGS_FIELD_EVENT_ID = 'event-id'; // mapped event
     const SETTINGS_FIELD_STATUS_LIST = 'status-list'; // mapped event
 
@@ -43,7 +46,8 @@ class EpicParticipantUpdater extends AbstractExternalModule
      * @param string $version
      * @return void
      */
-    function redcap_module_system_enable($version) {
+    function redcap_module_system_enable($version)
+    {
         try {
             $this->checkApiToken();
             // $this->installDependencies();
@@ -65,6 +69,37 @@ class EpicParticipantUpdater extends AbstractExternalModule
     }
 
     /**
+     * function executed when a survey is completed
+     * @param int $project_id
+     * @param string $record
+     * @param string $instrument
+     * @param int $event_id
+     * @param int $group_id
+     * @param string $survey_hash
+     * @param int $response_id
+     * @param int $repeat_instance
+     * @return void
+     */
+    function redcap_survey_complete($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1)
+    {
+
+    }
+   /**
+    * function excecuted when viewing a REDCap data entry form for a record
+    * @param int $project_id
+    * @param string $record
+    * @param string $instrument
+    * @param int $event_id
+    * @param int $group_id
+    * @param int $repeat_instance
+    * @return void
+    */
+    function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
+    {
+
+    }
+
+    /**
      * set study ID to the project IRB number by default
      *
      * @param int $project_id
@@ -75,7 +110,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
         $epic_model = new EpicModel($this);
         $study_id_setting = $this->getProjectSetting(EpicParticipantUpdater::SETTINGS_STUDY_ID, $project_id);
         $irb_number = $epic_model->getIrbNumberFromProject($project_id);
-        if(empty($study_id_setting) && !empty($irb_number)) {
+        if (empty($study_id_setting) && !empty($irb_number)) {
             $this->setProjectSetting(EpicParticipantUpdater::SETTINGS_STUDY_ID, $irb_number, $project_id);
         }
     }
@@ -94,10 +129,9 @@ class EpicParticipantUpdater extends AbstractExternalModule
     function checkApiToken()
     {
         $api_token = $this->getSystemSetting($this->api_token_key);
-        if(empty($api_token))
-        {
+        if (empty($api_token)) {
             // set a random API key if none has been set
-            $this->generateAPIToken();        
+            $this->generateAPIToken();
         }
     }
 

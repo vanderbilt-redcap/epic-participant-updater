@@ -1,106 +1,126 @@
 {
-    "name": "Epic Participant Updater",
-    "namespace": "Vanderbilt\\EpicParticipantUpdater",
-    "description": "Fetch data from EPIC XML file.",
-    "authors": [
-        {
-             "name": "Francesco Delacqua",
-             "email": "francesco.delacqua@vumc.org",
-             "institution": "Vanderbilt University Medical Center"
-         }
-    ],
-    "framework-version": 4,
-    "enable-every-page-hooks-on-system-pages": true,
-    "permissions": [
-         "redcap_module_system_enable",
-         "redcap_module_system_disable",
-         "redcap_module_project_enable"
-    ],
-    "links": {
-        "control-center": [
-            {
-                "name": "Epic Participant Updater",
-                "icon": "report",
-                "url": "index.php"
-            }
-         ]
-     },
-     "no-auth-pages": [
-        "api"
-     ],
-     "system-settings": [
-        {
-            "key": "api_token",
-            "name": "API token (needed for protected methods)",
-            "type": "text",
-            "required": true
-         }
-     ],
-     "project-settings": [
-        {
-            "key": "descriptive-text-studies",
-            "name": "Watched study ID.",
-            "type": "descriptive"
-        },
-        {
-            "key": "study-id",
-            "name": "Study ID",
-            "type": "text",
-            "required": true
-        },
-        {
-           "key": "descriptive-text-mapping",
-           "name": "Set the mapping fields.",
-           "type": "descriptive"
-        },
-        {
-            "key": "mrn-mapping-field",
-            "name": "MRN",
-            "required": true,
-            "type": "field-list"
-        },
-        {
-            "key": "status-mapping-field",
-            "name": "Status",
-            "required": true,
-            "type": "field-list"
-        },
-        {
-            "key": "date-start-mapping-field",
-            "name": "Study start date",
-            "required": false,
-            "type": "field-list"
-        },
-        {
-            "key": "date-end-mapping-field",
-            "name": "Study end date",
-            "required": false,
-            "type": "field-list"
-        },
-        {
-            "key": "study-id-mapping-field",
-            "name": "Study ID",
-            "required": false,
-            "type": "field-list"
-        },
-        {
-            "key": "event-id",
-            "name": "Fields event",
-            "required": true,
-            "type": "event-list"
-        },
-        {
-            "key": "descriptive-status-list",
-            "name": "Enter a list of status (one per line) that will trigger an action. Leave blank for any field. Some valid statuses are 'Interested', 'On Study', 'Pre-Screening'.",
-            "type": "descriptive"
-        },
-        {
-            "key": "status-list",
-            "name": "Status List",
-            "required": false,
-            "type": "textarea",
-            "repeatable": false
-        }
-     ],
-    "log-file": "log.txt"
- }
+  "name": "Epic Participant Updater",
+  "namespace": "Vanderbilt\\EpicParticipantUpdater",
+  "description": "Fetch data from EPIC XML file.",
+  "authors": [
+    {
+      "name": "Francesco Delacqua",
+      "email": "francesco.delacqua@vumc.org",
+      "institution": "Vanderbilt University Medical Center"
+    }
+  ],
+  "framework-version": 4,
+  "enable-every-page-hooks-on-system-pages": true,
+  "permissions": [
+    "redcap_module_system_enable",
+    "redcap_module_system_disable",
+    "redcap_module_project_enable",
+    "redcap_data_entry_form",
+    "redcap_survey_complete"
+  ],
+  "links": {
+    "control-center": [
+      {
+        "name": "Epic Participant Updater",
+        "icon": "report",
+        "url": "index.php"
+      }
+    ]
+  },
+  "no-auth-pages": [
+    "api"
+  ],
+  "system-settings": [
+    {
+      "key": "api_token",
+      "name": "API token (needed for protected methods)",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "project-settings": [
+    {
+      "key": "descriptive-text-studies",
+      "name": "Watched study ID.",
+      "type": "descriptive"
+    },
+    {
+      "key": "study-id",
+      "name": "Study ID",
+      "type": "text",
+      "required": true
+    },
+    {
+      "key": "descriptive-text-mapping",
+      "name": "Set the mapping fields.",
+      "type": "descriptive"
+    },
+    {
+      "key": "mrn-mapping-field",
+      "name": "MRN",
+      "required": true,
+      "type": "field-list"
+    },
+    {
+      "key": "status-mapping-field",
+      "name": "Status",
+      "required": true,
+      "type": "field-list"
+    },
+    {
+      "key": "date-start-mapping-field",
+      "name": "Study start date",
+      "required": false,
+      "type": "field-list"
+    },
+    {
+      "key": "date-end-mapping-field",
+      "name": "Study end date",
+      "required": false,
+      "type": "field-list"
+    },
+    {
+      "key": "study-id-mapping-field",
+      "name": "Study ID",
+      "required": false,
+      "type": "field-list"
+    },
+    {
+      "key": "fn-mapping-field",
+      "name": "Given Name Field",
+      "required": false,
+      "type": "field-list"
+    },
+    {
+      "key": "ln-mapping-field",
+      "name": "Family Name Field",
+      "required": false,
+      "type": "field-list"
+    },
+    {
+      "key": "dob-mapping-field",
+      "name": "Date of Birth Field",
+      "required": false,
+      "type": "event-list"
+    },
+    {
+      "key": "event-id",
+      "name": "Fields event",
+      "required": true,
+      "type": "event-list"
+    },
+    {
+      "key": "descriptive-status-list",
+      "name": "Enter a list of status (one per line) that will trigger an action. Leave blank for any field. Some valid statuses are 'Interested', 'On Study', 'Pre-Screening'.",
+      "type": "descriptive"
+    },
+    {
+      "key": "status-list",
+      "name": "Status List",
+      "required": false,
+      "type": "textarea",
+      "repeatable": false
+    }
+  ],
+  "log-file": "log.txt"
+}

@@ -52,6 +52,16 @@ class EpicXMLParser
     }
 
     /**
+     * Changes date from XML to necessary date format for REDCap storage
+     * @param string $string
+     * @return string
+     */
+    private static function processDate($string) {
+        if(empty($string)) return '';
+        $date = new DateTime($string);
+        return $date->format(self::DATE_FORMAT);
+    }
+    /**
      * Undocumented function
      *
      * @param string $xml_string
@@ -59,19 +69,12 @@ class EpicXMLParser
      */
     private static function extractDates($xml_string)
     {
-        // helper function to get formatted date string
-        $getDate = function($string) {
-            if(empty($string)) return '';
-            $date = new DateTime($string);
-            return $date->format(self::DATE_FORMAT);
-        };
-
         $dates = new XMLNode($xml_string, 'effectiveTime');
         $start_date_value = $dates->find('low')->attributes['value'];
         $end_date_value = $dates->find('high')->attributes['value'];
         $dates = array();
-        $dates['start'] = $getDate($start_date_value);
-        $dates['end'] = $getDate($end_date_value);
+        $dates['start'] = self::processDate($start_date_value);
+        $dates['end'] = self::processDate($end_date_value);
         return (object)$dates;
     }
 
@@ -87,9 +90,12 @@ class EpicXMLParser
             $processState = new XMLNode($xml_string, 'processState');
             $candidateID = new XMLNode($xml_string, 'candidateID');
             $plannedStudy = new XMLNode($xml_string, 'plannedStudy');
+            $dateofBirth = new XMLNode($xml_string, 'dob');
+            $names = new XMLNode($xml_string,'name');
             $dates = self::extractDates($xml_string);
             $MRN = $candidateID->attributes['extension']; // the MRN is in the "extension" attribute
             $processState = $processState->value; // status
+            $dateofBirth = $dateofBirth->value; // date of birth
 
             // get study ids
             $studies = $plannedStudy->find('id');
@@ -100,12 +106,21 @@ class EpicXMLParser
                 $study_ids[] = $study->attributes['extension']; // the ID is in the "extension" attribute
             }
 
+            // Get patient name. The 'given' tag can also be used for their middle name, so need to only grab the first name from the given array
+            $givenNames = $names->find('given');
+            if (!is_array($givenNames)) $givenNames = [$givenNames];
+            $firstName = $givenNames[0];
+            $lastName = $names->find('family');
+
             $data = array();
             $data['status'] = (string) $processState;
             $data['MRN'] = (string) $MRN;
             $data['study_ids'] = $study_ids;
             $data['date-start'] = $dates->start;
             $data['date-end'] = $dates->end;
+            $data['dob'] = self::processDate($dateofBirth);
+            $data['first-name'] = $firstName;
+            $data['last-name'] = $lastName;
         }catch (\RuntimeException $e) {
 			$error = $e->getMessage();
 			return array();

@@ -108,6 +108,9 @@ class EpicModel extends BaseModel
         $date_start_field_name = $this->settings->getStartDateFieldName($project_id);
         $date_end_field_name = $this->settings->getEndDateFieldName($project_id);
         $study_id_field_name = $this->settings->getStudyIdFieldName($project_id);
+        $dob_field_name = $this->settings->getDOBFieldName($project_id);
+        $firstname_field_name = $this->settings->getFirstNameFieldName($project_id);
+        $lastname_field_name = $this->settings->getLastNameFieldName($project_id);
         
         $must_save_as_repeatable = ($watched_study_ids===EpicParticipantUpdater::CATCH_ALL_IDENTIFIER || (is_array($watched_study_ids) && count($watched_study_ids)>1));
         // mandatory fields are ok and only 1 study is being watched
@@ -120,8 +123,12 @@ class EpicModel extends BaseModel
             'status' => $status_field_name,
         );
         // add optional fields
-        if(!empty($date_start_field_name)) $study_related_fieldsπ['date_start'] = $date_start_field_name;
-        if(!empty($date_end_field_name)) $study_related_fieldsπ['date_end'] = $date_end_field_name;
+        //TODO Ask why the arrays below were defined as $study_related_fieldsπ
+        if(!empty($date_start_field_name)) $study_related_fields['date_start'] = $date_start_field_name;
+        if(!empty($date_end_field_name)) $study_related_fields['date_end'] = $date_end_field_name;
+        if(!empty($dob_field_name)) $study_related_fields['dob'] = $dob_field_name;
+        if(!empty($firstname_field_name)) $study_related_fields['first_name'] = $firstname_field_name;
+        if(!empty($lastname_field_name)) $study_related_fields['last_name'] = $lastname_field_name;
 
         /**
          * helper function to check if all study related fields are in the same instrument
@@ -296,6 +303,9 @@ class EpicModel extends BaseModel
         $date_start_field_name = $this->settings->getStartDateFieldName($project_id);
         $date_end_field_name = $this->settings->getEndDateFieldName($project_id);
         $study_id_field_name = $this->settings->getStudyIdFieldName($project_id);
+        $dob_field_name = $this->settings->getDOBFieldName($project_id);
+        $firstname_field_name = $this->settings->getFirstNameFieldName($project_id);
+        $lastname_field_name = $this->settings->getLastNameFieldName($project_id);
         $event_id = $this->settings->getEventID($project_id);
 
         // set the mandatory fields
@@ -308,6 +318,9 @@ class EpicModel extends BaseModel
         // add dates if mapped
         if(!empty($date_start_field_name)) $fields[$date_start_field_name] = trim($xml_data['date-start']);
         if(!empty($date_end_field_name)) $fields[$date_end_field_name] = trim($xml_data['date-end']);
+        if(!empty($dob_field_name)) $fields[$dob_field_name] = trim($xml_data['dob']);
+        if(!empty($firstname_field_name)) $fields[$firstname_field_name] = trim($xml_data['first-name']);
+        if(!empty($lastname_field_name)) $fields[$lastname_field_name] = trim($xml_data['last-name']);
 
         $instance = RecordHelper::getInstanceNumber($project_id, $event_id, $record_id, $study_id_field_name, $study_id);
         $record = RecordHelper::getRecordSchema($project_id, $event_id, $record_id, $fields, $instance);
