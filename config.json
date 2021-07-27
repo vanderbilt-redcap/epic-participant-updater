@@ -36,6 +36,12 @@
       "name": "API token (needed for protected methods)",
       "type": "text",
       "required": true
+    },
+    {
+      "key": "epic-upload-url",
+      "name": "URL endpoint for uploading participant data to Epic",
+      "type": "text",
+      "required": true
     }
   ],
   "project-settings": [
@@ -101,7 +107,7 @@
       "key": "dob-mapping-field",
       "name": "Date of Birth Field",
       "required": false,
-      "type": "event-list"
+      "type": "field-list"
     },
     {
       "key": "event-id",

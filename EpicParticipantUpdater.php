@@ -7,6 +7,8 @@ if(file_exists($autoload)) require_once($autoload);
 require join(DIRECTORY_SEPARATOR, [__DIR__, 'app', 'Helpers', 'DependencyHelper.php']);
 
 use ExternalModules\AbstractExternalModule;
+use ExternalModules\ExternalModules;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 
@@ -27,6 +29,8 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_FIELD_LASTNAME = 'ln-mapping-field'; // mapped field
     const SETTINGS_FIELD_EVENT_ID = 'event-id'; // mapped event
     const SETTINGS_FIELD_STATUS_LIST = 'status-list'; // mapped event
+
+    const ON_STUDY_STATUS = "ON STUDY";
 
     /**
      * identifier to catch all study IDs
@@ -82,8 +86,21 @@ class EpicParticipantUpdater extends AbstractExternalModule
      */
     function redcap_survey_complete($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1)
     {
-
+        $xml_string = file_get_contents(ExternalModules::getModuleDirectoryPath($this->PREFIX)."/data/AlertProtocolState.xml");
+        $url = $this->getProjectSetting('epic-upload-url');
+        $ch = curl_init();
+        curl_setopt($ch,CURLOPT_URL,$url);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, "xmlRequest=".$xml_string);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 300);
+        $data = curl_exec($ch);
+        curl_close($ch);
+        $array_data = json_decode(json_decode(@simplexml_load_string($data)),true);
+        echo "<pre>";
+        print_r($array_data);
+        echo "</pre>";
     }
+
    /**
     * function excecuted when viewing a REDCap data entry form for a record
     * @param int $project_id
@@ -96,7 +113,14 @@ class EpicParticipantUpdater extends AbstractExternalModule
     */
     function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
     {
-
+        /*libxml_use_internal_errors(true);
+        $xml_string = file_get_contents(ExternalModules::getModuleDirectoryPath($this->PREFIX)."/data/request_DEV_dates.xml");
+        $xmlData = EpicXMLParser::parse($xml_string);
+        $model = new EpicModel($this);
+        $response = $model->checkXML($xmlData);
+        echo "<pre>";
+        print_r($response);
+        echo "</pre>";*/
     }
 
     /**

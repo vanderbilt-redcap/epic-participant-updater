@@ -95,7 +95,7 @@ class EpicXMLParser
             $dates = self::extractDates($xml_string);
             $MRN = $candidateID->attributes['extension']; // the MRN is in the "extension" attribute
             $processState = $processState->value; // status
-            $dateofBirth = $dateofBirth->value; // date of birth
+            $dateofBirth = $dateofBirth->attributes['value']; // date of birth
 
             // get study ids
             $studies = $plannedStudy->find('id');
@@ -109,8 +109,8 @@ class EpicXMLParser
             // Get patient name. The 'given' tag can also be used for their middle name, so need to only grab the first name from the given array
             $givenNames = $names->find('given');
             if (!is_array($givenNames)) $givenNames = [$givenNames];
-            $firstName = $givenNames[0];
-            $lastName = $names->find('family');
+            $firstName = $givenNames[0]->value;
+            $lastName = $names->find('family')->value;
 
             $data = array();
             $data['status'] = (string) $processState;

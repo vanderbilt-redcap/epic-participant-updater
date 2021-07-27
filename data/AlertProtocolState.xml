@@ -1,0 +1,36 @@
+<ep1:Envelope xmlns:ep1="http://www.w3.org/2003/05/soap-envelope">
+    <ep1:Header>
+        <ep2:Action ep1:mustUnderstand="true" xmlns:ep2="http://www.w3.org/2005/08/addressing">urn:ihe:qrph:rpe:2009:AlertProtocolState:REDCap</ep2:Action>
+    </ep1:Header>
+    <ep1:Body>
+        <ep3:AlertProtocolState xmlns:ep3="urn:ihe:qrph:rpe:2009">
+            <ep3:processState>CONSENTED</ep3:processState>
+            <ep3:patient>
+                <ep3:candidateID root="1.2.840.114350.1.13.478.2.7.5.737384.14" extension="002105611" />
+                <ep3:name>
+                    <given xmlns="urn:hl7-org:v3">BEN</given>
+                    <family xmlns="urn:hl7-org:v3">TEST</family>
+                </ep3:name>
+            </ep3:patient>
+            <study xmlns="urn:hl7-org:v3">
+                <instantiation>
+                    <plannedStudy>
+                        <id root="1.2.3.4" extension="202227" />
+                    </plannedStudy>
+                </instantiation>
+                <component1>
+                    <studyActivitiesAtSite>
+                        <subject1>
+                            <experimentalUnit>
+                                <effectiveTime>
+                                    <low value="20210402" />
+                                    <high value="" />
+                                </effectiveTime>
+                            </experimentalUnit>
+                        </subject1>
+                    </studyActivitiesAtSite>
+                </component1>
+            </study>
+        </ep3:AlertProtocolState>
+    </ep1:Body>
+</ep1:Envelope>
