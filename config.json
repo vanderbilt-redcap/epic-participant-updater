@@ -86,12 +86,6 @@
       "type": "field-list"
     },
     {
-      "key": "study-id-mapping-field",
-      "name": "Study ID",
-      "required": false,
-      "type": "field-list"
-    },
-    {
       "key": "fn-mapping-field",
       "name": "Given Name Field",
       "required": false,
@@ -125,6 +119,13 @@
       "name": "Status List",
       "required": false,
       "type": "textarea",
+      "repeatable": false
+    },
+    {
+      "key": "push-form",
+      "name": "Survey Form That Updates Status Upon Completion",
+      "required": false,
+      "type": "form-list",
       "repeatable": false
     }
   ],

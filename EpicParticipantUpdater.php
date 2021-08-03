@@ -11,6 +11,7 @@ use ExternalModules\ExternalModules;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
 
 class EpicParticipantUpdater extends AbstractExternalModule
 {
@@ -23,7 +24,6 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_FIELD_STATUS = 'status-mapping-field'; // mapped field
     const SETTINGS_FIELD_DATE_START = 'date-start-mapping-field'; // mapped field
     const SETTINGS_FIELD_DATE_END = 'date-end-mapping-field'; // mapped field
-    const SETTINGS_FIELD_STUDY_ID = 'study-id-mapping-field'; // mapped field
     const SETTINGS_FIELD_DOB = 'dob-mapping-field'; // mapped field
     const SETTINGS_FIELD_FIRSTNAME = 'fn-mapping-field'; // mapped field
     const SETTINGS_FIELD_LASTNAME = 'ln-mapping-field'; // mapped field
@@ -86,19 +86,59 @@ class EpicParticipantUpdater extends AbstractExternalModule
      */
     function redcap_survey_complete($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1)
     {
-        $xml_string = file_get_contents(ExternalModules::getModuleDirectoryPath($this->PREFIX)."/data/AlertProtocolState.xml");
-        $url = $this->getProjectSetting('epic-upload-url');
-        $ch = curl_init();
-        curl_setopt($ch,CURLOPT_URL,$url);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, "xmlRequest=".$xml_string);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 300);
-        $data = curl_exec($ch);
-        curl_close($ch);
-        $array_data = json_decode(json_decode(@simplexml_load_string($data)),true);
-        echo "<pre>";
-        print_r($array_data);
-        echo "</pre>";
+        $surveyToPush = $this->getProjectSetting('push-form');
+
+        if ($surveyToPush == $instrument) {
+            $xml_string = EpicDataPush::generateXML($project_id, $record, $event_id, $repeat_instance);
+            $dom = new \DOMDocument('1.0');
+            $dom->preserveWhiteSpace = false;
+            $dom->formatOutput = true;
+            $dom->loadXML($xml_string);
+
+            echo "<pre>";
+            echo print_r(htmlentities($dom->saveXML()));
+            echo "</pre>";
+
+            $url = $this->getSystemSetting('epic-upload-url');
+
+            $array_data = EpicDataPush::uploadParticipantXML($url,$xml_string);
+            echo "Accessed $url<br/>";
+            echo $array_data;
+
+            //Patient Validation failed
+            //ALERT_RECEIVED
+
+            /*$xml_string = file_get_contents(ExternalModules::getModuleDirectoryPath($this->PREFIX)."/data/AlertProtocolState.xml");
+            $url = $this->getSystemSetting('epic-upload-url');
+            echo "<pre>";
+            print_r(htmlentities($xml_string));
+            echo "</pre>";
+            $headers = array(
+                "Content-type: application/soap+xml; charset=utf-8",
+                "Accept: text/xml",
+                "Cache-Control: no-cache",
+                "Pragma: no-cache",
+                "SOAPAction: $url",
+                "Content-length: ".strlen($xml_string),
+            );
+
+            $ch = curl_init();
+            curl_setopt($ch,CURLOPT_URL,$url);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $xml_string);
+            curl_setopt($ch,CURLOPT_POST,1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 300);
+            curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,1);
+            curl_setopt($ch,CURLOPT_HTTPHEADER,$headers);
+            $data = curl_exec($ch);
+            curl_close($ch);
+            var_dump($data);
+            $array_data = json_decode(json_decode(@simplexml_load_string($data)),true);
+            echo "Accessed $url<br/>";
+            echo "<pre>";
+            print_r($array_data);
+            echo "</pre>";*/
+        }
     }
 
    /**
@@ -113,6 +153,14 @@ class EpicParticipantUpdater extends AbstractExternalModule
     */
     function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
     {
+        $xmlData = EpicDataPush::generateXML($project_id,$record,$event_id,$repeat_instance);
+        $dom = new \DOMDocument('1.0');
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput = true;
+        $dom->loadXML($xmlData);
+        echo "<pre>";
+        echo print_r(htmlentities($dom->saveXML()));
+        echo "</pre>";
         /*libxml_use_internal_errors(true);
         $xml_string = file_get_contents(ExternalModules::getModuleDirectoryPath($this->PREFIX)."/data/request_DEV_dates.xml");
         $xmlData = EpicXMLParser::parse($xml_string);
@@ -121,6 +169,50 @@ class EpicParticipantUpdater extends AbstractExternalModule
         echo "<pre>";
         print_r($response);
         echo "</pre>";*/
+
+        $xml_string = file_get_contents(ExternalModules::getModuleDirectoryPath($this->PREFIX)."/data/AlertProtocolState.xml");
+        $url = $this->getSystemSetting('epic-upload-url');
+        $headers = array(
+            "Content-type: application/soap+xml; charset=utf-8",
+            "Accept: text/xml",
+            "Cache-Control: no-cache",
+            "Pragma: no-cache",
+            "SOAPAction: $url",
+            "Content-length: ".strlen($xml_string),
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch,CURLOPT_URL,$url);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $xml_string);
+        curl_setopt($ch,CURLOPT_POST,1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 300);
+        curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,1);
+        curl_setopt($ch,CURLOPT_HTTPHEADER,$headers);
+        /*$response = curl_exec($ch);
+        var_dump($response);
+        curl_close($ch);
+        $response1 = str_replace("<soap:Body>","",$response);
+        $response2 = str_replace("</soap:Body>","",$response1);
+echo "Response: $response2<br/>";
+        // convertingc to XML
+        $parser = @simplexml_load_string($response2);
+        echo "Parser: ".$parser."<br/>";*/
+
+$options = array(
+    'http' => array(
+        'header' => "Content-type: application/soap+xml; charset=utf-8\r\n",
+        'method' => 'POST',
+        'content' => $xml_string
+    )
+);
+
+/*$response = file_get_contents($url, false, stream_context_create($options));
+
+var_dump([
+    'headers' => $http_response_header,
+    'content' => $response
+]);*/
     }
 
     /**
@@ -179,4 +271,18 @@ class EpicParticipantUpdater extends AbstractExternalModule
         return $token;
     }
 
+    public function getSettingsForXML($project_id)
+    {
+        return [
+            self::SETTINGS_FIELD_LASTNAME=>$this->getProjectSetting(self::SETTINGS_FIELD_LASTNAME,$project_id),
+            self::SETTINGS_FIELD_FIRSTNAME=>$this->getProjectSetting(self::SETTINGS_FIELD_FIRSTNAME,$project_id),
+            self::SETTINGS_FIELD_DOB=>$this->getProjectSetting(self::SETTINGS_FIELD_DOB,$project_id),
+            self::SETTINGS_FIELD_MRN=>$this->getProjectSetting(self::SETTINGS_FIELD_MRN,$project_id),
+            self::SETTINGS_STUDY_ID=>$this->getProjectSetting(self::SETTINGS_STUDY_ID,$project_id)
+        ];
+    }
+
+    public function getProjectEvent($project_id) {
+        return $this->getProjectSetting(self::SETTINGS_FIELD_EVENT_ID,$project_id);
+    }
 }

@@ -4,14 +4,15 @@
     </ep1:Header>
     <ep1:Body>
         <ep3:AlertProtocolState xmlns:ep3="urn:ihe:qrph:rpe:2009">
-            <ep3:processState>CONSENTED</ep3:processState>
+            <ep3:processState>On Study</ep3:processState>
             <ep3:patient>
-                <ep3:candidateID root="1.2.840.114350.1.13.478.2.7.5.737384.14" extension="002105611" />
+                <ep3:candidateID root="1.2.840.114350.1.13.478.2.7.5.737384.14" extension="002104187" />
                 <ep3:name>
-                    <given xmlns="urn:hl7-org:v3">BEN</given>
-                    <family xmlns="urn:hl7-org:v3">TEST</family>
+                    <given xmlns="urn:hl7-org:v3">Allergy</given>
+                    <family xmlns="urn:hl7-org:v3">Test</family>
                 </ep3:name>
             </ep3:patient>
+            <ep3:dob value="20110626"/>
             <study xmlns="urn:hl7-org:v3">
                 <instantiation>
                     <plannedStudy>
