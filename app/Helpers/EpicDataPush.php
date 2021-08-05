@@ -8,7 +8,7 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicDataPush
 {
-    static function generateXML($project_id,$record,$event_id,$repeat_instance=1) {
+    static function generateXML($status, $project_id,$record,$event_id,$repeat_instance=1) {
         $epicModule = new EpicParticipantUpdater();
         $settingsEvent = $epicModule->getProjectEvent($project_id);
 
@@ -25,7 +25,7 @@ class EpicDataPush
 
         $body = $xml->addChild('xmlns:ep1:Body');
         $alertProState = $body->addChild('ep3:AlertProtocolState','','urn:ihe:grph:rpe:2009');
-        $alertProState->addChild('processState','On Study');
+        $alertProState->addChild('processState',$status);
         $patient = $alertProState->addChild('patient');
         $candidate = $patient->addChild('candidateID');
         $candidate->addAttribute('root','1.2.840.114350.1.13.478.2.7.5.737384.14');
