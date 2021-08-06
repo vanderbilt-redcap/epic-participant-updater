@@ -104,6 +104,9 @@ class EpicParticipantUpdater extends AbstractExternalModule
             elseif (strpos($result,"ALERT_RECEIVED") !== false) {
                 $logString = "Patient status '$status' received by Epic";
             }
+            else {
+                $logString .= " - $result";
+            }
 
             \REDCap::logEvent("Epic Status Push for record $record",$logString);
         }
