@@ -127,6 +127,15 @@
       "required": false,
       "type": "form-list",
       "repeatable": false
+    },
+    {
+      "key": "run_hook",
+      "name": "Call REDCap's save record hook on data import from Epic",
+      "type": "radio",
+      "choices": [
+        {"value":"yes", "name":"Yes"},
+        {"value":"no", "name": "No"}
+      ]
     }
   ],
   "log-file": "log.txt"

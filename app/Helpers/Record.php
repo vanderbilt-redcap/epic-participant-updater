@@ -12,7 +12,7 @@ class Record
      * @param integer $project_id
      * @return array|false 
      */
-    private static function getFormData($project_id)
+    public static function getFormData($project_id)
     {
         $query_string = sprintf(
             "SELECT m.project_id,m.field_name,m.form_name

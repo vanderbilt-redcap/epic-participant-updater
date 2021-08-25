@@ -70,6 +70,10 @@ class Settings extends BaseModel {
         return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_DOB,$project_id);
     }
 
+    public function getCallHook($project_id) {
+	    return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_CALL_HOOK,$project_id);
+    }
+
 	public function getEventID($project_id)
 	{
 		return $this->module->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_EVENT_ID, $project_id);

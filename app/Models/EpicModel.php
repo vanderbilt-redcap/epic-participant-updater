@@ -1,5 +1,6 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
 
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record;
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
@@ -243,15 +244,20 @@ class EpicModel extends BaseModel
     }
 
     private function saveData($project_id, $study_id, $xml_data) {
-        $record_id = $this->getRecordIdForMrn($project_id, $xml_data['MRN']); // check for existing 
+        $record_id = $this->getRecordIdForMrn($project_id, $xml_data['MRN']); // check for existing
+
         if($record_id)
         {
             //update
             $this->updateRecord($project_id, $record_id, $study_id, $xml_data);
         }else{
+            // get the first available record_id
+            $record_id = $this->module->addAutoNumberedRecord($project_id);
             //create
-            $this->createRecord($project_id, $study_id, $xml_data);
+            $this->createRecord($project_id, $record_id, $study_id, $xml_data);
         }
+
+        $this->callREDCapSaveHook($project_id,$record_id,$study_id);
     }
 
     /**
@@ -336,11 +342,8 @@ class EpicModel extends BaseModel
      * @param string $existing_record_id
      * @return void
      */
-    private function createRecord($project_id, $study_id, $xml_data)
+    private function createRecord($project_id, $record_id, $study_id, $xml_data)
     {
-        // get the first available record_id
-        $record_id = $this->module->addAutoNumberedRecord($project_id);
-        
         $record = $this->getRecord($project_id, $record_id, $study_id, $xml_data);
         $result = \REDCap::saveData($project_id, 'array', $record);
 
@@ -415,6 +418,25 @@ class EpicModel extends BaseModel
         $event_id = $this->settings->getEventID($project_id);
         $record_id = RecordHelper::findRecordID($project_id, $event_id, $mrn_field_name, $MRN);
         return $record_id;
+    }
+
+    /**
+     * check module is set up to call 'redcap_save_record' hook and call it
+     *
+     * @return void
+     */
+    private function callREDCapSaveHook($project_id,$record_id,$study_id) {
+        if ($record_id) {
+            $study_id_field_name = $this->settings->getStudyIdFieldName($project_id);
+            $event_id = $this->settings->getEventID($project_id);
+            $instance = RecordHelper::getInstanceNumber($project_id, $event_id, $record_id, $study_id_field_name, $study_id);
+            $formData = Record::getFormData($project_id);
+
+            $callHook = $this->settings->getCallHook($project_id);
+            if ($callHook == "yes") {
+                \Hooks::call('redcap_save_record', array($project_id, $record_id, $formData[$study_id_field_name]->form_name, $event_id, null, null, null, $instance));
+            }
+        }
     }
 
     /**
