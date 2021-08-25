@@ -86,6 +86,12 @@
       "type": "field-list"
     },
     {
+      "key": "study-id-mapping-field",
+      "name": "Study ID",
+      "required": false,
+      "type": "field-list"
+    },
+    {
       "key": "fn-mapping-field",
       "name": "Given Name Field",
       "required": false,

@@ -28,6 +28,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_FIELD_FIRSTNAME = 'fn-mapping-field'; // mapped field
     const SETTINGS_FIELD_LASTNAME = 'ln-mapping-field'; // mapped field
     const SETTINGS_FIELD_EVENT_ID = 'event-id'; // mapped event
+    const SETTINGS_FIELD_STUDY_ID = 'study-id-mapping-field'; // mapped field
     const SETTINGS_FIELD_STATUS_LIST = 'status-list'; // mapped event
     const SETTINGS_CALL_HOOK = 'run_hook'; // save record hook call
 
