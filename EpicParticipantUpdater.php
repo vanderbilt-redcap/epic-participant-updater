@@ -125,6 +125,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
     */
     function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
     {
+        echo $this->getUrl('examples.php')."<br/>";
     }
 
     /**
