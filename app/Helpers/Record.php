@@ -123,7 +123,24 @@ class Record
         return false;
     }
 
+    public static function findFieldValue($project_id,$record_id,$event_id,$field_name,$instance = "") {
+        $query_string = sprintf(
+            "SELECT value FROM %s
+			WHERE project_id='%u' AND event_id='%u'
+            AND field_name='%s' AND record='%s' AND instance".($instance != "" && $instance != "1" ? " = '%u'" : " IS NULL")." LIMIT 1",
+            self::DB_TABLE,
+            $project_id,
+            $event_id,
+            $field_name,
+            $record_id,
+            $instance
+        );
 
+        $result = db_query($query_string);
+
+        if($row = db_fetch_object($result)) return $row->value;
+        return false;
+    }
 
     /**
      * get instance number for a record entry 

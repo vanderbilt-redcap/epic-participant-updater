@@ -12,6 +12,7 @@ use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
 
 class EpicParticipantUpdater extends AbstractExternalModule
 {
@@ -31,6 +32,9 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_FIELD_STUDY_ID = 'study-id-mapping-field'; // mapped field
     const SETTINGS_FIELD_STATUS_LIST = 'status-list'; // mapped event
     const SETTINGS_CALL_HOOK = 'run_hook'; // save record hook call
+    const SETTINGS_PUSH_FORM = 'push-form'; // Have to specify which survey should be completed to trigger status push to Epic
+    const SETTINGS_PUSH_FIELD = 'push-field'; // Field to trigger status push to Epic
+    const SETTINGS_PUSH_VALUE = 'push-value'; // Value in field to trigger status push to Epic
 
     const ON_STUDY_STATUS = "ON STUDY";
 
@@ -88,7 +92,11 @@ class EpicParticipantUpdater extends AbstractExternalModule
      */
     function redcap_survey_complete($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1)
     {
-        $surveyToPush = $this->getProjectSetting('push-form');
+        $surveyToPush = $this->getProjectSetting(self::SETTINGS_PUSH_FORM,$project_id);
+        $studyField = $this->getProjectSetting(self::SETTINGS_FIELD_STATUS,$project_id);
+        $triggerField = $this->getProjectSetting(self::SETTINGS_PUSH_FIELD,$project_id);
+        $triggerValue = $this->getProjectSetting(self::SETTINGS_PUSH_VALUE,$project_id);
+        $currentProject = new \Project($project_id);
 
         if ($surveyToPush == $instrument) {
             $status = "On Study";
@@ -105,6 +113,15 @@ class EpicParticipantUpdater extends AbstractExternalModule
             }
             elseif (strpos($result,"ALERT_RECEIVED") !== false) {
                 $logString = "Patient status '$status' received by Epic";
+                $currentTriggerValue = "";
+                if ($triggerField != "") {
+                    $currentTriggerValue = RecordHelper::findFieldValue($project_id,$record,$event_id,$triggerField,$repeat_instance);
+                }
+                if ($triggerValue == "" || $triggerValue == $currentTriggerValue) {
+                    $fields = array($currentProject->table_pk=>$record,$studyField=>$status);
+                    $saveData = RecordHelper::getRecordSchema($project_id,$event_id,$record,$fields,$repeat_instance);
+                    $result = \REDCap::saveData($project_id,'array',$saveData);
+                }
             }
             else {
                 $logString .= " - $result";
@@ -126,7 +143,6 @@ class EpicParticipantUpdater extends AbstractExternalModule
     */
     function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
     {
-        //echo $this->getUrl('examples.php')."<br/>";
     }
 
     /**

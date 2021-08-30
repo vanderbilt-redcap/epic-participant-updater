@@ -135,6 +135,18 @@
       "repeatable": false
     },
     {
+      "key": "push-field",
+      "name": "Field required to have a value to trigger status update to Epic (leave blank to trigger on any save of survey form)",
+      "required": false,
+      "type": "field-list"
+    },
+    {
+      "key": "push-value",
+      "name": "Value required in the field above to trigger status update to Epic (leave blank to trigger on any value)",
+      "required": false,
+      "type": "text"
+    },
+    {
       "key": "run_hook",
       "name": "Call REDCap's save record hook on data import from Epic",
       "type": "radio",
