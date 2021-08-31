@@ -101,7 +101,9 @@ class EpicParticipantUpdater extends AbstractExternalModule
         if ($surveyToPush == $instrument) {
             $status = "On Study";
             $xml_string = EpicDataPush::generateXML($status, $project_id, $record, $event_id, $repeat_instance);
-
+echo "<pre>";
+print_r(htmlentities($xml_string));
+echo "</pre>";
             $url = $this->getSystemSetting('epic-upload-url');
 
             $result = EpicDataPush::uploadParticipantXML($url,$xml_string);
@@ -129,6 +131,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
 
             \REDCap::logEvent("Epic Status Push for record $record",$logString);
         }
+        $this->exitAfterHook();
     }
 
    /**
