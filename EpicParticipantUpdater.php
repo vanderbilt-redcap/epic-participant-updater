@@ -35,6 +35,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_PUSH_FORM = 'push-form'; // Have to specify which survey should be completed to trigger status push to Epic
     const SETTINGS_PUSH_FIELD = 'push-field'; // Field to trigger status push to Epic
     const SETTINGS_PUSH_VALUE = 'push-value'; // Value in field to trigger status push to Epic
+    const SETTINGS_PUSH_STATUS = 'push-status'; // Status value to push for any field combination
 
     const ON_STUDY_STATUS = "ON STUDY";
 
@@ -94,40 +95,43 @@ class EpicParticipantUpdater extends AbstractExternalModule
     {
         $surveyToPush = $this->getProjectSetting(self::SETTINGS_PUSH_FORM,$project_id);
         $studyField = $this->getProjectSetting(self::SETTINGS_FIELD_STATUS,$project_id);
-        $triggerField = $this->getProjectSetting(self::SETTINGS_PUSH_FIELD,$project_id);
-        $triggerValue = $this->getProjectSetting(self::SETTINGS_PUSH_VALUE,$project_id);
+        $triggerFields = $this->getProjectSetting(self::SETTINGS_PUSH_FIELD,$project_id);
+        $triggerValues = $this->getProjectSetting(self::SETTINGS_PUSH_VALUE,$project_id);
+        $statusValues = $this->getProjectSetting(self::SETTINGS_PUSH_STATUS,$project_id);
         $currentProject = new \Project($project_id);
 
         if ($surveyToPush == $instrument) {
-            $status = "On Study";
-            $xml_string = EpicDataPush::generateXML($status, $project_id, $record, $event_id, $repeat_instance);
-
-            $url = $this->getSystemSetting('epic-upload-url');
-
-            $result = EpicDataPush::uploadParticipantXML($url,$xml_string);
-
-            $logString = "Unknown EPIC upload result";
-
-            if (strpos($result,"Patient Validation failed") !== false) {
-                $logString = "Patient could not be validated in Epic";
-            }
-            elseif (strpos($result,"ALERT_RECEIVED") !== false) {
-                $logString = "Patient status '$status' received by Epic";
+            foreach ($statusValues as $index => $statusValue) {
+                $triggerField = $triggerFields[$index];
+                $triggerValue = $triggerValues[$index];
                 $currentTriggerValue = "";
                 if ($triggerField != "") {
                     $currentTriggerValue = RecordHelper::findFieldValue($project_id,$record,$event_id,$triggerField,$repeat_instance);
                 }
-                if ($triggerValue == "" || $triggerValue == $currentTriggerValue) {
-                    $fields = array($currentProject->table_pk=>$record,$studyField=>$status);
-                    $saveData = RecordHelper::getRecordSchema($project_id,$event_id,$record,$fields,$repeat_instance);
-                    $result = \REDCap::saveData($project_id,'array',$saveData);
+                if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue = $triggerValue)) {
+                    $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance);
+
+                    $url = $this->getSystemSetting('epic-upload-url');
+
+                    $result = EpicDataPush::uploadParticipantXML($url,$xml_string);
+
+                    $logString = "Unknown EPIC upload result";
+
+                    if (strpos($result,"Patient Validation failed") !== false) {
+                        $logString = "Patient could not be validated in Epic";
+                    }
+                    elseif (strpos($result,"ALERT_RECEIVED") !== false) {
+                        $logString = "Patient status '$statusValue' received by Epic";
+                        $fields = array($currentProject->table_pk=>$record,$studyField=>$statusValue);
+                        $saveData = RecordHelper::getRecordSchema($project_id,$event_id,$record,$fields,$repeat_instance);
+                        $result = \REDCap::saveData($project_id,'array',$saveData);
+                    }
+                    else {
+                        $logString .= " - $result";
+                    }
+                    \REDCap::logEvent("Epic Status Push for record $record",$logString);
                 }
             }
-            else {
-                $logString .= " - $result";
-            }
-
-            \REDCap::logEvent("Epic Status Push for record $record",$logString);
         }
     }
 
