@@ -102,6 +102,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
 
         if ($surveyToPush == $instrument) {
             foreach ($statusValues as $index => $statusValue) {
+                if ($statusValue == "") continue;
                 $triggerField = $triggerFields[$index];
                 $triggerValue = $triggerValues[$index];
                 $currentTriggerValue = "";
