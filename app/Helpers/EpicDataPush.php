@@ -39,7 +39,7 @@ class EpicDataPush
         $plannedStudy = $instantiation->addChild('plannedStudy');
         $plannedId = $plannedStudy->addChild('id');
         $plannedId->addAttribute('root','1.2.3.4');
-        $plannedId->addAttribute('extension',str_pad($fieldSettings[EpicParticipantUpdater::SETTINGS_STUDY_ID],6,'0',STR_PAD_LEFT));
+        $plannedId->addAttribute('extension',str_pad($validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID]],6,'0',STR_PAD_LEFT));
         $component = $study->addChild('component1');
         $studyActivities = $component->addChild('studyActivitiesAtSite');
         $subject1 = $studyActivities->addChild('subject1');
