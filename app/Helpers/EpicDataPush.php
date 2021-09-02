@@ -16,6 +16,10 @@ class EpicDataPush
         $validData = $recordData[$record][$settingsEvent];
 
         $fieldSettings = $epicModule->getSettingsForXML($project_id);
+        echo "Setting: ".$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID]."<br/>";
+        echo "<pre>";
+        print_r($validData);
+        echo "</pre>";
 
         $xml = new \SimpleXMLElement('<ep1:Envelope/>',LIBXML_NOERROR,false,'ep1',true);
         $xml->addAttribute('xmlns:xmlns:ep1','http://www.w3.org/2003/05/soap-envelope');

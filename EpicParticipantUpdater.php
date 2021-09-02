@@ -216,7 +216,8 @@ exit;
             self::SETTINGS_FIELD_FIRSTNAME=>$this->getProjectSetting(self::SETTINGS_FIELD_FIRSTNAME,$project_id),
             self::SETTINGS_FIELD_DOB=>$this->getProjectSetting(self::SETTINGS_FIELD_DOB,$project_id),
             self::SETTINGS_FIELD_MRN=>$this->getProjectSetting(self::SETTINGS_FIELD_MRN,$project_id),
-            self::SETTINGS_STUDY_ID=>$this->getProjectSetting(self::SETTINGS_STUDY_ID,$project_id)
+            self::SETTINGS_STUDY_ID=>$this->getProjectSetting(self::SETTINGS_STUDY_ID,$project_id),
+            self::SETTINGS_FIELD_STUDY_ID=>$this->getProjectSetting(self::SETTINGS_FIELD_STUDY_ID,$project_id)
         ];
     }
 
