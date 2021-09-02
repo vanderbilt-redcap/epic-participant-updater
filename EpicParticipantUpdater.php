@@ -111,7 +111,10 @@ class EpicParticipantUpdater extends AbstractExternalModule
                 }
                 if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue = $triggerValue)) {
                     $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance);
-
+echo "<pre>";
+print_r(htmlentities($xml_string));
+echo "</pre>";
+exit;
                     $url = $this->getSystemSetting('epic-upload-url');
 
                     $result = EpicDataPush::uploadParticipantXML($url,$xml_string);
