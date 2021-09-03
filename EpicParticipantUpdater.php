@@ -93,44 +93,43 @@ class EpicParticipantUpdater extends AbstractExternalModule
      */
     function redcap_survey_complete($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1)
     {
-        $surveyToPush = $this->getProjectSetting(self::SETTINGS_PUSH_FORM,$project_id);
+        $surveysToPush = $this->getProjectSetting(self::SETTINGS_PUSH_FORM,$project_id);
         $studyField = $this->getProjectSetting(self::SETTINGS_FIELD_STATUS,$project_id);
         $triggerFields = $this->getProjectSetting(self::SETTINGS_PUSH_FIELD,$project_id);
         $triggerValues = $this->getProjectSetting(self::SETTINGS_PUSH_VALUE,$project_id);
         $statusValues = $this->getProjectSetting(self::SETTINGS_PUSH_STATUS,$project_id);
         $currentProject = new \Project($project_id);
 
-        if ($surveyToPush == $instrument) {
-            foreach ($statusValues as $index => $statusValue) {
+        foreach ($surveysToPush as $index => $surveyToPush) {
+            if ($surveyToPush == $instrument) {
+                $statusValue = $statusValues[$index];
                 if ($statusValue == "") continue;
                 $triggerField = $triggerFields[$index];
                 $triggerValue = $triggerValues[$index];
                 $currentTriggerValue = "";
                 if ($triggerField != "") {
-                    $currentTriggerValue = RecordHelper::findFieldValue($project_id,$record,$event_id,$triggerField,$repeat_instance);
+                    $currentTriggerValue = RecordHelper::findFieldValue($project_id, $record, $event_id, $triggerField, $repeat_instance);
                 }
                 if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue = $triggerValue)) {
                     $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance);
 
                     $url = $this->getSystemSetting('epic-upload-url');
 
-                    $result = EpicDataPush::uploadParticipantXML($url,$xml_string);
+                    $result = EpicDataPush::uploadParticipantXML($url, $xml_string);
 
                     $logString = "Unknown EPIC upload result";
 
-                    if (strpos($result,"Patient Validation failed") !== false) {
+                    if (strpos($result, "Patient Validation failed") !== false) {
                         $logString = "Patient could not be validated in Epic";
-                    }
-                    elseif (strpos($result,"ALERT_RECEIVED") !== false) {
+                    } elseif (strpos($result, "ALERT_RECEIVED") !== false) {
                         $logString = "Patient status '$statusValue' received by Epic";
-                        $fields = array($currentProject->table_pk=>$record,$studyField=>$statusValue);
-                        $saveData = RecordHelper::getRecordSchema($project_id,$event_id,$record,$fields,$repeat_instance);
-                        $result = \REDCap::saveData($project_id,'array',$saveData);
-                    }
-                    else {
+                        $fields = array($currentProject->table_pk => $record, $studyField => $statusValue);
+                        $saveData = RecordHelper::getRecordSchema($project_id, $event_id, $record, $fields, $repeat_instance);
+                        $result = \REDCap::saveData($project_id, 'array', $saveData);
+                    } else {
                         $logString .= " - $result";
                     }
-                    \REDCap::logEvent("Epic Status Push for record $record",$logString);
+                    \REDCap::logEvent("Epic Status Push for record $record", $logString);
                 }
             }
         }

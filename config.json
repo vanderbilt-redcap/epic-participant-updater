@@ -128,13 +128,6 @@
       "repeatable": false
     },
     {
-      "key": "push-form",
-      "name": "Survey Form That Updates Status Upon Completion",
-      "required": false,
-      "type": "form-list",
-      "repeatable": false
-    },
-    {
       "key": "run_hook",
       "name": "Call REDCap's save record hook on data import from Epic",
       "type": "radio",
@@ -149,6 +142,13 @@
       "type": "sub_settings",
       "repeatable": true,
       "sub_settings": [
+        {
+          "key": "push-form",
+          "name": "Survey Form That Updates Status Upon Completion",
+          "required": false,
+          "type": "form-list",
+          "repeatable": false
+        },
         {
           "key": "push-field",
           "name": "Field required to have a value to trigger status update to Epic (leave blank to trigger on any save of survey form)",
