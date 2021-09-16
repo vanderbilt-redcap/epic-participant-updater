@@ -103,6 +103,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
         foreach ($surveysToPush as $index => $surveyToPush) {
             if ($surveyToPush == $instrument) {
                 $statusValue = $statusValues[$index];
+
                 if ($statusValue == "") continue;
                 $triggerField = $triggerFields[$index];
                 $triggerValue = $triggerValues[$index];
@@ -110,7 +111,8 @@ class EpicParticipantUpdater extends AbstractExternalModule
                 if ($triggerField != "") {
                     $currentTriggerValue = RecordHelper::findFieldValue($project_id, $record, $event_id, $triggerField, $repeat_instance);
                 }
-                if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue = $triggerValue)) {
+
+                if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue == $triggerValue)) {
                     $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance);
 
                     $url = $this->getSystemSetting('epic-upload-url');
@@ -129,7 +131,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
                     } else {
                         $logString .= " - $result";
                     }
-                    \REDCap::logEvent("Epic Status Push for record $record", $logString);
+                    \REDCap::logEvent("Epic Status Push $statusValue for record $record", $logString);
                 }
             }
         }
