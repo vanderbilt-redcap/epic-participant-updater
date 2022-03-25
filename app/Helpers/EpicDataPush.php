@@ -30,9 +30,9 @@ class EpicDataPush
         $candidate = $patient->addChild('candidateID');
         $candidate->addAttribute('root','1.2.840.114350.1.13.478.2.7.5.737384.14');
         $candidate->addAttribute('extension',str_pad($validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_MRN]],9,'0',STR_PAD_LEFT));
-        $subjectID = $patient->addChild('subjectID');
+        /*$subjectID = $patient->addChild('subjectID');
         $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
-        $subjectID->addAttribute('extension',$record);
+        $subjectID->addAttribute('extension',$record);*/
         $name = $patient->addChild('name');
         $name->addChild('given',$validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME]],'urn:h7-org:v3');
         $name->addChild('family',$validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME]],'urn:hl7-org:v3');
