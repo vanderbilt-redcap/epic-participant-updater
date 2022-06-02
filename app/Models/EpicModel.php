@@ -434,6 +434,7 @@ class EpicModel extends BaseModel
 
             $callHook = $this->settings->getCallHook($project_id);
             if ($callHook == "yes") {
+                $_GET['pid'] = $project_id;
                 \Hooks::call('redcap_save_record', array($project_id, $record_id, $formData[$study_id_field_name]->form_name, $event_id, null, null, null, $instance));
             }
         }
