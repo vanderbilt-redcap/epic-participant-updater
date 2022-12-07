@@ -93,6 +93,46 @@ class EpicParticipantUpdater extends AbstractExternalModule
      */
     function redcap_survey_complete($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1)
     {
+        $runOnRecordSave = $this->getProjectSetting('run_on_record_save', (int) $project_id);
+        if(!$runOnRecordSave) {
+            $this->pushStudyStatus($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1);
+        }
+    }
+
+    /**
+    * function excecuted when viewing a REDCap data entry form for a record
+    * @param int $project_id
+    * @param string $record
+    * @param string $instrument
+    * @param int $event_id
+    * @param int $group_id
+    * @param string $survey_hash
+    * @param int $response_id
+    * @param int $repeat_instance
+    * @return void
+    */
+    function redcap_save_record ($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
+        $runOnRecordSave = $this->getProjectSetting('run_on_record_save', (int) $project_id);
+        if($runOnRecordSave) {
+            $this->pushStudyStatus($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1);
+        }
+    }
+
+   /**
+    * function excecuted when viewing a REDCap data entry form for a record
+    * @param int $project_id
+    * @param string $record
+    * @param string $instrument
+    * @param int $event_id
+    * @param int $group_id
+    * @param int $repeat_instance
+    * @return void
+    */
+    function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
+    {
+    }
+
+    function pushStudyStatus($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
         $surveysToPush = $this->getProjectSetting(self::SETTINGS_PUSH_FORM,$project_id);
         $studyField = $this->getProjectSetting(self::SETTINGS_FIELD_STATUS,$project_id);
         $triggerFields = $this->getProjectSetting(self::SETTINGS_PUSH_FIELD,$project_id);
@@ -135,20 +175,6 @@ class EpicParticipantUpdater extends AbstractExternalModule
                 }
             }
         }
-    }
-
-   /**
-    * function excecuted when viewing a REDCap data entry form for a record
-    * @param int $project_id
-    * @param string $record
-    * @param string $instrument
-    * @param int $event_id
-    * @param int $group_id
-    * @param int $repeat_instance
-    * @return void
-    */
-    function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
-    {
     }
 
     /**

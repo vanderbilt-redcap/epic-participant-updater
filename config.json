@@ -137,6 +137,12 @@
       ]
     },
     {
+        "key": "run_on_record_save",
+        "name": "Run status update on record save instead of survey submission?",
+        "type": "checkbox",
+        "super-users-only": true
+    },
+    {
       "key": "pipe-pairing",
       "name": "Field and Value Pairs for Pushing Status Values",
       "type": "sub_settings",
