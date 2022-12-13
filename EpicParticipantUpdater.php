@@ -93,7 +93,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
      */
     function redcap_survey_complete($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1)
     {
-        $runOnRecordSave = $this->getProjectSetting('run_on_record_save', (int) $project_id);
+        $runOnRecordSave = $this->getProjectSetting('run_on_record_save', $project_id);
         if(!$runOnRecordSave) {
             $this->pushStudyStatus($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1);
         }
@@ -112,7 +112,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
     * @return void
     */
     function redcap_save_record ($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
-        $runOnRecordSave = $this->getProjectSetting('run_on_record_save', (int) $project_id);
+        $runOnRecordSave = $this->getProjectSetting('run_on_record_save', $project_id);
         if($runOnRecordSave) {
             $this->pushStudyStatus($project_id, $record, $instrument, $event_id, $group_id, $survey_hash, $response_id, $repeat_instance = 1);
         }
