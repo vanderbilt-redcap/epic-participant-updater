@@ -36,6 +36,8 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_PUSH_FIELD = 'push-field'; // Field to trigger status push to Epic
     const SETTINGS_PUSH_VALUE = 'push-value'; // Value in field to trigger status push to Epic
     const SETTINGS_PUSH_STATUS = 'push-status'; // Status value to push for any field combination
+    const SETTINGS_USE_ALTERNATE_ID = 'use-alternate-id';
+    const SETTINGS_ALTERNATE_ID_FIELD = 'alternate-id-field';
 
     const ON_STUDY_STATUS = "ON STUDY";
 
@@ -138,6 +140,8 @@ class EpicParticipantUpdater extends AbstractExternalModule
         $triggerFields = $this->getProjectSetting(self::SETTINGS_PUSH_FIELD,$project_id);
         $triggerValues = $this->getProjectSetting(self::SETTINGS_PUSH_VALUE,$project_id);
         $statusValues = $this->getProjectSetting(self::SETTINGS_PUSH_STATUS,$project_id);
+        $useAlternateID = $this->getProjectSetting(self::SETTINGS_USE_ALTERNATE_ID,$project_id);
+        $alternateIDField = $this->getProjectSetting(self::SETTINGS_ALTERNATE_ID_FIELD,$project_id);
         $currentProject = new \Project($project_id);
 
         foreach ($surveysToPush as $index => $surveyToPush) {
@@ -153,7 +157,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
                 }
 
                 if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue == $triggerValue)) {
-                    $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance);
+                    $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance, $useAlternateID, $alternateIDField);
 
                     $url = $this->getSystemSetting('epic-upload-url');
 
