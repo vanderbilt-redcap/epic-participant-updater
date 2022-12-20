@@ -58,9 +58,31 @@
       "required": true
     },
     {
-      "key": "descriptive-text-mapping",
-      "name": "Set the mapping fields.",
+      "key": "descriptive-text-alt-id",
+      "name": "Participant ID.",
       "type": "descriptive"
+    },
+    {
+        "key": "use-alternate-id",
+        "name": "Use field other than Record ID as Participant ID in Epic?",
+        "type": "checkbox",
+        "super-users-only": true
+    },
+    {
+        "key": "alternate-id-field",
+        "name": "Alternate ID Field",
+        "required": false,
+        "type": "field-list",
+        "branchingLogic": {
+            "field": "use-alternate-id",
+            "value": "1"
+        },
+        "super-users-only": true
+    },
+    {
+        "key": "descriptive-text-mapping",
+        "name": "Set the mapping fields.",
+        "type": "descriptive"
     },
     {
       "key": "mrn-mapping-field",
