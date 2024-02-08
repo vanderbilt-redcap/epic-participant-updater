@@ -4,11 +4,8 @@ namespace Vanderbilt\EpicParticipantUpdater;
 $autoload = join(DIRECTORY_SEPARATOR, [__DIR__,'vendor','autoload.php']);
 if(file_exists($autoload)) require_once($autoload);
 
-require join(DIRECTORY_SEPARATOR, [__DIR__, 'app', 'Helpers', 'DependencyHelper.php']);
 
 use ExternalModules\AbstractExternalModule;
-use ExternalModules\ExternalModules;
-use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
