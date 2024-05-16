@@ -1,10 +1,10 @@
 <?php
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
+use Records;
+
 class Record
 {
-    
-    const DB_TABLE = 'redcap_data';
     
     /**
      * get the form name of a field
@@ -107,36 +107,32 @@ class Record
 	 */
 	public static function findRecordID($project_id, $event_id, $field_name, $value)
 	{
-		$query_string = sprintf(
-			"SELECT * FROM %s
-			WHERE project_id='%u' AND event_id='%u'
-            AND field_name='%s' AND value='%s' LIMIT 1",
-			self::DB_TABLE,
-			$project_id,
-			$event_id,
-			$field_name,
-			$value
-        );
-       
-        $result = db_query($query_string);
+        $dataTable = Records::getDataTable($project_id);
+        $params = [$project_id, $event_id, $field_name, $value];
+        $query_string = "SELECT * FROM $dataTable
+            WHERE project_id=? AND event_id=?
+            AND field_name=? AND value=? LIMIT 1";
+        $result = db_query($query_string, $params);
         if($row = db_fetch_object($result)) return $row->record;
         return false;
     }
 
     public static function findFieldValue($project_id,$record_id,$event_id,$field_name,$instance = "") {
-        $query_string = sprintf(
-            "SELECT value FROM %s
-			WHERE project_id='%u' AND event_id='%u'
-            AND field_name='%s' AND record='%s' AND instance".($instance != "" && $instance != "1" ? " = '%u'" : " IS NULL")." LIMIT 1",
-            self::DB_TABLE,
-            $project_id,
-            $event_id,
-            $field_name,
-            $record_id,
-            $instance
-        );
+        $dataTable = Records::getDataTable($project_id);
+        $params = [$project_id, $event_id, $field_name, $record_id, $instance];
 
-        $result = db_query($query_string);
+        $query_string = "SELECT value FROM $dataTable
+			WHERE project_id=? AND event_id=?
+            AND field_name=? AND record=?";
+        if($instance != '' && $instance != '1') {
+            $query_string .= ' AND instance=?';
+            $params[] = $instance;
+        } else {
+            $query_string .= ' AND instance IS NULL';
+        }
+        $query_string .= " LIMIT 1";
+
+        $result = db_query($query_string, $params);
 
         if($row = db_fetch_object($result)) return $row->value;
         return false;
@@ -157,43 +153,44 @@ class Record
         /**
          * helper function to get the next instance number
          */
-        $getNextInstanceNumber = function($table, $project_id, $event_id, $record_id, $field_name) {
-            $query_string = sprintf(
-                "SELECT MAX(IFNULL(instance, 1)) AS max_instance
-                FROM %s
-                WHERE project_id='%u'
-                AND event_id='%u'
-                AND record='%u'
-                AND field_name='%s'",
-                $table,
+        $getNextInstanceNumber = function($project_id, $event_id, $record_id, $field_name) {
+            $dataTable = Records::getDataTable($project_id);
+            $params = [
                 $project_id,
                 $event_id,
                 $record_id,
                 $field_name
-            );
-            $result = db_query($query_string);
+            ];
+            $query_string = "SELECT MAX(IFNULL(instance, 1)) AS max_instance
+                FROM $dataTable
+                WHERE project_id=?
+                AND event_id=?
+                AND record=?
+                AND field_name=?";
+            $result = db_query($query_string, $params);
             if($row = db_fetch_object($result)) return intval($row->max_instance)+1;
             else return 1;
         };
 
         if(empty($field_name)) return 1;
-		$query_string = sprintf(
-			"SELECT *, IFNULL(instance, 1) AS normalized_instance
-            FROM %s
-			WHERE project_id='%u'
-            AND event_id='%u'
-            AND record='%u'
-            AND field_name='%s' AND value='%s' LIMIT 1",
-			self::DB_TABLE,
-			$project_id,
+
+        $dataTable = Records::getDataTable($project_id);
+        $params = [
+            $project_id,
 			$event_id,
 			$record_id,
 			$field_name,
 			$value
-        );
-        $result = db_query($query_string);
+        ];
+		$query_string = "SELECT *, IFNULL(instance, 1) AS normalized_instance
+            FROM $dataTable
+			WHERE project_id=?
+            AND event_id=?
+            AND record=?
+            AND field_name=? AND value=? LIMIT 1";
+        $result = db_query($query_string, $params);
         if($row = db_fetch_object($result)) return intval($row->normalized_instance);
-        else return $getNextInstanceNumber(self::DB_TABLE, $project_id, $event_id, $record_id, $field_name);
+        else return $getNextInstanceNumber($project_id, $event_id, $record_id, $field_name);
     }
 
     /**
@@ -204,15 +201,13 @@ class Record
 	 */
 	public static function getNextAutoNumberedRecordId($project_id)
 	{
-		$query_string = sprintf(
-			"SELECT record FROM %s
-			WHERE project_id='%u'
+        $dataTable = Records::getDataTable($project_id);
+        $params = [$project_id];
+		$query_string = "SELECT record FROM $dataTable
+			WHERE project_id=?
 			GROUP BY record
-			ORDER BY CAST(record AS UNSIGNED INTEGER) DESC limit 1",
-			self::DB_TABLE,
-			$project_id
-		);
-		$result = db_query($query_string);
+			ORDER BY CAST(record AS UNSIGNED INTEGER) DESC limit 1";
+		$result = db_query($query_string, $params);
 		if($row=db_fetch_assoc($result))
 		{
 			$record = $row['record'];

@@ -1,12 +1,23 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Controllers;
 
-use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater as EPU;
+use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
 
 class EpicController extends BaseController
 {
+    /**
+     *
+     * @var EpicParticipantUpdater
+     */
     private $module;
+
+    /**
+     *
+     * @var EpicModel
+     */
+    private $app;
+
     private $defaults = [
         'logs_per_page' => 50,
     ];
@@ -54,8 +65,14 @@ class EpicController extends BaseController
             $app_settings = $this->appSettings();
             $projects = $this->projectsData();
             $api_token_data = $this->apiTokenData();
+            $epic_upload_url = $this->module->getEpicUploadURL();
 
-            $response = compact('app_settings', 'projects', 'api_token_data');
+            $response = [
+                'app_settings' => $app_settings,
+                'projects' => $projects,
+                'api_token_data' => $api_token_data,
+                'epic_upload_url' => $epic_upload_url,
+            ];
         } catch (\Exception $e) {
             $response = [
                 'message' => $e->getMessage(),

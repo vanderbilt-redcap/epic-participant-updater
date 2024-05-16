@@ -35,6 +35,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
     const SETTINGS_PUSH_STATUS = 'push-status'; // Status value to push for any field combination
     const SETTINGS_USE_ALTERNATE_ID = 'use-alternate-id';
     const SETTINGS_ALTERNATE_ID_FIELD = 'alternate-id-field';
+    const SETTINGS_EPIC_UPLOAD_URL = 'epic-upload-url';
 
     const ON_STUDY_STATUS = "ON STUDY";
 
@@ -132,6 +133,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
     }
 
     function pushStudyStatus($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
+        $url = $this->getSystemSetting(self::SETTINGS_EPIC_UPLOAD_URL);
         $surveysToPush = $this->getProjectSetting(self::SETTINGS_PUSH_FORM,$project_id);
         $studyField = $this->getProjectSetting(self::SETTINGS_FIELD_STATUS,$project_id);
         $triggerFields = $this->getProjectSetting(self::SETTINGS_PUSH_FIELD,$project_id);
@@ -155,8 +157,6 @@ class EpicParticipantUpdater extends AbstractExternalModule
 
                 if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue == $triggerValue)) {
                     $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance, $useAlternateID, $alternateIDField);
-
-                    $url = $this->getSystemSetting('epic-upload-url');
 
                     $result = EpicDataPush::uploadParticipantXML($url, $xml_string);
 
@@ -199,6 +199,11 @@ class EpicParticipantUpdater extends AbstractExternalModule
         return $this->getSystemSetting($this->api_token_key);
     }
 
+    public function getEpicUploadURL()
+    {
+        return $this->getSystemSetting(self::SETTINGS_EPIC_UPLOAD_URL);
+    }
+
     /**
      * set a random API token if none is set
      *
@@ -229,7 +234,6 @@ class EpicParticipantUpdater extends AbstractExternalModule
             "hash" => RandomString::generate(16),
         );
         $token = base64_encode(json_encode($data));
-
         $this->setSystemSetting($this->api_token_key, $token);
         //return $token;
     }

@@ -1,5 +1,5 @@
 <template>
-    <div class="page">
+    <div class="border rounded p-2 mt-2">
         <p>Download a project template and use it as a starting point or as a reference for how to use the module.</p>
         <ul>
             <template v-for="(link, label, index) in projectTemplates" :key="index">
@@ -13,7 +13,7 @@
 import { computed } from 'vue';
 import { useAppStore } from '../store'
 const store = useAppStore()
-const projectTemplates = computed(() => store.settings?.app_settings?.project_templates ?? {})
+const projectTemplates = computed(() => store?.app_settings?.project_templates ?? {})
 
 </script>
 

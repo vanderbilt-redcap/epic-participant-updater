@@ -29,7 +29,9 @@ class API {
         const url = new URL(location.href);
         const searchParams = url.searchParams;
         const defaultParams = {...this.#defaultParams}
+        const mandatoryParams = ['type', 'page'] // page and type should not be altered
         for (const [key, value] of searchParams) {
+            if (mandatoryParams.includes(key)) continue
             defaultParams[key] = value;
         }
         if(window.redcap_csrf_token) defaultParams['redcap_csrf_token'] = window.redcap_csrf_token;
