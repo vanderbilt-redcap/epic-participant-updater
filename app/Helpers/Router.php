@@ -2,11 +2,15 @@
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
 use Authentication;
+use Vanderbilt\EpicParticipantUpdater\App\Middlewares\MiddlewareInterface;
 
 class Router {
 
     const API_TOKEN_PROTECTED = 'api_token_protected';
     const REDCAP_USER_PROTECTED = 'redcap_user_protected';
+
+    private $baseController;
+    private $dispatcher;
     
     function __construct($routes=[], $baseController)
     {
@@ -75,19 +79,34 @@ class Router {
                 $this->baseController->notAllowed();
                 break;
             case \FastRoute\Dispatcher::FOUND:
-                $handler = $routeInfo[1];
-                $route_data = $routeInfo[1];
-                $handler = $route_data[0]; // extract the handler
-                // extract the 'protected' attribute
-                $protection = isset($route_data[1]) ? boolval($route_data[1]) : false;
-                if($protection == self::API_TOKEN_PROTECTED) $this->checkApiToken();
-                if($protection == self::REDCAP_USER_PROTECTED) $this->checkRedcapUser();
-                $vars = $routeInfo[2];
-                // ... call $handler with $vars
-                list($class, $method) = explode("/", $handler, 2);
-                call_user_func_array(array(new $class, $method), $vars);
+                try {
+                    $this->handleRoute($routeInfo);
+                } catch (\Throwable $th) {
+                    $message =$th->getMEssage();
+                    $status_code = $th->getCode();
+                    $response = array(
+                        "error" => true,
+                        "message" => $message,
+                    );
+                    $this->baseController->printJSON($response, $status_code);
+                }
                 break;
-        } 
+        }
+    }
+
+    private function handleRoute($routeInfo) {
+        $route_data = $routeInfo[1];
+        $handler = $route_data[0]; // extract the handler
+        // extract the middlewares
+        /** @var  MiddlewareInterface[] $middlewares */
+        $middlewares = $route_data[1] ?? [];
+        foreach ($middlewares as $middleware) {
+            $middleware->handle();
+        }
+        $vars = $routeInfo[2];
+        // ... call $handler with $vars
+        list($class, $method) = explode("/", $handler, 2);
+        call_user_func_array(array(new $class, $method), $vars);
     }
 
     private function checkRedcapUser()

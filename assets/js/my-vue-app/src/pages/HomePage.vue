@@ -1,5 +1,5 @@
 <template>
-    <div class="page">
+    <div class="border rounded p-2 mt-2">
         <p>This module exposes an endpoint that listens for study related data coming from Hyperspace.</p>
 
         <p>Whenever a patient is added to a study in Hyperspace, an XML payload is sent to an exposed URL in REDCap.</p>

@@ -4,6 +4,10 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class Settings extends BaseModel {
 	
+	/**
+	 *
+	 * @var EpicParticipantUpdater
+	 */
 	private $module;
 
 	/**

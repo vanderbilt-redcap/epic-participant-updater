@@ -17,24 +17,30 @@ export default defineStore('settings', () => {
         return data
     }
 
-    const settings = reactive({
-        api_token_data: {},
-        app_settings: {},
-        projects: [],
-    })
+    const regenerateToken = async() => {
+        const response = await api.create('regenerate_token')
+        return response
+    }
+
     const api_token_data = ref({})
+    const app_settings = ref({})
+    const projects = ref([])
+    const epic_upload_url = ref('')
 
     async function init() {
         const data = await getSettings()
-        console.log(data?.api_token_data)
-        settings.api_token_data = api_token_data.value = data?.api_token_data ?? {}
-        settings.app_settings = data?.app_settings ?? {}
-        settings.projects = data?.projects ?? []
+        api_token_data.value = data?.api_token_data ?? {}
+        app_settings.value = data?.app_settings ?? {}
+        projects.value = data?.projects ?? []
+        epic_upload_url.value = data?.epic_upload_url ?? ''
     }
     
     return {
         init,
-        settings,
+        regenerateToken,
         api_token_data,
+        app_settings,
+        projects,
+        epic_upload_url,
     }
 })

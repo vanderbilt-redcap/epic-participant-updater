@@ -12,14 +12,14 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import useStore from './store'
-const store = useStore()
+import {useAppStore} from './store'
+const store = useAppStore()
 const loading = ref(false)
 const error = ref()
 
 onMounted(async () => {
   loading.value = true
-  await store.app.init()
+  await store.init()
   loading.value = false
 })
 </script>

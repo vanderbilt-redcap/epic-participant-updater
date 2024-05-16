@@ -4,6 +4,12 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class Logger {
 
+    /**
+     *
+     * @var EpicParticipantUpdater
+     */
+    private $module;
+
     private static $reserved_keys = [
         'project_id' => '_project_id',
         'record_id' => '_record_id',

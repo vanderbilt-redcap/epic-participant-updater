@@ -1,14 +1,20 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
 
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record;
+use Vanderbilt\EpicParticipantUpdater\App\Models\Settings;
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
-use Vanderbilt\EpicParticipantUpdater\App\Models\Settings;
 
 
 class EpicModel extends BaseModel
 {
+
+    /**
+     *
+     * @var EpicParticipantUpdater
+     */
+    private $module;
 
     /**
      * settings helper

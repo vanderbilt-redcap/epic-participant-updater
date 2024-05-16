@@ -31,6 +31,7 @@
   
   .nav-link {
     /* Your .nav-link styles here */
+    outline: none;
   }
   
   .nav-link.active {
