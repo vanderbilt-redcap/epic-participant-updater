@@ -1,21 +1,25 @@
 <?php
-
-
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
-use DateTime;
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicDataPush
 {
-    static function generateXML($status, $project_id,$record,$event_id,$repeat_instance=1, $useAlternateID=0, $alternateIDField='') {
-        $epicModule = new EpicParticipantUpdater();
+    static function generateXML($status, $project_id,$record, $event_id, $repeat_instance=1, $useAlternateID=0, $alternateIDField='') {
+        $epicModule = EpicParticipantUpdater::getInstance();
         $settingsEvent = $epicModule->getProjectEvent($project_id);
 
-        $recordData = \REDCap::getData(['project_id'=>$project_id,'records'=>array($record),'events'=>array($settingsEvent)]);
-        $validData = $recordData[$record][$settingsEvent];
+        $recordData = \REDCap::getData(['project_id'=>$project_id,'records'=>[$record],'events'=>[$settingsEvent]]);
+        $validData = $recordData[$record][$settingsEvent] ?? [];
 
         $fieldSettings = $epicModule->getSettingsForXML($project_id);
+
+        // collect values
+        $valueMrn = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_MRN]] ?? '';
+        $valueFirstname = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME]] ?? '';
+        $valueLastname = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME]] ?? '';
+        $valueDOB = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_DOB]] ?? '';
+        $valueStudyID = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID]] ?? '';
 
         $xml = new \SimpleXMLElement('<ep1:Envelope/>',LIBXML_NOERROR,false,'ep1',true);
         $xml->addAttribute('xmlns:xmlns:ep1','http://www.w3.org/2003/05/soap-envelope');
@@ -29,7 +33,7 @@ class EpicDataPush
         $patient = $alertProState->addChild('patient');
         $candidate = $patient->addChild('candidateID');
         $candidate->addAttribute('root','1.2.840.114350.1.13.478.2.7.5.737384.14');
-        $candidate->addAttribute('extension',str_pad($validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_MRN]],9,'0',STR_PAD_LEFT));
+        $candidate->addAttribute('extension',str_pad($valueMrn,9,'0',STR_PAD_LEFT));
         $subjectID = $patient->addChild('subjectID');
         $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
         if($useAlternateID == 1 && !empty($alternateIDField)) {
@@ -38,15 +42,15 @@ class EpicDataPush
             $subjectID->addAttribute('extension',$record);
         }
         $name = $patient->addChild('name');
-        $name->addChild('given',$validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME]],'urn:h7-org:v3');
-        $name->addChild('family',$validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME]],'urn:hl7-org:v3');
-        $alertProState->addChild('dob')->addAttribute('value',($validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_DOB]] != "" ? date('Ymd',strtotime($validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_DOB]])) : ""));
+        $name->addChild('given',$valueFirstname,'urn:h7-org:v3');
+        $name->addChild('family',$valueLastname,'urn:hl7-org:v3');
+        $alertProState->addChild('dob')->addAttribute('value',($valueDOB != "" ? date('Ymd',strtotime($valueDOB)) : ""));
         $study = $alertProState->addChild('study','','urn:hl7-org:v3');
         $instantiation = $study->addChild('instantiation');
         $plannedStudy = $instantiation->addChild('plannedStudy');
         $plannedId = $plannedStudy->addChild('id');
         $plannedId->addAttribute('root','1.2.3.4');
-        $plannedId->addAttribute('extension',str_pad($validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID]],6,'0',STR_PAD_LEFT));
+        $plannedId->addAttribute('extension',str_pad($valueStudyID,6,'0',STR_PAD_LEFT));
         $component = $study->addChild('component1');
         $studyActivities = $component->addChild('studyActivitiesAtSite');
         $subject1 = $studyActivities->addChild('subject1');

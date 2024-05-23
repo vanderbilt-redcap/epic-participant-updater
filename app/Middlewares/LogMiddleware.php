@@ -6,16 +6,13 @@ class LogMiddleware implements MiddlewareInterface
 {
     function logRequest()
     {
-        global $module; //$module is exposed globally
-
         $request_log = Logger::getRequestLog();
         $message = 'API';
         $parameters = array(
-            'status' => 'info',
+            'status' => Logger::STATUS_INFO,
             'description' => $request_log,
         );
-        $logger = new Logger($module);
-        $logger->log($message, $parameters);
+        Logger::make()->log($message, $parameters);
     }
 
     public function handle() {

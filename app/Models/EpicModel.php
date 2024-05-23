@@ -409,8 +409,7 @@ class EpicModel extends BaseModel
 
     private function log($message, $parameters=[])
     {
-        $logger = new Logger($this->module);
-        $logger->log($message, $parameters);
+        Logger::make()->log($message, $parameters);
     }
     
     /**

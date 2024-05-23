@@ -48,8 +48,7 @@ class EpicController extends BaseController
 	{
         $start = $_GET['_start'] ?: 0;
         $limit = $_GET['_limit'] ?: $this->defaults['logs_per_page'];
-        $logger = new Logger($this->module);
-        $response = $logger->getList($start, $limit);
+        $response = Logger::make()->getList($start, $limit);
         $this->printJSON($response);
     }
     

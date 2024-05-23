@@ -1,5 +1,7 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
+use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
+
 class XMLNode
 {
 	public $xml_string;
@@ -63,7 +65,7 @@ class XMLNode
 		$node_metadata = array();
 		$match = $matches[0]; // the current matched element
 		$node_metadata['xml_string'] = $match;
-		$node_metadata['xml'] = @simplexml_load_string($match);
+		$node_metadata['xml'] = $this->loadXmlString($match);
 		$node_metadata['namespaced_tag'] = $matches['ns_tag'];
 		$node_metadata['tag'] = $matches['tag'];
 		$node_metadata['namespace'] = $matches['ns'];
@@ -78,6 +80,36 @@ class XMLNode
 
 		return (object)$node_metadata;
 	}
+
+	private function loadXmlString($xmlString) {
+		// Suppress errors temporarily
+		libxml_use_internal_errors(true);
+	
+		// Try to load the XML string
+		$xml = simplexml_load_string($xmlString);
+	
+		// Check if loading was successful
+		if ($xml === false) {
+			$logger = Logger::make();
+			// Handle the errors
+			$errors = libxml_get_errors();
+			foreach ($errors as $error) {
+				$logger->log($message='Error loading XML', [
+                    'status' => Logger::STATUS_ERROR,
+					'description' => $error->message,
+                ]);
+			}
+			// Clear the errors
+			libxml_clear_errors();
+			$xml = null;
+		}
+	
+		// Restore error handling
+		libxml_use_internal_errors(false);
+	
+		return $xml;
+	}
+	
 
 	/**
 	 * find a node children with the specified tag
