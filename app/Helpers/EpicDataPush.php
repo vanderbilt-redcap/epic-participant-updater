@@ -19,7 +19,9 @@ class EpicDataPush
         $valueFirstname = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME]] ?? '';
         $valueLastname = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME]] ?? '';
         $valueDOB = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_DOB]] ?? '';
+        $valueDOB = ($valueDOB !== "") ? date('Ymd',strtotime($valueDOB)) : "";
         $valueStudyID = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID]] ?? '';
+        $valueStudyID = str_pad($valueStudyID,6,'0',STR_PAD_LEFT);
 
         // assign the values by reference so they can be retrieved
         $values = [
@@ -42,7 +44,7 @@ class EpicDataPush
         $patient = $alertProState->addChild('patient');
         $candidate = $patient->addChild('candidateID');
         $candidate->addAttribute('root','1.2.840.114350.1.13.478.2.7.5.737384.14');
-        $candidate->addAttribute('extension',str_pad($valueMrn,9,'0',STR_PAD_LEFT));
+        $candidate->addAttribute('extension',$valueStudyID);
         $subjectID = $patient->addChild('subjectID');
         $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
         if($useAlternateID == 1 && !empty($alternateIDField)) {
@@ -53,7 +55,7 @@ class EpicDataPush
         $name = $patient->addChild('name');
         $name->addChild('given',$valueFirstname,'urn:h7-org:v3');
         $name->addChild('family',$valueLastname,'urn:hl7-org:v3');
-        $alertProState->addChild('dob')->addAttribute('value',($valueDOB != "" ? date('Ymd',strtotime($valueDOB)) : ""));
+        $alertProState->addChild('dob')->addAttribute('value',$valueDOB);
         $study = $alertProState->addChild('study','','urn:hl7-org:v3');
         $instantiation = $study->addChild('instantiation');
         $plannedStudy = $instantiation->addChild('plannedStudy');
