@@ -33,14 +33,34 @@ class Logger {
     ]; // list of available status
 
      //fields to get from database 
-    private static $DB_fields = ['log_id', 'timestamp', 'user', 'ip',
-        '_project_id AS project_id', '_record_id AS record',
-        'message', 'status', 'description', 'MRN', 'study_id'];
+    private static $DB_fields = [
+        'log_id',
+        'timestamp',
+        'user',
+        'ip',
+        '_project_id AS project_id',
+        '_record_id AS record',
+        'message',
+        'status',
+        'description',
+        'MRN',
+        'study_id'
+    ];
 
 
     public function __construct($module)
     {
         $this->module = $module;
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @return Logger
+     */
+    public static function make() {
+        global $module;
+        return new static($module);
     }
 
     /**

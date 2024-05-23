@@ -6,7 +6,6 @@ use Vanderbilt\EpicParticipantUpdater\App\Helpers\Router;
 use Vanderbilt\EpicParticipantUpdater\App\Middlewares\CheckApiTokenMiddleware;
 use Vanderbilt\EpicParticipantUpdater\App\Middlewares\CheckRedcapUserMiddleware;
 use Vanderbilt\EpicParticipantUpdater\App\Middlewares\LogMiddleware;
-use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
 
 require_once __DIR__."/bootstrap.php";
 

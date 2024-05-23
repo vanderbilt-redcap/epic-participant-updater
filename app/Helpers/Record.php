@@ -119,7 +119,7 @@ class Record
 
     public static function findFieldValue($project_id,$record_id,$event_id,$field_name,$instance = "") {
         $dataTable = Records::getDataTable($project_id);
-        $params = [$project_id, $event_id, $field_name, $record_id, $instance];
+        $params = [$project_id, $event_id, $field_name, $record_id];
 
         $query_string = "SELECT value FROM $dataTable
 			WHERE project_id=? AND event_id=?

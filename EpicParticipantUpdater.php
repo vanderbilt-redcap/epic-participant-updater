@@ -46,10 +46,30 @@ class EpicParticipantUpdater extends AbstractExternalModule
 
     private $api_token_key = 'api_token';
 
+    /**
+     *
+     * @var EpicParticipantUpdater
+     */
+    private static $instance;
+
     function __construct()
     {
         parent::__construct();
     }
+
+    /**
+     *
+     * @return EpicParticipantUpdater
+     */
+    public static function getInstance() {
+        global $module;
+        if($module instanceof EpicParticipantUpdater) return $module;
+        if (!self::$instance) {
+          self::$instance = new self();
+        }
+        return self::$instance;
+      }
+    
 
     /**
      * function executed when the module is enabled at system level
