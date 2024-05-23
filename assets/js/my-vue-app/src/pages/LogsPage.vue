@@ -48,7 +48,7 @@
                         <td>
                             <details>
                                 <summary>More...</summary>
-                                {{log.description}}
+                                <pre>{{log.description}}</pre>
                             </details>
                         </td>
                         <td>{{log.MRN}}</td>

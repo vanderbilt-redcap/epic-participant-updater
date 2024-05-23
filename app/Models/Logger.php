@@ -10,6 +10,12 @@ class Logger {
      */
     private $module;
 
+    /**
+     *
+     * @var Logger
+     */
+    private static $instance;
+
     private static $reserved_keys = [
         'project_id' => '_project_id',
         'record_id' => '_record_id',
@@ -59,15 +65,19 @@ class Logger {
      * @return Logger
      */
     public static function make() {
-        global $module;
-        return new static($module);
+        if (!self::$instance) {
+            $module = EpicParticipantUpdater::getInstance();
+            self::$instance = new self($module);
+        }
+        return self::$instance;
     }
 
     /**
      * save the log using the module log function
      * the parameters keys are transformed to a safe version before logging
      *
-     * @param EpicParticipantUpdater $module
+     * @param string $message
+     * @param array $parameters
      * @return void
      */
     public function log($message, $parameters)
@@ -131,6 +141,14 @@ class Logger {
             return intval($row['total']);
         }
         return 0;
+    }
+
+    public static function printArray($array) {
+        $result = '';
+        foreach ($array as $key => $value) {
+            $result .= "{$key} = {$value}\n";
+        }
+        return $result;
     }
     
     /**

@@ -10,6 +10,7 @@ use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
+use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
 
 class EpicParticipantUpdater extends AbstractExternalModule
 {
@@ -176,22 +177,30 @@ class EpicParticipantUpdater extends AbstractExternalModule
                 }
 
                 if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue == $triggerValue)) {
-                    $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance, $useAlternateID, $alternateIDField);
+                    $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance, $useAlternateID, $alternateIDField, $values);
 
                     $result = EpicDataPush::uploadParticipantXML($url, $xml_string);
 
-                    $logString = "Unknown EPIC upload result";
+                    $requestStatus = $logString = "Unknown EPIC upload result";
 
                     if (strpos($result, "Patient Validation failed") !== false) {
-                        $logString = "Patient could not be validated in Epic";
+                        $requestStatus = $logString = "Patient could not be validated in Epic";
                     } elseif (strpos($result, "ALERT_RECEIVED") !== false) {
-                        $logString = "Patient status '$statusValue' received by Epic";
+                        $requestStatus = $logString = "Patient status '$statusValue' received by Epic";
                         $fields = array($currentProject->table_pk => $record, $studyField => $statusValue);
                         $saveData = RecordHelper::getRecordSchema($project_id, $event_id, $record, $fields, $repeat_instance);
                         $result = \REDCap::saveData($project_id, 'array', $saveData);
                     } else {
                         $logString .= " - $result";
                     }
+
+                    Logger::make()->log('pushing payload to Epic', [
+                        'project_id' => $project_id,
+                        'record_id' => $record,
+                        'status' => Logger::STATUS_INFO,
+                        'description' => "$requestStatus\n" . Logger::printArray($values),
+                    ]);
+
                     \REDCap::logEvent("Epic Status Push $statusValue for record $record", $logString);
                 }
             }

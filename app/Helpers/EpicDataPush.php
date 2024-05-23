@@ -5,7 +5,7 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicDataPush
 {
-    static function generateXML($status, $project_id,$record, $event_id, $repeat_instance=1, $useAlternateID=0, $alternateIDField='') {
+    static function generateXML($status, $project_id,$record, $event_id, $repeat_instance=1, $useAlternateID=0, $alternateIDField='', &$values = null) {
         $epicModule = EpicParticipantUpdater::getInstance();
         $settingsEvent = $epicModule->getProjectEvent($project_id);
 
@@ -20,6 +20,15 @@ class EpicDataPush
         $valueLastname = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME]] ?? '';
         $valueDOB = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_DOB]] ?? '';
         $valueStudyID = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID]] ?? '';
+
+        // assign the values by reference so they can be retrieved
+        $values = [
+            EpicParticipantUpdater::SETTINGS_FIELD_MRN => $valueMrn,
+            EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME => $valueFirstname,
+            EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME => $valueLastname,
+            EpicParticipantUpdater::SETTINGS_FIELD_DOB => $valueDOB,
+            EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID => $valueStudyID,
+        ];
 
         $xml = new \SimpleXMLElement('<ep1:Envelope/>',LIBXML_NOERROR,false,'ep1',true);
         $xml->addAttribute('xmlns:xmlns:ep1','http://www.w3.org/2003/05/soap-envelope');
