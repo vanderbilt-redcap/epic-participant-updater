@@ -5,22 +5,14 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicDataPush
 {
-    static function generateXML($status, $project_id,$record, $event_id, $repeat_instance=1, $useAlternateID=0, $alternateIDField='', &$values = null) {
-        $epicModule = EpicParticipantUpdater::getInstance();
-        $settingsEvent = $epicModule->getProjectEvent($project_id);
-
-        $recordData = \REDCap::getData(['project_id'=>$project_id,'records'=>[$record],'events'=>[$settingsEvent]]);
-        $validData = $recordData[$record][$settingsEvent] ?? [];
-
-        $fieldSettings = $epicModule->getSettingsForXML($project_id);
-
+    static function generateXML($status, $record, $data=[], &$values = null) {
         // collect values
-        $valueMrn = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_MRN]] ?? '';
-        $valueFirstname = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME]] ?? '';
-        $valueLastname = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME]] ?? '';
-        $valueDOB = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_DOB]] ?? '';
+        $valueMrn = $data[EpicParticipantUpdater::SETTINGS_FIELD_MRN] ?? '';
+        $valueFirstname = $data[EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME] ?? '';
+        $valueLastname = $data[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME] ?? '';
+        $valueDOB = $data[EpicParticipantUpdater::SETTINGS_FIELD_DOB] ?? '';
         $valueDOB = ($valueDOB !== "") ? date('Ymd',strtotime($valueDOB)) : "";
-        $valueStudyID = $validData[$fieldSettings[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID]] ?? '';
+        $valueStudyID = $data[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID] ?? '';
         $valueStudyID = str_pad($valueStudyID,6,'0',STR_PAD_LEFT);
 
         // assign the values by reference so they can be retrieved
@@ -47,11 +39,7 @@ class EpicDataPush
         $candidate->addAttribute('extension',$valueStudyID);
         $subjectID = $patient->addChild('subjectID');
         $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
-        if($useAlternateID == 1 && !empty($alternateIDField)) {
-            $subjectID->addAttribute('extension',$validData[$alternateIDField]);
-        } else {
-            $subjectID->addAttribute('extension',$record);
-        }
+        $subjectID->addAttribute('extension',$record); // this could be the alternate ID
         $name = $patient->addChild('name');
         $name->addChild('given',$valueFirstname,'urn:h7-org:v3');
         $name->addChild('family',$valueLastname,'urn:hl7-org:v3');
@@ -61,7 +49,7 @@ class EpicDataPush
         $plannedStudy = $instantiation->addChild('plannedStudy');
         $plannedId = $plannedStudy->addChild('id');
         $plannedId->addAttribute('root','1.2.3.4');
-        $plannedId->addAttribute('extension',str_pad($valueStudyID,6,'0',STR_PAD_LEFT));
+        $plannedId->addAttribute('extension',$valueStudyID);
         $component = $study->addChild('component1');
         $studyActivities = $component->addChild('studyActivitiesAtSite');
         $subject1 = $studyActivities->addChild('subject1');

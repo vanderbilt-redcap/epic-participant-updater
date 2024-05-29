@@ -177,8 +177,11 @@ class EpicParticipantUpdater extends AbstractExternalModule
                 }
 
                 if ($triggerField == "" || ($triggerField != "" && $triggerValue == "" && $currentTriggerValue != "") || ($triggerField != "" && $triggerValue != "" && $currentTriggerValue == $triggerValue)) {
-                    $xml_string = EpicDataPush::generateXML($statusValue, $project_id, $record, $event_id, $repeat_instance, $useAlternateID, $alternateIDField, $values);
-
+                    // $alternateData is an array of data with keys matching the contants referring to mapping fields
+                    $data = RecordHelper::getInstanceData($project_id, $record, $repeat_instance, $event_id, $alternateData);
+                    // check if alternate record ID should be used
+                    $recordID = ($useAlternateID!==1) ? $record : $data[$alternateIDField];
+                    $xml_string = EpicDataPush::generateXML($statusValue, $recordID, $alternateData, $values);
                     $result = EpicDataPush::uploadParticipantXML($url, $xml_string);
 
                     $requestStatus = $logString = "Unknown EPIC upload result";
