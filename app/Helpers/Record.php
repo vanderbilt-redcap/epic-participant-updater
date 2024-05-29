@@ -2,15 +2,16 @@
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
 use Records;
+use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class Record
 {
     
     /**
-     * get the form name of a field
+     * Retrieves form data for a specific project including metadata and event details.
      *
-     * @param integer $project_id
-     * @return array|false 
+     * @param integer $project_id The ID of the REDCap project.
+     * @return array|false An associative array of form data indexed by field name or false on failure.
      */
     public static function getFormData($project_id)
     {
@@ -39,8 +40,88 @@ class Record
     }
 
     /**
+     * Retrieves all data for a specific record across all instances in a project.
      *
-     * get a valid schema compatible with REDCap::saveData
+     * @param integer $project_id The ID of the REDCap project.
+     * @param string|int $record The record ID within the project.
+     * @param int $eventID The event ID
+     * @return array An array of data for each instance of the record.
+     */
+    public static function getData($project_id, $record, $eventID) {
+        $instances = Record::getInstances($project_id, $record=1);
+        $data = [];
+        foreach ($instances as $instance) {
+            $data[$instance] = static::getInstanceData($project_id, $record, $instance, $eventID);
+        }
+        return $data;
+    }
+
+    /**
+     * Retrieves specific data for a given record within a project, optionally returning an alternative data structure.
+     *
+     * This function fetches participant-specific data based on provided settings and mappings. It is designed to work
+     * with specific project configurations and can adjust its data retrieval based on whether fields are marked as repeated.
+     * An optional reference parameter allows the caller to receive a mapped array of field identifiers to their values,
+     * providing an alternative view of the same data.
+     *
+     * @param int $projectId The unique identifier of the project from which to fetch data.
+     * @param string $recordId The unique identifier of the record for which data is being retrieved.
+     * @param int|null $formInstance The instance number of the form/event, relevant for repeated forms/events. Use NULL for non-repeated.
+     * @location int|null $eventId Optional. The specific event ID to use for data retrieval. If null, defaults to a project-specific setting.
+     * @param array|null &$alternateData Optional. A reference to an array that will be populated with the field settings keys and their corresponding data values.
+     *
+     * @return array An associative array of field names to their corresponding values as fetched based on the project settings.
+     *
+     * @throws Exception If data retrieval fails or settings are incorrectly configured.
+     */
+    public static function getInstanceData($project_id, $record, $instance, $eventID, &$alternateData=null) {
+        $eventID = $eventID ?? EpicParticipantUpdater::getInstance()->getProjectSetting(EpicParticipantUpdater::SETTINGS_FIELD_EVENT_ID,$project_id);
+        $settings = EpicParticipantUpdater::getInstance()->getProjectSettings($project_id);
+        $fields = [
+            EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME => $settings[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME]['value'] ?? null,
+            EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME => $settings[EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME]['value'] ?? null,
+            EpicParticipantUpdater::SETTINGS_FIELD_DATE_START => $settings[EpicParticipantUpdater::SETTINGS_FIELD_DATE_START]['value'] ?? null,
+            EpicParticipantUpdater::SETTINGS_FIELD_DATE_END => $settings[EpicParticipantUpdater::SETTINGS_FIELD_DATE_END]['value'] ?? null,
+            EpicParticipantUpdater::SETTINGS_FIELD_DOB => $settings[EpicParticipantUpdater::SETTINGS_FIELD_DOB]['value'] ?? null,
+            EpicParticipantUpdater::SETTINGS_FIELD_MRN => $settings[EpicParticipantUpdater::SETTINGS_FIELD_MRN]['value'] ?? null,
+            EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID => $settings[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID]['value'] ?? null,
+            EpicParticipantUpdater::SETTINGS_ALTERNATE_ID_FIELD => $settings[EpicParticipantUpdater::SETTINGS_ALTERNATE_ID_FIELD]['value'] ?? null,
+        ];
+        $alternateData = $data = [];
+        $form_data = self::getFormData($project_id);
+        foreach ($fields as $settingKey => $fieldName) {
+            if(!$fieldName) continue;
+            $isRepeated = boolval($form_data[$fieldName]->is_repeated ?? false);
+            $adjustedInstance = ($isRepeated) ? $instance : null; // get the non-repeated value if applicable
+            $data[$fieldName] = $fieldValue = Record::findFieldValue($project_id, $record, $eventID, $fieldName, $adjustedInstance);
+            $alternateData[$settingKey] = $fieldValue;
+        }
+        return $data;
+    }
+
+    /**
+     * Retrieves all instance numbers for a given record in a project.
+     *
+     * @param integer $project_id The ID of the REDCap project.
+     * @param string|int $record The record ID to search for instances.
+     * @return array An array of distinct instance numbers.
+     */
+    public static function getInstances($project_id, $record): array {
+        $dataTable = Records::getDataTable($project_id);
+        $params = [$project_id, $record];
+        $query_string = "SELECT DISTINCT CAST(COALESCE(instance, 1) AS UNSIGNED) AS instance_transformed
+            FROM $dataTable
+            WHERE project_id = ? AND record = ?
+            ORDER BY instance_transformed";
+        $result = db_query($query_string, $params);
+        $instances = [];
+        while($row = db_fetch_assoc($result)) $instances[] = $row['instance_transformed'];
+        return $instances;
+    }
+
+    /**
+     * 
+     * Constructs a schema compatible with REDCap::saveData method, considering repetition settings.
      * 
      * $schema = array(
      *	'record_id' => array(
@@ -56,13 +137,13 @@ class Record
      *	)
      * );
      *
-     * @param integer $project_id
-     * @param integer $event_id
-     * @param string $record_id
-     * @param array $fields
-     * @param integer $instance_number
-     * @return array
-     */
+     * @param integer $project_id The ID of the REDCap project.
+     * @param integer $event_id The event ID associated with the record.
+     * @param string $record_id The specific record ID.
+     * @param array $fields Associative array of field names and values.
+     * @param integer $instance_number Instance number if applicable.
+     * @return array Structured array following REDCap schema requirements for data saving.
+    */
     public static function getRecordSchema($project_id, $event_id, $record_id, $fields=array() ,$instance_number=1)
     {
         $form_data = self::getFormData($project_id);
@@ -78,7 +159,7 @@ class Record
                 $is_repeated = boolval($field_data->is_repeated);
 
                 if($is_repeated) {
-                    if(empty($repeatedInstancesData[$form_name][$instance_number])) $repeatedInstancesData[$form_name][$instance_number] = array();
+                    if(empty($repeatedInstancesData[$form_name][$instance_number])) $repeatedInstancesData[$form_name][$instance_number] = [];
                     $repeatedInstancesData[$form_name][$instance_number][$key] = $value;
                 }else {
 
@@ -97,14 +178,14 @@ class Record
     }
 
     /**
-	 * find a record ID from the database seraching for a specific field_name => value pair
-	 *
-	 * @param integer $project_id
-	 * @param integer $event_id
-	 * @param string $field_name
-	 * @param string $value
-	 * @return string|false
-	 */
+     * Searches for a record ID by matching a specific field's value.
+     *
+     * @param integer $project_id The ID of the REDCap project.
+     * @param integer $event_id The event ID to look in.
+     * @param string $field_name The field name to match against.
+     * @param string $value The value to search for.
+     * @return string|false The found record ID or false if not found.
+     */
 	public static function findRecordID($project_id, $event_id, $field_name, $value)
 	{
         $dataTable = Records::getDataTable($project_id);
@@ -117,6 +198,16 @@ class Record
         return false;
     }
 
+    /**
+     * Retrieves the value of a specified field for a given record and instance.
+     *
+     * @param integer $project_id The ID of the REDCap project.
+     * @param string|int $record_id The record ID.
+     * @param integer $event_id The event ID associated with the field.
+     * @param string $field_name The name of the field.
+     * @param string|int $instance The instance number (optional).
+     * @return mixed The value of the field or false if not found.
+     */
     public static function findFieldValue($project_id,$record_id,$event_id,$field_name,$instance = "") {
         $dataTable = Records::getDataTable($project_id);
         $params = [$project_id, $event_id, $field_name, $record_id];
@@ -139,14 +230,14 @@ class Record
     }
 
     /**
-     * get instance number for a record entry 
+     * Retrieves the instance number for a specific field value or assigns a new one if not present.
      *
-     * @param integer $project_id
-     * @param integer $event_id
-     * @param integer $record_id
-     * @param string $field_name
-     * @param mixed $value
-     * @return integer|null
+     * @param integer $project_id The ID of the REDCap project.
+     * @param integer $event_id The event ID.
+     * @param integer $record_id The record ID.
+     * @param string $field_name The field name to look up.
+     * @param mixed $value The value to match.
+     * @return integer|null The instance number if found or assigned, null otherwise.
      */
     public static function getInstanceNumber($project_id, $event_id, $record_id, $field_name, $value)
     {

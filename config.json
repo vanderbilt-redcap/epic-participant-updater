@@ -166,6 +166,11 @@
         "super-users-only": true
     },
     {
+      "key": "descriptive-pushing-status-values",
+      "name": "The setting below allows users to automate sending data to remote webhooks based on specific criteria. Users can define a <i>form</i>, <i>field</i>, and <i>value</i>; when the <i>field</i>'s value matches the specified <i>value</i>, a predefined <i>status</i> is sent to the webhook. If the criteria are not met, no data is sent.<br><br>Important Note: If you configure multiple settings for the same <i>form</i> but different <i>fields</i>, be aware that if both criteria are true simultaneously, the software will send data for each matching condition. This can potentially create race conditions and lead to multiple, rapid data transmissions. Please consider this when setting up your configurations to avoid unintended behavior.",
+      "type": "descriptive"
+    },
+    {
       "key": "pipe-pairing",
       "name": "Field and Value Pairs for Pushing Status Values",
       "type": "sub_settings",

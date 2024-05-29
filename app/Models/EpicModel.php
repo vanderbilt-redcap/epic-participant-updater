@@ -129,13 +129,9 @@ class EpicModel extends BaseModel
             'study_id' => $study_id_field_name,
             'status' => $status_field_name,
         );
-        // add optional fields
-        //TODO Ask why the arrays below were defined as $study_related_fieldsπ
+        // add optional fields. this can be repeated in case of multiple studies, so must be in the same instrument
         if(!empty($date_start_field_name)) $study_related_fields['date_start'] = $date_start_field_name;
         if(!empty($date_end_field_name)) $study_related_fields['date_end'] = $date_end_field_name;
-        if(!empty($dob_field_name)) $study_related_fields['dob'] = $dob_field_name;
-        if(!empty($firstname_field_name)) $study_related_fields['first_name'] = $firstname_field_name;
-        if(!empty($lastname_field_name)) $study_related_fields['last_name'] = $lastname_field_name;
 
         /**
          * helper function to check if all study related fields are in the same instrument
