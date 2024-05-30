@@ -180,8 +180,9 @@ class EpicParticipantUpdater extends AbstractExternalModule
                     // $alternateData is an array of data with keys matching the contants referring to mapping fields
                     $data = RecordHelper::getInstanceData($project_id, $record, $repeat_instance, $event_id, $alternateData);
                     // check if alternate record ID should be used
-                    $recordID = ($useAlternateID!==1) ? $record : $data[$alternateIDField];
-                    $xml_string = EpicDataPush::generateXML($statusValue, $recordID, $alternateData, $values);
+                    $alternateID = $data[$alternateIDField] ?? '';
+                    $recordID = ($useAlternateID===1 && !empty($alternateID)) ? $alternateID : $record;
+                    $xml_string = EpicDataPush::generateXML($statusValue, $recordID, $alternateData);
                     $result = EpicDataPush::uploadParticipantXML($url, $xml_string);
 
                     $requestStatus = $logString = "Unknown EPIC upload result";
@@ -201,7 +202,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
                         'project_id' => $project_id,
                         'record_id' => $record,
                         'status' => Logger::STATUS_INFO,
-                        'description' => "$requestStatus\n" . Logger::printArray($values),
+                        'description' => "$requestStatus\n" . Logger::printArray($xml_string),
                     ]);
 
                     \REDCap::logEvent("Epic Status Push $statusValue for record $record", $logString);
