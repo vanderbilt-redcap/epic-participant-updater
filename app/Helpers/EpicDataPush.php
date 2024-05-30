@@ -5,24 +5,16 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicDataPush
 {
-    static function generateXML($status, $record, $data=[], &$values = null) {
+    static function generateXML($status, $record, $data=[]) {
         // collect values
         $valueMrn = $data[EpicParticipantUpdater::SETTINGS_FIELD_MRN] ?? '';
+        $valueMrn = str_pad($valueMrn,9,'0',STR_PAD_LEFT);
         $valueFirstname = $data[EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME] ?? '';
         $valueLastname = $data[EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME] ?? '';
         $valueDOB = $data[EpicParticipantUpdater::SETTINGS_FIELD_DOB] ?? '';
         $valueDOB = ($valueDOB !== "") ? date('Ymd',strtotime($valueDOB)) : "";
         $valueStudyID = $data[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID] ?? '';
         $valueStudyID = str_pad($valueStudyID,6,'0',STR_PAD_LEFT);
-
-        // assign the values by reference so they can be retrieved
-        $values = [
-            EpicParticipantUpdater::SETTINGS_FIELD_MRN => $valueMrn,
-            EpicParticipantUpdater::SETTINGS_FIELD_FIRSTNAME => $valueFirstname,
-            EpicParticipantUpdater::SETTINGS_FIELD_LASTNAME => $valueLastname,
-            EpicParticipantUpdater::SETTINGS_FIELD_DOB => $valueDOB,
-            EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID => $valueStudyID,
-        ];
 
         $xml = new \SimpleXMLElement('<ep1:Envelope/>',LIBXML_NOERROR,false,'ep1',true);
         $xml->addAttribute('xmlns:xmlns:ep1','http://www.w3.org/2003/05/soap-envelope');
@@ -36,7 +28,7 @@ class EpicDataPush
         $patient = $alertProState->addChild('patient');
         $candidate = $patient->addChild('candidateID');
         $candidate->addAttribute('root','1.2.840.114350.1.13.478.2.7.5.737384.14');
-        $candidate->addAttribute('extension',$valueStudyID);
+        $candidate->addAttribute('extension',$valueMrn);
         $subjectID = $patient->addChild('subjectID');
         $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
         $subjectID->addAttribute('extension',$record); // this could be the alternate ID
