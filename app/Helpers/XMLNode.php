@@ -121,6 +121,7 @@ class XMLNode
 	{
 		$nodes = self::getNodes($this->xml_string, $tag_name);
 		if(empty($nodes)) return false;
+		if(!is_array($nodes)) return false;
 		if(count($nodes)===1) return $nodes[0];
 		return $nodes;
 	}
