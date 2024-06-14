@@ -181,7 +181,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
                     $data = RecordHelper::getInstanceData($project_id, $record, $repeat_instance, $event_id, $alternateData);
                     // check if alternate record ID should be used
                     $alternateID = $data[$alternateIDField] ?? '';
-                    $recordID = ($useAlternateID===1 && !empty($alternateID)) ? $alternateID : $record;
+                    $recordID = ($useAlternateID==true && !empty($alternateID)) ? $alternateID : $record;
                     $xml_string = EpicDataPush::generateXML($statusValue, $recordID, $alternateData);
                     $result = EpicDataPush::uploadParticipantXML($url, $xml_string);
 
