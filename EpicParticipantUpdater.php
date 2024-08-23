@@ -202,7 +202,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
                         'project_id' => $project_id,
                         'record_id' => $record,
                         'status' => Logger::STATUS_INFO,
-                        'description' => "$requestStatus\n" . htmlspecialchars($xml_string),
+                        'description' => "$requestStatus\n" . $xml_string
                     ]);
 	                $headers  = "From: noreply@vumc.org\r\n";
 	                $headers .= "Reply-To: noreply@vumc.org\r\n";
