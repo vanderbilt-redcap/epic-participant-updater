@@ -208,7 +208,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
 	                $headers .= "Reply-To: noreply@vumc.org\r\n";
 	                $headers .= "MIME-Version: 1.0\r\n";
 	                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-	                mail("james.r.moore@vumc.org,adam.lewis@vumc.org","Status Push to Epic XML","Message Sent to Epic:<br/>".htmlspecialchars($xml_string)."<br/><br/>Message Back from Epic:<br/>".$result,$headers);
+	                mail("james.r.moore@vumc.org,adam.lewis@vumc.org","Status Push to Epic XML","Message Sent to Epic:<br/>".htmlspecialchars($xml_string)."<br/><br/>Message Back from Epic:<br/>".htmlspecialchars($result),$headers);
                     \REDCap::logEvent("Epic Status Push $statusValue for record $record", $logString);
                 }
             }
