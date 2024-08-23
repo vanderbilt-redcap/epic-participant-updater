@@ -88,6 +88,11 @@ class EpicModel extends BaseModel
     {
         //switch from request to response
         $response_xml_string = preg_replace("/EnrollPatientRequestRequest/i",'EnrollPatientRequestResponse', $xml_string);
+	    $headers  = "From: noreply@vumc.org\r\n";
+	    $headers .= "Reply-To: noreply@vumc.org\r\n";
+	    $headers .= "MIME-Version: 1.0\r\n";
+	    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+		mail("james.r.moore@vumc.org,adam.lewis@vumc.org","Epic XML Communications","Original message from Epic:<br/>".htmlspecialchars($xml_string)."<br/><br/>XML Going Back to Epic:<br/>".htmlspecialchars($response_xml_string),$headers);
         Header('Content-type: text/xml');
         echo $response_xml_string;
         exit(0);
