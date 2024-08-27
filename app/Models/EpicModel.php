@@ -88,13 +88,24 @@ class EpicModel extends BaseModel
     {
         //switch from request to response
         $response_xml_string = preg_replace("/EnrollPatientRequestRequest/i",'EnrollPatientRequestResponse', $xml_string);
+	    $loadStr = simplexml_load_string($response_xml_string);
+	    //$loadStr->addChild('testing','first testing');
+	    $dom = dom_import_simplexml($loadStr);
+	    $new = $dom->insertBefore($dom->ownerDocument->createElement('s:Header',''),$dom->firstChild);
+	    $action = $dom->ownerDocument->createElement('rpe:Action','urn:ihe:qrph:rpe:2009:EnrollPatientRequestResponse:REDCap');
+
+	    $actionnode = $new->appendChild($action);
+	    $actionnode->setAttribute('s:mustUnderstand','true');
+	    $actionnode->setAttribute('xmlns:rpe','http://www.w3.org/2005/08/addressing');
+	    $newXML = simplexml_import_dom($new);
+
 	    $headers  = "From: noreply@vumc.org\r\n";
 	    $headers .= "Reply-To: noreply@vumc.org\r\n";
 	    $headers .= "MIME-Version: 1.0\r\n";
 	    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-		mail("james.r.moore@vumc.org,adam.lewis@vumc.org","Epic XML Communications","Original message from Epic:<br/>".htmlspecialchars($xml_string)."<br/><br/>XML Going Back to Epic:<br/>".htmlspecialchars($response_xml_string),$headers);
+		mail("james.r.moore@vumc.org,adam.lewis@vumc.org","Epic XML Communications","Original message from Epic:<br/>".htmlspecialchars($xml_string)."<br/><br/>XML Going Back to Epic:<br/>".htmlspecialchars($loadStr->asXML()),$headers);
         Header('Content-type: text/xml');
-        echo $response_xml_string;
+        echo $loadStr->asXML();
         exit(0);
     }
 
