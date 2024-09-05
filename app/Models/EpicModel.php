@@ -72,7 +72,7 @@ class EpicModel extends BaseModel
     {
         $xml_data = EpicXMLParser::parse($HTTP_RAW_POST_DATA);
         $response = $this->checkXML($xml_data);
-        self::createSOAPResponse($HTTP_RAW_POST_DATA);
+        //self::createSOAPResponse($HTTP_RAW_POST_DATA);
     }
 
     /**
