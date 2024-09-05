@@ -87,7 +87,7 @@ class EpicModel extends BaseModel
     private static function createSOAPResponse($xml_string)
     {
         //switch from request to response
-        $response_xml_string = preg_replace("/EnrollPatientRequestRequest/i",'EnrollPatientRequestResponse', $xml_string);
+        $response_xml_string = preg_replace("/ EnrollPatientRequestRequest/i",'EnrollPatientRequestResponse', $xml_string);
 	    /*$loadStr = simplexml_load_string($response_xml_string);
 	    //$loadStr->addChild('testing','first testing');
 	    $dom = dom_import_simplexml($loadStr);
