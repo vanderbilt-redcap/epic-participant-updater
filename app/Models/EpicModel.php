@@ -1,5 +1,6 @@
 <?php namespace Vanderbilt\EpicParticipantUpdater\App\Models;
 
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Settings;
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
@@ -87,17 +88,11 @@ class EpicModel extends BaseModel
     private static function createSOAPResponse($xml_string)
     {
         //switch from request to response
-        $response_xml_string = preg_replace("/EnrollPatientRequestRequest/i",'EnrollPatientRequestResponse', $xml_string);
-	    $loadStr = simplexml_load_string($response_xml_string);
-	    //$loadStr->addChild('testing','first testing');
-	    $dom = dom_import_simplexml($loadStr);
-	    $new = $dom->insertBefore($dom->ownerDocument->createElement('Header',''),$dom->firstChild);
-	    $action = $dom->ownerDocument->createElement('Action','urn:ihe:qrph:rpe:2009:EnrollPatientRequestResponse');
-
-	    $actionnode = $new->appendChild($action);
-	    //$actionnode->setAttribute('s:mustUnderstand','true');
-	    //$actionnode->setAttribute('xmlns:rpe','http://www.w3.org/2005/08/addressing');
-	    $newXML = simplexml_import_dom($new);
+        //<ep1:Envelope xmlns="urn:hl7-org:v3" xmlns:ep1="http://www.w3.org/2003/05/soap-envelope"><ep1:Header><ep2:Action ep1:mustUnderstand="1" xmlsn:ep2="http://www.w3.org/2005/08/addressing">EnrollPatientRequestResponse</ep2:Action></ep1:Header><ep1:Body><ep3:EnrollPatientRequestResponse xmlns:ep3="urn:ihe:qrph:rpe:2009" xmlns="urn:hl7-org:v3"><ep3:processState>Interested</ep3:processState><ep3:patient><ep3:candidateID extension="010004249" root="1.2.840.114350.1.13.478.3.7.5.737384.14"/><ep3:name><given>Yellow</given><family>Craigtest</family></ep3:name><ep3:address><streetAddressLine>380 Thompson Lane</streetAddressLine><city>Nashville</city><state>TN</state><postalCode>37211</postalCode><country>US</country></ep3:address><ep3:dob value="19650117"/></ep3:patient><study><instantiation><plannedStudy><id extension=" ;150403"/></plannedStudy></instantiation></study></ep3:EnrollPatientRequestResponse></ep1:Body></ep1:Envelope>
+	    $xmlData = EpicxmlParser::parse($xml_string);
+		$status = $xmlData['status'];
+		$MRN = $xmlData['MRN'];
+		$loadStr = EpicDataPush::generateXML($status,$MRN,$xmlData);
 
 	    $headers  = "From: noreply@vumc.org\r\n";
 	    $headers .= "Reply-To: noreply@vumc.org\r\n";
