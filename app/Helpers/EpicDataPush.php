@@ -5,7 +5,7 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicDataPush
 {
-    static function generateXML($status, $record, $data=[]) {
+    static function generateXML($status, $method, $record, $data=[]) {
         // collect values
         $valueMrn = $data[EpicParticipantUpdater::SETTINGS_FIELD_MRN] ?? '';
         $valueMrn = str_pad($valueMrn,9,'0',STR_PAD_LEFT);
@@ -19,11 +19,11 @@ class EpicDataPush
         $xml = new \SimpleXMLElement('<ep1:Envelope/>',LIBXML_NOERROR,false,'ep1',true);
         $xml->addAttribute('xmlns:xmlns:ep1','http://www.w3.org/2003/05/soap-envelope');
         $header = $xml->addChild('xmlns:ep1:Header');
-        $headerAction = $header->addChild('ep2:Action','urn:ihe:qrph:rpe:2009:AlertProtocolState:REDCap','http://www.w3.org/2005/08/addressing');
+        $headerAction = $header->addChild('ep2:Action','urn:ihe:qrph:rpe:2009:'.$method.':REDCap','http://www.w3.org/2005/08/addressing');
         $headerAction->addAttribute('xmlns:ep1:mustUnderstand','true');
 
         $body = $xml->addChild('xmlns:ep1:Body');
-        $alertProState = $body->addChild('ep3:AlertProtocolState','','urn:ihe:grph:rpe:2009');
+        $alertProState = $body->addChild('ep3:'.$method,'','urn:ihe:grph:rpe:2009');
         $alertProState->addChild('processState',$status);
         $patient = $alertProState->addChild('patient');
         $candidate = $patient->addChild('candidateID');
