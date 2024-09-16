@@ -182,7 +182,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
                     // check if alternate record ID should be used
                     $alternateID = $data[$alternateIDField] ?? '';
                     $recordID = ($useAlternateID==true && !empty($alternateID)) ? $alternateID : $record;
-                    $xml_string = EpicDataPush::generateXML($statusValue, "AlertProtocolState", $recordID, $alternateData);
+                    $xml_string = EpicDataPush::generateXML($statusValue, "AlertProtocolState:REDCap", $recordID, $alternateData);
                     $result = EpicDataPush::uploadParticipantXML($url, $xml_string);
 
                     $requestStatus = $logString = "Unknown EPIC upload result";
