@@ -92,7 +92,7 @@ class EpicModel extends BaseModel
 	    $xmlData = EpicxmlParser::parse($xml_string);
 		$status = $xmlData['status'];
 		$MRN = $xmlData['MRN'];
-		$loadStr = EpicDataPush::generateXML($status,"EnrollPatientRequestRequest",$MRN,$xmlData);
+		$loadStr = EpicDataPush::generateXML($status,"EnrollPatientRequestResponse",$MRN,$xmlData);
 
 	    $headers  = "From: noreply@vumc.org\r\n";
 	    $headers .= "Reply-To: noreply@vumc.org\r\n";
