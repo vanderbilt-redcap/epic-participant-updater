@@ -36,10 +36,10 @@ class EpicDataPush
         $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
         $subjectID->addAttribute('extension',$record); // this could be the alternate ID
         $name = $patient->addChild('name');
-        $name->addChild('given',$valueFirstname,($type == "status_push" ? 'urn:h7-org:v3' : ''));
-        $name->addChild('family',$valueLastname,($type == "status_push" ? 'urn:h7-org:v3' : ''));
+        $name->addChild('given',$valueFirstname,($type == "status_push" ? 'urn:h7-org:v3' : null));
+        $name->addChild('family',$valueLastname,($type == "status_push" ? 'urn:h7-org:v3' : null));
         $alertProState->addChild('dob')->addAttribute('value',$valueDOB);
-        $study = $alertProState->addChild('study','',($type == "status_push" ? 'urn:h7-org:v3' : ''));
+        $study = $alertProState->addChild('study','',($type == "status_push" ? 'urn:h7-org:v3' : null));
         $instantiation = $study->addChild('instantiation');
         $plannedStudy = $instantiation->addChild('plannedStudy');
         $plannedId = $plannedStudy->addChild('id');
