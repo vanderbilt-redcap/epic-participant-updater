@@ -5,7 +5,7 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicDataPush
 {
-    static function generateXML($status, $method, $record, $data=[]) {
+    static function generateXML($status, $method, $record, $data, $type='status_push') {
         // collect values
         $valueMrn = $data[EpicParticipantUpdater::SETTINGS_FIELD_MRN] ?? '';
         $valueMrn = str_pad($valueMrn,9,'0',STR_PAD_LEFT);
@@ -18,6 +18,9 @@ class EpicDataPush
 
         $xml = new \SimpleXMLElement('<ep1:Envelope/>',LIBXML_NOERROR,false,'ep1',true);
         $xml->addAttribute('xmlns:xmlns:ep1','http://www.w3.org/2003/05/soap-envelope');
+		if ($status != 'status_push') {
+			$xml->addAttribute('xmlns:xmlns','urn:h7-org:v3');
+		}
         $header = $xml->addChild('xmlns:ep1:Header');
         $headerAction = $header->addChild('ep2:Action',$method,'http://www.w3.org/2005/08/addressing');
         $headerAction->addAttribute('xmlns:ep1:mustUnderstand','true');
@@ -33,22 +36,24 @@ class EpicDataPush
         $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
         $subjectID->addAttribute('extension',$record); // this could be the alternate ID
         $name = $patient->addChild('name');
-        $name->addChild('given',$valueFirstname,'urn:h7-org:v3');
-        $name->addChild('family',$valueLastname,'urn:hl7-org:v3');
+        $name->addChild('given',$valueFirstname,($type == "status_push" ? 'urn:h7-org:v3' : ''));
+        $name->addChild('family',$valueLastname,($type == "status_push" ? 'urn:h7-org:v3' : ''));
         $alertProState->addChild('dob')->addAttribute('value',$valueDOB);
-        $study = $alertProState->addChild('study','','urn:hl7-org:v3');
+        $study = $alertProState->addChild('study','',($type == "status_push" ? 'urn:h7-org:v3' : ''));
         $instantiation = $study->addChild('instantiation');
         $plannedStudy = $instantiation->addChild('plannedStudy');
         $plannedId = $plannedStudy->addChild('id');
         $plannedId->addAttribute('root','1.2.3.4');
         $plannedId->addAttribute('extension',$valueStudyID);
-        $component = $study->addChild('component1');
-        $studyActivities = $component->addChild('studyActivitiesAtSite');
-        $subject1 = $studyActivities->addChild('subject1');
-        $experimental = $subject1->addChild('experimentalUnit');
-        $effective = $experimental->addChild('effectiveTime');
-        $effective->addChild('low')->addAttribute('value','');
-        $effective->addChild('high')->addAttribute('value','');
+		if ($type == "status_push") {
+			$component = $study->addChild('component1');
+			$studyActivities = $component->addChild('studyActivitiesAtSite');
+			$subject1 = $studyActivities->addChild('subject1');
+			$experimental = $subject1->addChild('experimentalUnit');
+			$effective = $experimental->addChild('effectiveTime');
+			$effective->addChild('low')->addAttribute('value', '');
+			$effective->addChild('high')->addAttribute('value', '');
+		}
 
         return $xml->asXML();
     }

@@ -93,7 +93,7 @@ class EpicModel extends BaseModel
 		$status = $xmlData['status'];
 		$MRN = $xmlData['MRN'];
 		$method = $xmlData['method'];
-		$loadStr = EpicDataPush::generateXML($status,$method,$MRN,$xmlData);
+		$loadStr = EpicDataPush::generateXML($status,$method,$MRN,$xmlData,'response');
 
 	    $headers  = "From: noreply@vumc.org\r\n";
 	    $headers .= "Reply-To: noreply@vumc.org\r\n";
