@@ -97,6 +97,9 @@ class EpicXMLParser
 			if ($method == "EnrollPatientRequestRequest") {
 				$method = "EnrollPatientRequestResponse";
 			}
+			else {
+				$method .= "Response";
+			}
             $dates = self::extractDates($xml_string);
             $MRN = $candidateID->attributes['extension']; // the MRN is in the "extension" attribute
             $processState = $processState->value; // status
