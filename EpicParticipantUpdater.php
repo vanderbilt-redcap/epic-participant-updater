@@ -6,6 +6,7 @@ if(file_exists($autoload)) require_once($autoload);
 
 
 use ExternalModules\AbstractExternalModule;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
@@ -151,6 +152,16 @@ class EpicParticipantUpdater extends AbstractExternalModule
     */
     function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
     {
+		/*$testString = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing"><s:Header><a:Action s:mustUnderstand="1"/><a:MessageID>urn:uuid:7df6fcbf-4fba-4ed4-b523-c5b33628c641</a:MessageID><a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo><a:From><a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address></a:From><a:To s:mustUnderstand="1">https://redcaptest.vumc.org/api/?NOAUTH&amp;prefix=epic_participant_updater&amp;type=module&amp;page=api&amp;route=check&amp;api_token=eyJpYXQiOjE1OTQyNDAzMDAsImhhc2giOiJ2aWtKQUlFbUdPUTA0MFdDIn0=</a:To></s:Header><s:Body><rpe:AlertProtocolState xmlns:rpe="urn:ihe:qrph:rpe:2009" xmlns="urn:hl7-org:v3"><rpe:processState>On Study</rpe:processState><rpe:patient><rpe:candidateID extension="002105534" root="1.2.840.114350.1.13.478.3.7.5.737384.14"/><rpe:name><given>Adam</given><family>Test</family></rpe:name><rpe:address><streetAddressLine>2209 E Lake St</streetAddressLine><city>MURFREESBORO</city><state>TN</state><postalCode>37129</postalCode><country>US</country></rpe:address><rpe:dob value="19870808"/></rpe:patient><study><instantiation><plannedStudy><id extension="TEST-1"/></plannedStudy></instantiation><component1><studyActivitiesAtSite><subject1><experimentalUnit><effectiveTime><low value="20220418"/></effectiveTime></experimentalUnit></subject1><secondaryPerformer><serviceProvider><id extension="INTRC"/></serviceProvider></secondaryPerformer></studyActivitiesAtSite></component1></study></rpe:AlertProtocolState></s:Body></s:Envelope>';
+		$parsed = EpicXMLParser::parse($testString);
+		echo "<pre>";
+		print_r($parsed);
+		echo "</pre>";
+	    $status = $parsed['status'];
+	    $MRN = $parsed['MRN'];
+	    $method = $parsed['method'];
+	    $loadStr = EpicDataPush::generateXML($status,$method,$MRN,$parsed,'response');
+		echo htmlspecialchars($loadStr);*/
     }
 
     function pushStudyStatus($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
