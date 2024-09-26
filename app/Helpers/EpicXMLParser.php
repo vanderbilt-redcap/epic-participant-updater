@@ -126,7 +126,7 @@ class EpicXMLParser
 			$data['method'] = (string) $method;
 	        $data['MRN'] = (string) $MRN;
             $data[EpicParticipantUpdater::SETTINGS_FIELD_MRN] = (string) $MRN;
-			$data[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID] = (string) $MRN;
+			$data[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID] = (string) $study_ids[0];
             $data['study_ids'] = $study_ids;
             $data['date-start'] = $dates->start;
             $data['date-end'] = $dates->end;
