@@ -2,6 +2,7 @@
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
 use DateTime;
+use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicXMLParser
 {
@@ -123,7 +124,9 @@ class EpicXMLParser
             $data = array();
             $data['status'] = (string) $processState;
 			$data['method'] = (string) $method;
-            $data['MRN'] = (string) $MRN;
+	        $data['MRN'] = (string) $MRN;
+            $data[EpicParticipantUpdater::SETTINGS_FIELD_MRN] = (string) $MRN;
+			$data[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID] = (string) $MRN;
             $data['study_ids'] = $study_ids;
             $data['date-start'] = $dates->start;
             $data['date-end'] = $dates->end;

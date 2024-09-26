@@ -30,11 +30,7 @@ class EpicDataPush
         $alertProState->addChild('processState',$status);
         $patient = $alertProState->addChild('patient');
         $candidate = $patient->addChild('candidateID');
-        $candidate->addAttribute('root','1.2.840.114350.1.13.478.2.7.5.737384.14');
         $candidate->addAttribute('extension',$valueMrn);
-        $subjectID = $patient->addChild('subjectID');
-        $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
-        $subjectID->addAttribute('extension',$record); // this could be the alternate ID
         $name = $patient->addChild('name');
         $name->addChild('given',$valueFirstname,($type == "status_push" ? 'urn:h7-org:v3' : null));
         $name->addChild('family',$valueLastname,($type == "status_push" ? 'urn:h7-org:v3' : null));
@@ -43,9 +39,13 @@ class EpicDataPush
         $instantiation = $study->addChild('instantiation');
         $plannedStudy = $instantiation->addChild('plannedStudy');
         $plannedId = $plannedStudy->addChild('id');
-        $plannedId->addAttribute('root','1.2.3.4');
         $plannedId->addAttribute('extension',$valueStudyID);
 		if ($type == "status_push") {
+			$candidate->addAttribute('root','1.2.840.114350.1.13.478.2.7.5.737384.14');
+			$plannedId->addAttribute('root','1.2.3.4');
+			$subjectID = $patient->addChild('subjectID');
+			$subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
+			$subjectID->addAttribute('extension',$record); // this could be the alternate ID
 			$component = $study->addChild('component1');
 			$studyActivities = $component->addChild('studyActivitiesAtSite');
 			$subject1 = $studyActivities->addChild('subject1');
