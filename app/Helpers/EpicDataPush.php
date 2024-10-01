@@ -22,7 +22,9 @@ class EpicDataPush
 			$xml = new \SimpleXMLElement("<$method/>", LIBXML_NOERROR);
 			$xml->addAttribute('xmlns:xmlns', 'urn:ihe:qrph:rpe:2009');
 			$code = $xml->addChild('responseCode','ALERT_RECEIVED');
-			$returnValue = $xml->asXML();
+			$t_xml = new \DOMDocument();
+			$t_xml->loadXML($xml->asXML());
+			$returnValue = $t_xml->saveXML($t_xml->documentElement);
 		}
 		else {
 			$xml = new \SimpleXMLElement('<ep1:Envelope/>', LIBXML_NOERROR, false, 'ep1', true);
