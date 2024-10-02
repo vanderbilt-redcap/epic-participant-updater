@@ -19,12 +19,17 @@ class EpicDataPush
 		$returnValue = "";
 
 		if ($method == "AlertProtocolStateResponse") {
-			$xml = new \SimpleXMLElement("<$method/>", LIBXML_NOERROR);
-			$xml->addAttribute('xmlns:xmlns', 'urn:ihe:qrph:rpe:2009');
-			$code = $xml->addChild('responseCode','ALERT_RECEIVED');
-			$t_xml = new \DOMDocument();
-			$t_xml->loadXML($xml->asXML());
-			$returnValue = $t_xml->saveXML($t_xml->documentElement);
+			$xml = new \SimpleXMLElement('<ep1:Envelope/>', LIBXML_NOERROR, false, 'ep1', true);
+			$xml->addAttribute('xmlns:xmlns:ep1', 'http://www.w3.org/2003/05/soap-envelope');
+			$xml->addAttribute('xmlns:xmlns', 'urn:h7-org:v3');
+			$header = $xml->addChild('xmlns:Header',null);
+			$headerAction = $header->addChild('xmlns:ep3:Action', $method);
+			$headerAction->addAttribute('xmlns:ep1:mustUnderstand', 'true');
+
+			$body = $xml->addChild('xmlns:ep1:Body');
+			$alertProState = $body->addChild($method, '', 'urn:ihe:grph:rpe:2009');
+			$alertProState->addChild('responseCode','ALERT_RECEIVED');
+			$returnValue = $xml->asXML();
 		}
 		else {
 			$xml = new \SimpleXMLElement('<ep1:Envelope/>', LIBXML_NOERROR, false, 'ep1', true);
