@@ -23,7 +23,7 @@ class EpicDataPush
 			$xml->addAttribute('xmlns:xmlns:ep1', 'http://www.w3.org/2003/05/soap-envelope');
 			$xml->addAttribute('xmlns:xmlns', 'urn:h7-org:v3');
 			$header = $xml->addChild('xmlns:ep1:Header',null);
-			$headerAction = $header->addChild('xmlns:ep3:Action', $method);
+			$headerAction = $header->addChild('ep3:Action', $method,"http://www.w3.org/2005/08/addressing");
 			$headerAction->addAttribute('xmlns:ep1:mustUnderstand', 'true');
 
 			$body = $xml->addChild('xmlns:ep1:Body');
