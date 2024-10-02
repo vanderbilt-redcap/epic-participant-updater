@@ -26,7 +26,7 @@ class EpicDataPush
 			$headerAction = $header->addChild('xmlns:ep3:Action', $method);
 			$headerAction->addAttribute('xmlns:ep1:mustUnderstand', 'true');
 
-			$body = $xml->addChild('xmlns:ep1:Body');
+			$body = $xml->addChild('xmlns:Body');
 			$alertProState = $body->addChild($method, '', 'urn:ihe:grph:rpe:2009');
 			$alertProState->addChild('responseCode','ALERT_RECEIVED');
 			$returnValue = $xml->asXML();
