@@ -22,13 +22,13 @@ class EpicDataPush
 			$xml = new \SimpleXMLElement('<ep1:Envelope/>', LIBXML_NOERROR, false, 'ep1', true);
 			$xml->addAttribute('xmlns:xmlns:ep1', 'http://www.w3.org/2003/05/soap-envelope');
 			$xml->addAttribute('xmlns:xmlns', 'urn:h7-org:v3');
-			$header = $xml->addChild('xmlns:Header',null);
+			$header = $xml->addChild('xmlns:ep1:Header',null);
 			$headerAction = $header->addChild('xmlns:ep3:Action', $method);
 			$headerAction->addAttribute('xmlns:ep1:mustUnderstand', 'true');
 
-			$body = $xml->addChild('xmlns:Body');
-			$alertProState = $body->addChild($method, '', 'urn:ihe:grph:rpe:2009');
-			$alertProState->addChild('responseCode','ALERT_RECEIVED');
+			$body = $xml->addChild('xmlns:ep1:Body');
+			$alertProState = $body->addChild('ep4:'.$method, '', 'urn:ihe:grph:rpe:2009');
+			$alertProState->addChild('ep4:responseCode','ALERT_RECEIVED');
 			$returnValue = $xml->asXML();
 		}
 		else {
