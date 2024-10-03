@@ -32,10 +32,14 @@ class EpicDataPush
 			$returnValue = $xml->asXML();
 		}
 		else {
+			$action = $method;
 			$xml = new \SimpleXMLElement('<ep1:Envelope/>', LIBXML_NOERROR, false, 'ep1', true);
 			$xml->addAttribute('xmlns:xmlns:ep1', 'http://www.w3.org/2003/05/soap-envelope');
 			if ($type != 'status_push') {
 				$xml->addAttribute('xmlns:xmlns', 'urn:h7-org:v3');
+			}
+			else {
+				$action = "urn:ihe:qrph:rpe:2009:".$action.":REDCap";
 			}
 			$header = $xml->addChild('xmlns:ep1:Header');
 			$headerAction = $header->addChild('ep2:Action', $method, 'http://www.w3.org/2005/08/addressing');
