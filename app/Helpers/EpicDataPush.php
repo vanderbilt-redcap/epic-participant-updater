@@ -34,7 +34,7 @@ class EpicDataPush
 		else {
 			$xml = new \SimpleXMLElement('<ep1:Envelope/>', LIBXML_NOERROR, false, 'ep1', true);
 			$xml->addAttribute('xmlns:xmlns:ep1', 'http://www.w3.org/2003/05/soap-envelope');
-			if ($status != 'status_push') {
+			if ($type != 'status_push') {
 				$xml->addAttribute('xmlns:xmlns', 'urn:h7-org:v3');
 			}
 			$header = $xml->addChild('xmlns:ep1:Header');
