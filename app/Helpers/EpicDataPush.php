@@ -5,7 +5,7 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicDataPush
 {
-    static function generateXML($status, $record, $data=[]) {
+    static function generateXML($status, $method, $record, $data, $type='status_push') {
         // collect values
         $valueMrn = $data[EpicParticipantUpdater::SETTINGS_FIELD_MRN] ?? '';
         $valueMrn = str_pad($valueMrn,9,'0',STR_PAD_LEFT);
@@ -16,41 +16,68 @@ class EpicDataPush
         $valueStudyID = $data[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID] ?? '';
         $valueStudyID = str_pad($valueStudyID,6,'0',STR_PAD_LEFT);
 
-        $xml = new \SimpleXMLElement('<ep1:Envelope/>',LIBXML_NOERROR,false,'ep1',true);
-        $xml->addAttribute('xmlns:xmlns:ep1','http://www.w3.org/2003/05/soap-envelope');
-        $header = $xml->addChild('xmlns:ep1:Header');
-        $headerAction = $header->addChild('ep2:Action','urn:ihe:qrph:rpe:2009:AlertProtocolState:REDCap','http://www.w3.org/2005/08/addressing');
-        $headerAction->addAttribute('xmlns:ep1:mustUnderstand','true');
+		$returnValue = "";
 
-        $body = $xml->addChild('xmlns:ep1:Body');
-        $alertProState = $body->addChild('ep3:AlertProtocolState','','urn:ihe:grph:rpe:2009');
-        $alertProState->addChild('processState',$status);
-        $patient = $alertProState->addChild('patient');
-        $candidate = $patient->addChild('candidateID');
-        $candidate->addAttribute('root','1.2.840.114350.1.13.478.2.7.5.737384.14');
-        $candidate->addAttribute('extension',$valueMrn);
-        $subjectID = $patient->addChild('subjectID');
-        $subjectID->addAttribute('root','PATIENT-ENROLLMENT-IDENTIFIER');
-        $subjectID->addAttribute('extension',$record); // this could be the alternate ID
-        $name = $patient->addChild('name');
-        $name->addChild('given',$valueFirstname,'urn:h7-org:v3');
-        $name->addChild('family',$valueLastname,'urn:hl7-org:v3');
-        $alertProState->addChild('dob')->addAttribute('value',$valueDOB);
-        $study = $alertProState->addChild('study','','urn:hl7-org:v3');
-        $instantiation = $study->addChild('instantiation');
-        $plannedStudy = $instantiation->addChild('plannedStudy');
-        $plannedId = $plannedStudy->addChild('id');
-        $plannedId->addAttribute('root','1.2.3.4');
-        $plannedId->addAttribute('extension',$valueStudyID);
-        $component = $study->addChild('component1');
-        $studyActivities = $component->addChild('studyActivitiesAtSite');
-        $subject1 = $studyActivities->addChild('subject1');
-        $experimental = $subject1->addChild('experimentalUnit');
-        $effective = $experimental->addChild('effectiveTime');
-        $effective->addChild('low')->addAttribute('value','');
-        $effective->addChild('high')->addAttribute('value','');
+		if ($method == "AlertProtocolStateResponse") {
+			$xml = new \SimpleXMLElement('<ep1:Envelope/>', LIBXML_NOERROR, false, 'ep1', true);
+			$xml->addAttribute('xmlns:xmlns:ep1', 'http://www.w3.org/2003/05/soap-envelope');
+			$xml->addAttribute('xmlns:xmlns', 'urn:h7-org:v3');
+			$header = $xml->addChild('xmlns:ep1:Header',null);
+			$headerAction = $header->addChild('ep3:Action', $method,"http://www.w3.org/2005/08/addressing");
+			$headerAction->addAttribute('xmlns:ep1:mustUnderstand', 'true');
 
-        return $xml->asXML();
+			$body = $xml->addChild('xmlns:ep1:Body');
+			$alertProState = $body->addChild('ep4:'.$method, '', 'urn:ihe:grph:rpe:2009');
+			$alertProState->addChild('ep4:responseCode','ALERT_RECEIVED');
+			$returnValue = $xml->asXML();
+		}
+		else {
+			$action = $method;
+			$xml = new \SimpleXMLElement('<ep1:Envelope/>', LIBXML_NOERROR, false, 'ep1', true);
+			$xml->addAttribute('xmlns:xmlns:ep1', 'http://www.w3.org/2003/05/soap-envelope');
+			if ($type != 'status_push') {
+				$xml->addAttribute('xmlns:xmlns', 'urn:h7-org:v3');
+			}
+			else {
+				$action = "urn:ihe:qrph:rpe:2009:".$action.":REDCap";
+			}
+			$header = $xml->addChild('xmlns:ep1:Header');
+			$headerAction = $header->addChild('ep2:Action', $action, 'http://www.w3.org/2005/08/addressing');
+			$headerAction->addAttribute('xmlns:ep1:mustUnderstand', 'true');
+
+			$body = $xml->addChild('xmlns:ep1:Body');
+			$alertProState = $body->addChild('ep3:' . $method, '', 'urn:ihe:grph:rpe:2009');
+			$alertProState->addChild('processState', $status);
+			$patient = $alertProState->addChild('patient');
+			$candidate = $patient->addChild('candidateID');
+			$candidate->addAttribute('extension', $valueMrn);
+			$name = $patient->addChild('name');
+			$name->addChild('given', $valueFirstname, ($type == "status_push" ? 'urn:h7-org:v3' : null));
+			$name->addChild('family', $valueLastname, ($type == "status_push" ? 'urn:h7-org:v3' : null));
+			$alertProState->addChild('dob')->addAttribute('value', $valueDOB);
+			$study = $alertProState->addChild('study', '', ($type == "status_push" ? 'urn:h7-org:v3' : null));
+			$instantiation = $study->addChild('instantiation');
+			$plannedStudy = $instantiation->addChild('plannedStudy');
+			$plannedId = $plannedStudy->addChild('id');
+			$plannedId->addAttribute('extension', $valueStudyID);
+			if ($type == "status_push") {
+				$candidate->addAttribute('root', '1.2.840.114350.1.13.478.2.7.5.737384.14');
+				$plannedId->addAttribute('root', '1.2.3.4');
+				$subjectID = $patient->addChild('subjectID');
+				$subjectID->addAttribute('root', 'PATIENT-ENROLLMENT-IDENTIFIER');
+				$subjectID->addAttribute('extension', $record); // this could be the alternate ID
+				$component = $study->addChild('component1');
+				$studyActivities = $component->addChild('studyActivitiesAtSite');
+				$subject1 = $studyActivities->addChild('subject1');
+				$experimental = $subject1->addChild('experimentalUnit');
+				$effective = $experimental->addChild('effectiveTime');
+				$effective->addChild('low')->addAttribute('value', '');
+				$effective->addChild('high')->addAttribute('value', '');
+			}
+			$returnValue = $xml->asXML();
+		}
+
+        return $returnValue;
     }
 
     static function uploadParticipantXML($url,$xml_string) {
