@@ -2,6 +2,7 @@
 namespace Vanderbilt\EpicParticipantUpdater\App\Helpers;
 
 use DateTime;
+use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class EpicXMLParser
 {
@@ -92,6 +93,14 @@ class EpicXMLParser
             $plannedStudy = new XMLNode($xml_string, 'plannedStudy');
             $dateofBirth = new XMLNode($xml_string, 'dob');
             $names = new XMLNode($xml_string,'name');
+			$body = new XMLNode($xml_string, 'body');
+			$method = $body->children[0]->tag;
+			if ($method == "EnrollPatientRequestRequest") {
+				$method = "EnrollPatientRequestResponse";
+			}
+			else {
+				$method .= "Response";
+			}
             $dates = self::extractDates($xml_string);
             $MRN = $candidateID->attributes['extension']; // the MRN is in the "extension" attribute
             $processState = $processState->value; // status
@@ -114,7 +123,10 @@ class EpicXMLParser
 
             $data = array();
             $data['status'] = (string) $processState;
-            $data['MRN'] = (string) $MRN;
+			$data['method'] = (string) $method;
+	        $data['MRN'] = (string) $MRN;
+            $data[EpicParticipantUpdater::SETTINGS_FIELD_MRN] = (string) $MRN;
+			$data[EpicParticipantUpdater::SETTINGS_FIELD_STUDY_ID] = (string) $study_ids[0];
             $data['study_ids'] = $study_ids;
             $data['date-start'] = $dates->start;
             $data['date-end'] = $dates->end;

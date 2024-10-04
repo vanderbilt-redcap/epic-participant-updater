@@ -6,6 +6,7 @@ if(file_exists($autoload)) require_once($autoload);
 
 
 use ExternalModules\AbstractExternalModule;
+use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
@@ -151,6 +152,17 @@ class EpicParticipantUpdater extends AbstractExternalModule
     */
     function redcap_data_entry_form ($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance = 1 )
     {
+		/*$testString = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing"><s:Header><a:Action s:mustUnderstand="1"/><a:MessageID>urn:uuid:7df6fcbf-4fba-4ed4-b523-c5b33628c641</a:MessageID><a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo><a:From><a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address></a:From><a:To s:mustUnderstand="1">https://redcaptest.vumc.org/api/?NOAUTH&amp;prefix=epic_participant_updater&amp;type=module&amp;page=api&amp;route=check&amp;api_token=eyJpYXQiOjE1OTQyNDAzMDAsImhhc2giOiJ2aWtKQUlFbUdPUTA0MFdDIn0=</a:To></s:Header><s:Body><rpe:AlertProtocolState xmlns:rpe="urn:ihe:qrph:rpe:2009" xmlns="urn:hl7-org:v3"><rpe:processState>On Study</rpe:processState><rpe:patient><rpe:candidateID extension="002105534" root="1.2.840.114350.1.13.478.3.7.5.737384.14"/><rpe:name><given>Adam</given><family>Test</family></rpe:name><rpe:address><streetAddressLine>2209 E Lake St</streetAddressLine><city>MURFREESBORO</city><state>TN</state><postalCode>37129</postalCode><country>US</country></rpe:address><rpe:dob value="19870808"/></rpe:patient><study><instantiation><plannedStudy><id extension="TEST-1"/></plannedStudy></instantiation><component1><studyActivitiesAtSite><subject1><experimentalUnit><effectiveTime><low value="20220418"/></effectiveTime></experimentalUnit></subject1><secondaryPerformer><serviceProvider><id extension="INTRC"/></serviceProvider></secondaryPerformer></studyActivitiesAtSite></component1></study></rpe:AlertProtocolState></s:Body></s:Envelope>';
+		$parsed = EpicXMLParser::parse($testString);
+		echo "Parsed:<br/>";
+		echo "<pre>";
+		print_r($parsed);
+		echo "</pre>";
+	    $status = $parsed['status'];
+	    $MRN = $parsed['MRN'];
+	    $method = $parsed['method'];
+	    $loadStr = EpicDataPush::generateXML($status,$method,$MRN,$parsed,'response');
+		echo htmlspecialchars($loadStr);*/
     }
 
     function pushStudyStatus($project_id, $record, $instrument, $event_id, $group_id = NULL, $survey_hash = NULL, $response_id = NULL, $repeat_instance = 1) {
@@ -182,7 +194,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
                     // check if alternate record ID should be used
                     $alternateID = $data[$alternateIDField] ?? '';
                     $recordID = ($useAlternateID==true && !empty($alternateID)) ? $alternateID : $record;
-                    $xml_string = EpicDataPush::generateXML($statusValue, $recordID, $alternateData);
+                    $xml_string = EpicDataPush::generateXML($statusValue, "AlertProtocolState", $recordID, $alternateData);
                     $result = EpicDataPush::uploadParticipantXML($url, $xml_string);
 
                     $requestStatus = $logString = "Unknown EPIC upload result";
@@ -193,7 +205,7 @@ class EpicParticipantUpdater extends AbstractExternalModule
                         $requestStatus = $logString = "Patient status '$statusValue' received by Epic";
                         $fields = array($currentProject->table_pk => $record, $studyField => $statusValue);
                         $saveData = RecordHelper::getRecordSchema($project_id, $event_id, $record, $fields, $repeat_instance);
-                        $result = \REDCap::saveData($project_id, 'array', $saveData);
+                        $saveResult = \REDCap::saveData($project_id, 'array', $saveData);
                     } else {
                         $logString .= " - $result";
                     }
@@ -202,9 +214,13 @@ class EpicParticipantUpdater extends AbstractExternalModule
                         'project_id' => $project_id,
                         'record_id' => $record,
                         'status' => Logger::STATUS_INFO,
-                        'description' => "$requestStatus\n" . Logger::printArray($xml_string),
+                        'description' => "$requestStatus\n" . $xml_string
                     ]);
-
+	                $headers  = "From: noreply@vumc.org\r\n";
+	                $headers .= "Reply-To: noreply@vumc.org\r\n";
+	                $headers .= "MIME-Version: 1.0\r\n";
+	                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+	                mail("james.r.moore@vumc.org,adam.lewis@vumc.org","Status Push to Epic XML","Message Sent to Epic:<br/>".htmlspecialchars($xml_string)."<br/><br/>Message Back from Epic:<br/>".htmlspecialchars($result),$headers);
                     \REDCap::logEvent("Epic Status Push $statusValue for record $record", $logString);
                 }
             }
