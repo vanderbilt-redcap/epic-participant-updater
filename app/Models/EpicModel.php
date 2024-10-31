@@ -99,8 +99,8 @@ class EpicModel extends BaseModel
 	    $headers .= "Reply-To: noreply@vumc.org\r\n";
 	    $headers .= "MIME-Version: 1.0\r\n";
 	    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-		mail("james.r.moore@vumc.org,adam.lewis@vumc.org","Epic XML Communications","Original message from Epic:<br/>".htmlspecialchars($xml_string)."<br/><br/>XML Going Back to Epic:<br/>".htmlspecialchars($loadStr),$headers);
-        Header('Content-Type: application/soap+xml; charset=utf-8');*/
+		mail("james.r.moore@vumc.org,adam.lewis@vumc.org","Epic XML Communications","Original message from Epic:<br/>".htmlspecialchars($xml_string)."<br/><br/>XML Going Back to Epic:<br/>".htmlspecialchars($loadStr),$headers);*/
+        Header('Content-Type: application/soap+xml; charset=utf-8');
         echo $loadStr;
         exit(0);
     }
