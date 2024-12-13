@@ -6,7 +6,6 @@ if(file_exists($autoload)) require_once($autoload);
 
 
 use ExternalModules\AbstractExternalModule;
-use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicXMLParser;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\RandomString;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
