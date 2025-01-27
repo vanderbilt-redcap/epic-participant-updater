@@ -127,8 +127,8 @@ class EpicController extends BaseController
     {
         $module_prefix = $this->module->PREFIX;
         $api_token = $this->module->getApiToken();
-        $listening_url_base = sprintf("%sapi/?NOAUTH&prefix=%s&type=module&page=api&route=check&api_token=",APP_PATH_WEBROOT_FULL, $module_prefix);
-        $listening_url = $listening_url_base.$api_token;
+        $listening_url_base = sprintf("%sapi/?NOAUTH&prefix=%s&type=module&page=api&route=check",APP_PATH_WEBROOT_FULL, $module_prefix);
+        $listening_url = $listening_url_base;
         $data = [
             'api_token' => $api_token,
             'listening_url_base' => $listening_url_base,
