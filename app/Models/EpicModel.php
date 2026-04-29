@@ -10,6 +10,9 @@ use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
 
 class EpicModel extends BaseModel
 {
+    private const SAVE_ACTION_CREATE = 'create';
+    private const SAVE_ACTION_UPDATE = 'update';
+    private const SAVE_ERROR_SEPARATOR = "\n";
 
     /**
      *
@@ -349,70 +352,124 @@ class EpicModel extends BaseModel
     }
             
     /**
-     * insert a new record or update an existing one
+     * Create a REDCap record from Epic XML data and log the full save outcome.
      *
-     * @param \Project $project
+     * @param integer $project_id
+     * @param string|integer $record_id
+     * @param string $study_id
      * @param array $xml_data
-     * @param string $existing_record_id
      * @return void
      */
     private function createRecord($project_id, $record_id, $study_id, $xml_data)
     {
+        $event_id = $this->settings->getEventID($project_id);
         $record = $this->getRecord($project_id, $record_id, $study_id, $xml_data);
         $result = \REDCap::saveData($project_id, 'array', $record);
-
-        // log results
-        if($error = $result['errors'])
-        {
-            $status = Logger::STATUS_ERROR;
-            $description = "error creating new record: {$error}";
-        }else
-        {
-            $status = Logger::STATUS_SUCCESS;
-            $description = "new record created";
-        }
-
-        $this->log($message='created record', $parameters = [
-            'status' => $status,
-            'description' => $description,
-            'project_id'=> $project_id,
-            'record_id' => $record_id,
-            'study_id' => $study_id,
-            'MRN' => $xml_data['MRN']
-        ]);
+        $this->logSaveDataResult(
+            self::SAVE_ACTION_CREATE,
+            $project_id,
+            $record_id,
+            $study_id,
+            $xml_data,
+            $event_id,
+            $result
+        );
     }
 
     /**
-     * update the status of an existing record
+     * Update an existing REDCap record from Epic XML data and log the full save outcome.
      * 
      * @param integer $project_id
-     * @param integer $record_id
+     * @param string|integer $record_id
+     * @param string $study_id
      * @param array $xml_data
      * @return void
      */
     private function updateRecord($project_id, $record_id, $study_id, $xml_data)
     {
-
+        $event_id = $this->settings->getEventID($project_id);
         $record = $this->getRecord($project_id, $record_id, $study_id, $xml_data);
         $result = \REDCap::saveData($project_id, 'array', $record);
 
-        if($error = $result['errors'])
+        $this->logSaveDataResult(
+            self::SAVE_ACTION_UPDATE,
+            $project_id,
+            $record_id,
+            $study_id,
+            $xml_data,
+            $event_id,
+            $result
+        );
+    }
+
+    /**
+     * Log REDCap saveData results with scalar context that survives external module log storage.
+     *
+     * @param string $save_action
+     * @param integer $project_id
+     * @param string|integer $record_id
+     * @param string $study_id
+     * @param array $xml_data
+     * @param integer $event_id
+     * @param mixed $result
+     * @return void
+     */
+    private function logSaveDataResult(
+        $save_action,
+        $project_id,
+        $record_id,
+        $study_id,
+        $xml_data,
+        $event_id,
+        $result
+    )
+    {
+        $errors = \Records::getSaveDataErrors($result);
+        if(empty($errors) && is_string($result) && trim($result) !== '')
         {
-            $status = Logger::STATUS_ERROR;
-            $description = "error updating record {$record_id}: {$error}";
+            $errors = [trim($result)];
+        }
+        $has_errors = !empty($errors);
+        $save_errors = implode(self::SAVE_ERROR_SEPARATOR, $errors);
+        $item_count = is_array($result) ? intval($result['item_count'] ?? 0) : 0;
+
+        if($save_action === self::SAVE_ACTION_CREATE)
+        {
+            $message = 'created record';
+            $description = $has_errors
+                ? "error creating new record {$record_id} in project {$project_id}, "
+                    . "event {$event_id}, study {$study_id}: {$save_errors}"
+                : "new record {$record_id} created";
         }else
         {
-            $status = Logger::STATUS_SUCCESS;
-            $description = "record {$record_id} updated";
+            $message = 'updated record';
+            $description = $has_errors
+                ? "error updating record {$record_id} in project {$project_id}, "
+                    . "event {$event_id}, study {$study_id}: {$save_errors}"
+                : "record {$record_id} updated";
         }
-        $this->log($message='updated record', $parameters = [
-            'status' => $status,
+
+        $parameters = [
+            'status' => $has_errors ? Logger::STATUS_ERROR : Logger::STATUS_SUCCESS,
             'description' => $description,
-            'project_id'=> $project_id,
+            'project_id' => $project_id,
             'record_id' => $record_id,
+            'event_id' => $event_id,
             'study_id' => $study_id,
-            'MRN' => $xml_data['MRN']
-        ]);
+            'MRN' => $xml_data['MRN'],
+            'epic_status' => $xml_data['status'],
+            'save_action' => $save_action,
+            'save_error_count' => count($errors),
+            'save_item_count' => $item_count,
+        ];
+
+        if($has_errors)
+        {
+            // External module logs reject arrays, so preserve errors as newline-delimited text.
+            $parameters['save_errors'] = $save_errors;
+        }
+
+        $this->log($message, $parameters);
     }
 
     private function log($message, $parameters=[])
