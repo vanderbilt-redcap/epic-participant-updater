@@ -3,6 +3,25 @@
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 
 class Logger {
+    private const SEARCHABLE_FIELDS = [
+        'log_id',
+        'timestamp',
+        'username',
+        'ip',
+        '_project_id',
+        '_record_id',
+        'message',
+        'status',
+        'description',
+        'MRN',
+        'study_id',
+        'event_id',
+        'epic_status',
+        'save_action',
+        'save_error_count',
+        'save_item_count',
+        'save_errors',
+    ];
 
     /**
      *
@@ -42,7 +61,7 @@ class Logger {
     private static $DB_fields = [
         'log_id',
         'timestamp',
-        'user',
+        'username AS user',
         'ip',
         '_project_id AS project_id',
         '_record_id AS record',
@@ -50,7 +69,13 @@ class Logger {
         'status',
         'description',
         'MRN',
-        'study_id'
+        'study_id',
+        'event_id',
+        'epic_status',
+        'save_action',
+        'save_error_count',
+        'save_item_count',
+        'save_errors',
     ];
 
 
@@ -98,49 +123,87 @@ class Logger {
     }
 
     /**
-     * list the logs using pagination
-     * set $limit to -1 to skip pagination
+     * List logs using server-side pagination and a global text filter.
      *
-     * @param int $page
+     * Set $limit to -1 to skip pagination for legacy callers.
+     *
+     * @param int $start
      * @param int $limit
-     * @return void
+     * @param string $query
+     * @return array
      */
-	public function getList($start, $limit)
+	public function getList($start, $limit, $query = '')
 	{
-		$query_string = "SELECT ".implode(',',self::$DB_fields)." ORDER BY timestamp DESC";
+        $parameters = [];
+        $whereClause = $this->getSearchWhereClause($query, $parameters);
+
+		$query_string = "SELECT ".implode(',',self::$DB_fields);
+        if($whereClause !== '') $query_string .= " WHERE {$whereClause}";
+        $query_string .= " ORDER BY timestamp DESC";
 		if($limit>0) $query_string .= " LIMIT {$start}, {$limit}";
-		$result = $this->module->queryLogs($query_string);
+		$result = $this->module->queryLogs($query_string, $parameters);
 		$logs = [];
 		while($row = db_fetch_object($result)){
 			$logs[] = $row;
         }
-        $response = array(
+
+        return array(
             'data' => $logs,
             'metadata' => array(
-                'total' => $this->getTotalCount(),
+                'total' => $this->getTotalCount($query),
+                'page' => $limit > 0 ? intval(floor($start / $limit)) + 1 : 1,
+                'perPage' => $limit,
+                'start' => $start,
+                'limit' => $limit,
+                'query' => $query,
             ),
         );
-
-		return $response;
     }
 
 
     /**
-     * get the total count of results (ignore limit and filters)
+     * Get the total count of results after applying the active filter.
      *
-     * @param [array $params
+     * @param string $query
      * @return integer
      */
-    private function getTotalCount()
+    private function getTotalCount($query = '')
     {
-        $query_string = sprintf("SELECT COUNT(*) AS total");
-        $result = $this->module->queryLogs($query_string);
+        $parameters = [];
+        $whereClause = $this->getSearchWhereClause($query, $parameters);
+        $query_string = "SELECT COUNT(*) AS total";
+        if($whereClause !== '') $query_string .= " WHERE {$whereClause}";
+        $result = $this->module->queryLogs($query_string, $parameters);
         if($result && $row=db_fetch_assoc($result))
         {
 
             return intval($row['total']);
         }
         return 0;
+    }
+
+    /**
+     * Build the global search clause shared by the list and count queries.
+     *
+     * @param string $query
+     * @param array $parameters
+     * @return string
+     */
+    private function getSearchWhereClause($query, &$parameters)
+    {
+        $query = trim((string)$query);
+        if($query === '') return '';
+
+        $likeValue = '%' . $query . '%';
+        $clauses = [];
+
+        foreach(self::SEARCHABLE_FIELDS as $field)
+        {
+            $clauses[] = "{$field} LIKE ?";
+            $parameters[] = $likeValue;
+        }
+
+        return '(' . implode(' OR ', $clauses) . ')';
     }
 
     public static function printArray($array) {

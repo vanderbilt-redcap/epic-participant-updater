@@ -6,6 +6,13 @@ use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
 
 class EpicController extends BaseController
 {
+    private const LOGS_PARAM_START = '_start';
+    private const LOGS_PARAM_LIMIT = '_limit';
+    private const LOGS_PARAM_PAGE = '_page';
+    private const LOGS_PARAM_PER_PAGE = '_per_page';
+    private const LOGS_PARAM_QUERY = 'q';
+    private const LOGS_MAX_PER_PAGE = 500;
+
     /**
      *
      * @var EpicParticipantUpdater
@@ -40,16 +47,113 @@ class EpicController extends BaseController
         $this->printJSON($response);
     }
     
-    /*
-    * list the logs
-    * @todo add pagination
-    */
+    /**
+     * List logs using normalized pagination and search request parameters.
+     *
+     * @return void
+     */
 	public function getLogs()
 	{
-        $start = $_GET['_start'] ?: 0;
-        $limit = $_GET['_limit'] ?: $this->defaults['logs_per_page'];
-        $response = Logger::make()->getList($start, $limit);
+        $request = $this->getLogRequestParameters();
+        $response = Logger::make()->getList($request['start'], $request['limit'], $request['query']);
+        $response['metadata'] = array_merge($response['metadata'] ?? [], [
+            'page' => $request['page'],
+            'perPage' => $request['perPage'],
+            'start' => $request['start'],
+            'limit' => $request['limit'],
+            'query' => $request['query'],
+        ]);
         $this->printJSON($response);
+    }
+
+    /**
+     * Normalize logs request input while preserving the current offset-based API.
+     *
+     * @return array
+     */
+    private function getLogRequestParameters()
+    {
+        $defaultPerPage = intval($this->defaults['logs_per_page']);
+        $rawLimit = $this->getIntegerRequestParameter(self::LOGS_PARAM_LIMIT, $defaultPerPage);
+        $page = $this->getIntegerRequestParameter(self::LOGS_PARAM_PAGE, null);
+        $query = substr(trim((string)($_GET[self::LOGS_PARAM_QUERY] ?? '')), 0, 255);
+
+        if($page !== null)
+        {
+            $perPage = $this->getIntegerRequestParameter(self::LOGS_PARAM_PER_PAGE, $rawLimit);
+            $perPage = $this->clampLogsPerPage($perPage, $defaultPerPage);
+            $page = max(1, $page);
+
+            return [
+                'page' => $page,
+                'perPage' => $perPage,
+                'start' => ($page - 1) * $perPage,
+                'limit' => $perPage,
+                'query' => $query,
+            ];
+        }
+
+        $start = max(0, $this->getIntegerRequestParameter(self::LOGS_PARAM_START, 0));
+        $limit = $this->normalizeLogsLimit($rawLimit, $defaultPerPage);
+
+        return [
+            'page' => $limit > 0 ? intval(floor($start / $limit)) + 1 : 1,
+            'perPage' => $limit,
+            'start' => $start,
+            'limit' => $limit,
+            'query' => $query,
+        ];
+    }
+
+    /**
+     * Read an integer query parameter with an explicit fallback.
+     *
+     * @param string $key
+     * @param integer|null $default
+     * @return integer|null
+     */
+    private function getIntegerRequestParameter($key, $default)
+    {
+        if(!isset($_GET[$key]) || $_GET[$key] === '')
+        {
+            return $default;
+        }
+
+        return intval($_GET[$key]);
+    }
+
+    /**
+     * Normalize page size values for regular paged requests.
+     *
+     * @param integer $perPage
+     * @param integer $defaultPerPage
+     * @return integer
+     */
+    private function clampLogsPerPage($perPage, $defaultPerPage)
+    {
+        if($perPage < 1)
+        {
+            return $defaultPerPage;
+        }
+
+        return min($perPage, self::LOGS_MAX_PER_PAGE);
+    }
+
+    /**
+     * Normalize offset API limits, including the legacy unpaged `-1` value.
+     *
+     * @param integer $limit
+     * @param integer $defaultPerPage
+     * @return integer
+     */
+    private function normalizeLogsLimit($limit, $defaultPerPage)
+    {
+        if($limit === -1)
+        {
+            return -1;
+        }
+
+        return $this->clampLogsPerPage($limit, $defaultPerPage);
     }
     
     /*
