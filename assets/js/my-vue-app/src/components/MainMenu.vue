@@ -19,6 +19,9 @@
                     <li class="nav-item">
                         <NavLinkItem to="/logs">Logs</NavLinkItem>
                     </li>
+                    <li class="nav-item">
+                        <NavLinkItem to="/log-archives">Log Archives</NavLinkItem>
+                    </li>
                 </ul>
             </div>
         </div>

@@ -19,6 +19,15 @@
     "redcap_save_record",
     "redcap_survey_complete"
   ],
+  "crons": [
+    {
+      "cron_name": "epu_archive_old_logs",
+      "cron_description": "Archive and clean one oldest eligible Epic Participant Updater log month.",
+      "method": "cron_archiveOldLogs",
+      "cron_frequency": 1209600,
+      "cron_max_run_time": 86400
+    }
+  ],
   "links": {
     "control-center": [
       {

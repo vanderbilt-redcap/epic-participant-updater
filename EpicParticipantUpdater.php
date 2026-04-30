@@ -11,6 +11,7 @@ use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\EpicDataPush;
 use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
+use Vanderbilt\EpicParticipantUpdater\App\Services\LogArchiveService;
 
 class EpicParticipantUpdater extends AbstractExternalModule
 {
@@ -250,6 +251,64 @@ class EpicParticipantUpdater extends AbstractExternalModule
     public function getEpicUploadURL()
     {
         return $this->getSystemSetting(self::SETTINGS_EPIC_UPLOAD_URL);
+    }
+
+    /**
+     * Cron entry point that archives and cleans one oldest eligible log month.
+     *
+     * @param array $cronAttributes
+     * @return string
+     */
+    public function cron_archiveOldLogs($cronAttributes)
+    {
+        try {
+            $result = (new LogArchiveService($this))->archiveAndCleanupOldestEligibleMonth();
+            return $this->getLogArchiveCronMessage($result);
+        } catch(\Throwable $throwable) {
+            $message = $throwable->getMessage();
+            $this->log(LogArchiveService::LOG_MESSAGE_ARCHIVE_RUN, [
+                'status' => Logger::STATUS_ERROR,
+                'archive_status' => LogArchiveService::STATUS_ERROR,
+                'description' => $message,
+            ]);
+            return "Log archive failed: {$message}";
+        }
+    }
+
+    /**
+     * Build a short human-readable result for REDCap's cron log.
+     *
+     * @param array $result
+     * @return string
+     */
+    private function getLogArchiveCronMessage($result)
+    {
+        $status = isset($result['status']) ? $result['status'] : LogArchiveService::STATUS_ERROR;
+        $month = isset($result['month']) ? $result['month'] : '';
+        $deletedCount = intval($result['deleted_count'] ?? 0);
+
+        if($status === LogArchiveService::STATUS_ARCHIVED_AND_DELETED)
+        {
+            return "Archived and cleaned log month {$month}; deleted {$deletedCount} hot log rows.";
+        }
+
+        if($status === LogArchiveService::STATUS_ALREADY_DELETED)
+        {
+            return "Log month {$month} was already archived and cleaned.";
+        }
+
+        if($status === LogArchiveService::STATUS_NO_ELIGIBLE_LOGS)
+        {
+            return 'No eligible log month to archive.';
+        }
+
+        if($status === LogArchiveService::STATUS_ERROR)
+        {
+            $message = isset($result['message']) ? $result['message'] : 'Unknown error.';
+            return "Log archive failed: {$message}";
+        }
+
+        return "Log archive completed with status {$status}.";
     }
 
     /**

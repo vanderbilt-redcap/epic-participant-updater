@@ -14,6 +14,8 @@ require_once __DIR__."/bootstrap.php";
 $routes = [
     [['POST','PUT'], "check", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/check', [new LogMiddleware(), new CheckApiTokenMiddleware()]]],
     ['GET', "logs", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogs']],
+    ['GET', "archives", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getLogArchives', [new CheckRedcapUserMiddleware()]]],
+    ['GET', "archives/{month:\d{4}-\d{2}}/{fileType:archive|manifest}", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/downloadLogArchive', [new CheckRedcapUserMiddleware()]]],
     ['GET', "settings", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/getSettings']],
     ['GET', "/test[/{id:\d+}]", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\BaseController/test', [new LogMiddleware()]]],
     ['POST', "regenerate_token", ['Vanderbilt\EpicParticipantUpdater\App\Controllers\EpicController/regenerateAPIToken', [new LogMiddleware(), new CheckRedcapUserMiddleware()]]],

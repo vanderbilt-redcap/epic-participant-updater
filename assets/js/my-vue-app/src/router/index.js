@@ -5,6 +5,7 @@ import HomePage from '@/pages/HomePage.vue'
 import ProjectTemplatesPage from '@/pages/ProjectTemplatesPage.vue'
 import ApiTokenPage from '@/pages/ApiTokenPage.vue'
 import LogsPage from '@/pages/LogsPage.vue'
+import LogArchivesPage from '@/pages/LogArchivesPage.vue'
 
 /**
  * supported routes.
@@ -21,6 +22,7 @@ const routes = [
             { path: 'project-templates', name: 'project-templates', component: ProjectTemplatesPage },
             { path: 'api-token', name: 'api-token', component: ApiTokenPage },
             { path: 'logs', name: 'logs', component: LogsPage },
+            { path: 'log-archives', name: 'log-archives', component: LogArchivesPage },
             { path: '/:pathMatch(.*)*', component: NotFoundPage },
         ],
     },

@@ -3,6 +3,7 @@
 use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
+use Vanderbilt\EpicParticipantUpdater\App\Services\LogArchiveService;
 
 class EpicController extends BaseController
 {
@@ -64,6 +65,57 @@ class EpicController extends BaseController
             'query' => $request['query'],
         ]);
         $this->printJSON($response);
+    }
+
+    /**
+     * List cold-storage archive files available for download.
+     *
+     * @return void
+     */
+    public function getLogArchives()
+    {
+        $archives = (new LogArchiveService($this->module))->getArchiveList();
+        foreach($archives as &$archive)
+        {
+            $archive['archive_download_url'] = $this->getLogArchiveDownloadUrl($archive['month'], 'archive');
+            $archive['manifest_download_url'] = $this->getLogArchiveDownloadUrl($archive['month'], 'manifest');
+        }
+
+        $this->printJSON([
+            'data' => $archives,
+            'metadata' => [
+                'total' => count($archives),
+            ],
+        ]);
+    }
+
+    /**
+     * Download an archive artifact after resolving the edoc from the archive index.
+     *
+     * @param string $month
+     * @param string $fileType
+     * @return void
+     */
+    public function downloadLogArchive($month, $fileType)
+    {
+        try {
+            $file = (new LogArchiveService($this->module))->getArchiveFile($month, $fileType);
+            $contents = $file['contents'];
+            $filename = $this->sanitizeDownloadFilename($file['filename']);
+            $mimeType = $file['mime_type'] ?: 'application/octet-stream';
+
+            header('Content-Type: ' . $mimeType);
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Length: ' . strlen($contents));
+            print $contents;
+            exit;
+        } catch(\Exception $exception) {
+            $statusCode = $exception->getCode() ?: 404;
+            $this->printJSON([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], $statusCode);
+        }
     }
 
     /**
@@ -154,6 +206,36 @@ class EpicController extends BaseController
         }
 
         return $this->clampLogsPerPage($limit, $defaultPerPage);
+    }
+
+    /**
+     * Build the authenticated REDCap API URL for an indexed archive artifact.
+     *
+     * @param string $month
+     * @param string $fileType
+     * @return string
+     */
+    private function getLogArchiveDownloadUrl($month, $fileType)
+    {
+        return APP_PATH_WEBROOT_FULL . 'api/?' . http_build_query([
+            'type' => 'module',
+            'page' => 'api',
+            'prefix' => $this->module->PREFIX,
+            'route' => "archives/{$month}/{$fileType}",
+        ]);
+    }
+
+    /**
+     * Strip unsafe characters from a browser download filename.
+     *
+     * @param string $filename
+     * @return string
+     */
+    private function sanitizeDownloadFilename($filename)
+    {
+        $filename = basename(str_replace(["\r", "\n"], '', (string)$filename));
+        $filename = preg_replace('/[^A-Za-z0-9._-]/', '_', $filename);
+        return $filename ?: 'log_archive.bin';
     }
     
     /*
