@@ -262,8 +262,8 @@ class EpicParticipantUpdater extends AbstractExternalModule
     public function cron_archiveOldLogs($cronAttributes)
     {
         try {
-            $result = (new LogArchiveService($this))->archiveAndCleanupOldestEligibleMonth();
-            return $this->getLogArchiveCronMessage($result);
+            $result = $this->runLogArchiveCleanup();
+            return $this->getLogArchiveCleanupMessage($result);
         } catch(\Throwable $throwable) {
             $message = $throwable->getMessage();
             $this->log(LogArchiveService::LOG_MESSAGE_ARCHIVE_RUN, [
@@ -276,12 +276,22 @@ class EpicParticipantUpdater extends AbstractExternalModule
     }
 
     /**
-     * Build a short human-readable result for REDCap's cron log.
+     * Run the log archive cleanup job used by both cron and manual UI actions.
+     *
+     * @return array
+     */
+    public function runLogArchiveCleanup()
+    {
+        return (new LogArchiveService($this))->archiveAndCleanupOldestEligibleMonth();
+    }
+
+    /**
+     * Build a short human-readable result for REDCap's cron log and UI actions.
      *
      * @param array $result
      * @return string
      */
-    private function getLogArchiveCronMessage($result)
+    public function getLogArchiveCleanupMessage($result)
     {
         $status = isset($result['status']) ? $result['status'] : LogArchiveService::STATUS_ERROR;
         $month = isset($result['month']) ? $result['month'] : '';

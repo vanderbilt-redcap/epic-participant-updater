@@ -9,7 +9,11 @@ export default defineStore('logArchives', () => {
     const archives = ref([])
     const metadata = ref({})
     const loading = ref(false)
+    const runningCleanup = ref(false)
+    const deletingMonth = ref('')
     const error = ref()
+    const actionError = ref()
+    const actionMessage = ref('')
 
     const total = computed(() => {
         const parsed = parseInt(metadata.value?.total ?? archives.value.length, 10)
@@ -31,12 +35,54 @@ export default defineStore('logArchives', () => {
         }
     }
 
+    const runCleanup = async () => {
+        runningCleanup.value = true
+        actionError.value = undefined
+        actionMessage.value = ''
+        try {
+            const response = await api.create('archives/run-cleanup', {})
+            actionMessage.value = response.data?.message ?? 'Log archive cleanup completed.'
+            return response.data
+        } catch (exception) {
+            actionError.value = exception
+            actionMessage.value = exception.response?.data?.message ?? 'Unable to run log archive cleanup.'
+            throw exception
+        } finally {
+            await loadList()
+            runningCleanup.value = false
+        }
+    }
+
+    const deleteArchive = async (month) => {
+        deletingMonth.value = month
+        actionError.value = undefined
+        actionMessage.value = ''
+        try {
+            const response = await api.delete('archives', month)
+            actionMessage.value = `Deleted archive files for ${month}.`
+            return response.data
+        } catch (exception) {
+            actionError.value = exception
+            actionMessage.value = exception.response?.data?.message ?? `Unable to delete archive files for ${month}.`
+            throw exception
+        } finally {
+            await loadList()
+            deletingMonth.value = ''
+        }
+    }
+
     return {
         archives,
         metadata,
         loading,
+        runningCleanup,
+        deletingMonth,
         error,
+        actionError,
+        actionMessage,
         total,
         loadList,
+        runCleanup,
+        deleteArchive,
     }
 })

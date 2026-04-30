@@ -309,6 +309,52 @@ class LogArchiveTest extends TestCase
         $service->getArchiveFile('2026-01', 'archive');
     }
 
+    public function testDeleteArchiveFilesDeletesArchiveAndManifestAndRemovesIndex()
+    {
+        $module = new FakeLogArchiveModule();
+        $repository = new FakeLogArchiveRepository([
+            ['log_id' => 1, 'timestamp' => '2026-01-15 10:00:00', 'message' => 'first'],
+        ]);
+        $storage = new FakeLogArchiveStorage();
+        $service = new LogArchiveService($module, $repository, $storage, '2026-04-30 12:00:00');
+        $service->archiveOldestEligibleMonth();
+
+        $result = $service->deleteArchiveFiles('2026-01');
+
+        $this->assertSame(LogArchiveService::STATUS_ARCHIVE_FILES_DELETED, $result['status']);
+        $this->assertSame(2, $result['deleted_file_count']);
+        $this->assertSame([1, 2], $storage->deletedDocIds);
+        $this->assertSame([], $storage->files);
+        $this->assertSame([], json_decode($module->settings[LogArchiveService::ARCHIVE_INDEX_SETTING], true));
+        $this->assertCount(1, $module->logs);
+        $this->assertSame(LogArchiveService::LOG_MESSAGE_ARCHIVE_FILES_DELETED, $module->logs[0]['message']);
+        $this->assertSame('success', $module->logs[0]['parameters']['status']);
+    }
+
+    public function testDeleteArchiveFilesKeepsIndexWhenEdocDeleteFails()
+    {
+        $module = new FakeLogArchiveModule();
+        $repository = new FakeLogArchiveRepository([
+            ['log_id' => 1, 'timestamp' => '2026-01-15 10:00:00', 'message' => 'first'],
+        ]);
+        $storage = new FakeLogArchiveStorage();
+        $service = new LogArchiveService($module, $repository, $storage, '2026-04-30 12:00:00');
+        $service->archiveOldestEligibleMonth();
+        $storage->failDeleteDocIds[] = 1;
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Could not delete archive edoc.');
+
+        try {
+            $service->deleteArchiveFiles('2026-01');
+        } finally {
+            $index = json_decode($module->settings[LogArchiveService::ARCHIVE_INDEX_SETTING], true);
+            $this->assertArrayHasKey('2026-01', $index);
+            $this->assertCount(2, $storage->files);
+            $this->assertSame([], $storage->deletedDocIds);
+        }
+    }
+
     private static function readZipEntry($contents, $entryName)
     {
         $path = tempnam(sys_get_temp_dir(), 'epu_test_zip_');
@@ -441,6 +487,8 @@ class FakeLogArchiveStorage
 {
     public $files = [];
     public $failReadDocIds = [];
+    public $failDeleteDocIds = [];
+    public $deletedDocIds = [];
     private $nextDocId = 1;
 
     public function storeFile($sourcePath, $downloadName)
@@ -472,5 +520,22 @@ class FakeLogArchiveStorage
         }
 
         return isset($this->files[$docId]) ? $this->files[$docId] : false;
+    }
+
+    public function deleteFile($docId)
+    {
+        $docId = intval($docId);
+        if(in_array($docId, $this->failDeleteDocIds, true))
+        {
+            return false;
+        }
+        if(!isset($this->files[$docId]))
+        {
+            return false;
+        }
+
+        unset($this->files[$docId]);
+        $this->deletedDocIds[] = $docId;
+        return true;
     }
 }

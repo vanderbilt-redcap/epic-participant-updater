@@ -68,6 +68,29 @@ class LogArchiveEdocStorage
         ];
     }
 
+    /**
+     * Soft-delete an archive edoc through REDCap file metadata handling.
+     *
+     * @param int $docId
+     * @return bool
+     */
+    public function deleteFile($docId)
+    {
+        $docId = intval($docId);
+        if($docId < 1) return false;
+
+        $info = \Files::getEdocInfo($docId, false, true);
+        if(!$info) return false;
+        if(!empty($info['delete_date'])) return true;
+
+        if($info['project_id'] !== null && $info['project_id'] !== '' && is_numeric($info['project_id']))
+        {
+            return (bool)\Files::deleteFileByDocId($docId, intval($info['project_id']));
+        }
+
+        return $this->softDeleteSystemEdoc($docId);
+    }
+
     private function copyToUploadTemp($sourcePath): string
     {
         $uploadPath = tempnam($this->getTempDirectory(), 'epu_edoc_');
@@ -91,5 +114,20 @@ class LogArchiveEdocStorage
             return rtrim(APP_PATH_TEMP, DIRECTORY_SEPARATOR);
         }
         return sys_get_temp_dir();
+    }
+
+    private function softDeleteSystemEdoc($docId): bool
+    {
+        // REDCap's public delete helper requires a project id, while module archives are stored without one.
+        $query = db_query(
+            "UPDATE redcap_edocs_metadata
+             SET delete_date = ?
+             WHERE doc_id = ? AND delete_date IS NULL AND project_id IS NULL",
+            [date('Y-m-d H:i:s'), intval($docId)]
+        );
+
+        if(!$query) return false;
+
+        return db_affected_rows() > 0 || (bool)\Files::wasEdocDeleted($docId);
     }
 }

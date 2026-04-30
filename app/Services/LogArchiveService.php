@@ -16,6 +16,7 @@ class LogArchiveService
     const STATUS_ALREADY_DELETED = 'already_deleted';
     const STATUS_ARCHIVED = 'archived';
     const STATUS_ARCHIVED_AND_DELETED = 'archived_and_deleted';
+    const STATUS_ARCHIVE_FILES_DELETED = 'archive_files_deleted';
     const STATUS_DELETED = 'deleted';
     const STATUS_ERROR = 'error';
     const STATUS_NO_ELIGIBLE_LOGS = 'no_eligible_logs';
@@ -23,6 +24,7 @@ class LogArchiveService
     const STATUS_VERIFIED = 'verified';
 
     const LOG_MESSAGE_ARCHIVE_RUN = 'log archive run';
+    const LOG_MESSAGE_ARCHIVE_FILES_DELETED = 'log archive files deleted';
 
     private static $LOG_FIELDS = [
         'log_id',
@@ -480,6 +482,67 @@ class LogArchiveService
         ];
     }
 
+    /**
+     * Delete the zip and manifest edocs for an indexed archive month.
+     *
+     * @param string $month
+     * @return array
+     */
+    public function deleteArchiveFiles($month): array
+    {
+        if(!preg_match('/^\d{4}-\d{2}$/', (string)$month))
+        {
+            throw new \InvalidArgumentException('Invalid archive month.', 400);
+        }
+
+        $index = $this->getArchiveIndex();
+        if(!isset($index[$month]))
+        {
+            throw new \RuntimeException('Archive month not found.', 404);
+        }
+
+        $entry = $index[$month];
+        $files = [
+            'archive' => intval($entry['archive_doc_id'] ?? 0),
+            'manifest' => intval($entry['manifest_doc_id'] ?? 0),
+        ];
+
+        foreach($files as $fileType => $docId)
+        {
+            if($docId < 1)
+            {
+                throw new \RuntimeException("Archive {$fileType} edoc is not indexed.", 404);
+            }
+        }
+
+        $deletedDocIds = [];
+        foreach($files as $fileType => $docId)
+        {
+            if(in_array($docId, $deletedDocIds, true)) continue;
+
+            if(!$this->storage->deleteFile($docId))
+            {
+                throw new \RuntimeException("Could not delete {$fileType} edoc.");
+            }
+
+            $deletedDocIds[] = $docId;
+        }
+
+        unset($index[$month]);
+        $this->saveArchiveIndex($index);
+
+        $result = [
+            'status' => self::STATUS_ARCHIVE_FILES_DELETED,
+            'month' => $month,
+            'deleted_file_count' => count($deletedDocIds),
+            'archive_filename' => $entry['archive_filename'] ?? '',
+            'manifest_filename' => $entry['manifest_filename'] ?? '',
+        ];
+        $this->logArchiveFilesDeleted($entry, $result);
+
+        return $result;
+    }
+
     private function buildManifest(array $window, array $archiveStats, array $archiveFile): array
     {
         return [
@@ -681,6 +744,20 @@ class LogArchiveService
         ];
 
         $this->module->log(self::LOG_MESSAGE_ARCHIVE_RUN, $parameters);
+    }
+
+    private function logArchiveFilesDeleted(array $entry, array $result): void
+    {
+        if(!method_exists($this->module, 'log')) return;
+
+        $this->module->log(self::LOG_MESSAGE_ARCHIVE_FILES_DELETED, [
+            'status' => 'success',
+            'archive_status' => $result['status'],
+            'archive_month' => $result['month'],
+            'archive_doc_id' => intval($entry['archive_doc_id'] ?? 0),
+            'manifest_doc_id' => intval($entry['manifest_doc_id'] ?? 0),
+            'deleted_file_count' => intval($result['deleted_file_count'] ?? 0),
+        ]);
     }
 
     private function encodeJson($data, $flags, $description): string

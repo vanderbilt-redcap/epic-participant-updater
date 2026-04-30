@@ -66,7 +66,7 @@ class API {
 
     delete(route, id, config = {}) {
         config = API.makeRoute(`${route}/${id}`, config);
-        return this.client.delete(route, config);
+        return this.client.delete('', config);
     }
 }
 

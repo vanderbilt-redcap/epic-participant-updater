@@ -110,11 +110,51 @@ class EpicController extends BaseController
             print $contents;
             exit;
         } catch(\Exception $exception) {
-            $statusCode = $exception->getCode() ?: 404;
             $this->printJSON([
                 'error' => true,
                 'message' => $exception->getMessage(),
+            ], $this->getExceptionStatusCode($exception, 404));
+        }
+    }
+
+    /**
+     * Delete the zip and manifest files for a cold-storage archive month.
+     *
+     * @param string $month
+     * @return void
+     */
+    public function deleteLogArchive($month)
+    {
+        try {
+            $result = (new LogArchiveService($this->module))->deleteArchiveFiles($month);
+            $this->printJSON($result);
+        } catch(\Exception $exception) {
+            $this->printJSON([
+                'error' => true,
+                'message' => $exception->getMessage(),
+            ], $this->getExceptionStatusCode($exception, 500));
+        }
+    }
+
+    /**
+     * Run the same archive cleanup job used by the scheduled cron.
+     *
+     * @return void
+     */
+    public function runLogArchiveCleanup()
+    {
+        try {
+            $result = $this->module->runLogArchiveCleanup();
+            $statusCode = ($result['status'] ?? '') === LogArchiveService::STATUS_ERROR ? 500 : 200;
+            $this->printJSON([
+                'message' => $this->module->getLogArchiveCleanupMessage($result),
+                'result' => $this->sanitizeLogArchiveRunResult($result),
             ], $statusCode);
+        } catch(\Throwable $throwable) {
+            $this->printJSON([
+                'error' => true,
+                'message' => $throwable->getMessage(),
+            ], $this->getExceptionStatusCode($throwable, 500));
         }
     }
 
@@ -236,6 +276,36 @@ class EpicController extends BaseController
         $filename = basename(str_replace(["\r", "\n"], '', (string)$filename));
         $filename = preg_replace('/[^A-Za-z0-9._-]/', '_', $filename);
         return $filename ?: 'log_archive.bin';
+    }
+
+    /**
+     * Return archive cleanup result fields that are safe for the browser.
+     *
+     * @param array $result
+     * @return array
+     */
+    private function sanitizeLogArchiveRunResult($result)
+    {
+        return [
+            'status' => $result['status'] ?? '',
+            'month' => $result['month'] ?? '',
+            'deleted_count' => intval($result['deleted_count'] ?? 0),
+            'row_count' => intval($result['archive']['row_count'] ?? 0),
+            'message' => $result['message'] ?? '',
+        ];
+    }
+
+    /**
+     * Normalize thrown exception codes into HTTP status codes.
+     *
+     * @param \Throwable $exception
+     * @param int $default
+     * @return int
+     */
+    private function getExceptionStatusCode($exception, $default)
+    {
+        $code = intval($exception->getCode());
+        return $code >= 400 && $code <= 599 ? $code : $default;
     }
     
     /*
