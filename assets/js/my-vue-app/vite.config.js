@@ -19,6 +19,8 @@ export default defineConfig({
         // "Strict MIME type checking is enforced for module scripts per HTML spec"
         return `${entryAlias}.${format}.js`
       },
+      // Keep the CSS artifact path stable because index.php loads it directly.
+      cssFileName: 'style',
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
@@ -41,7 +43,8 @@ export default defineConfig({
     },
   },
   define: {
-    'process.env': {},
+    // Vue's bundler build still checks NODE_ENV; REDCap serves the bundle without a Node process global.
+    'process.env.NODE_ENV': JSON.stringify('production'),
   },
   plugins: [vue()],
   resolve: {
