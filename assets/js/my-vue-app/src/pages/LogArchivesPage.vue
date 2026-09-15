@@ -1,7 +1,7 @@
 <template>
     <div class="d-flex flex-column gap-2 mt-2">
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <button type="button" class="btn btn-sm btn-primary" @click="store.loadList" :disabled="loading">
+            <button type="button" class="btn btn-sm btn-primary" aria-label="Refresh archives" @click="store.loadList" :disabled="loading">
                 <i v-if="loading" class="fas fa-spinner fa-spin fa-fw"></i>
                 <i v-else class="fas fa-refresh fa-fw"></i>
             </button>
@@ -38,7 +38,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="archives.length === 0">
+                    <tr v-if="loading && archives.length === 0">
+                        <td colspan="8" class="text-center text-muted py-3">Loading archives…</td>
+                    </tr>
+                    <tr v-else-if="!error && archives.length === 0">
                         <td colspan="8" class="text-center text-muted py-3">No log archives found</td>
                     </tr>
                     <tr v-for="archive in archives" :key="archive.month">
@@ -56,7 +59,7 @@
                         <td>{{ archive.created_at }}</td>
                         <td>
                             <span class="badge" :class="cleanupClass(archive.cleanup_status)">
-                                {{ archive.cleanup_status || 'archived' }}
+                                {{ cleanupLabel(archive.cleanup_status) }}
                             </span>
                             <div v-if="archive.deleted_at" class="text-muted small">{{ archive.deleted_at }}</div>
                         </td>
@@ -111,6 +114,13 @@ const cleanupClass = (status) => {
     if (status === 'already_deleted') return 'text-bg-success'
     if (status === 'error') return 'text-bg-danger'
     return 'text-bg-secondary'
+}
+
+// Cleanup removes active rows; the downloadable archive remains available.
+const cleanupLabel = (status) => {
+    if (status === 'deleted' || status === 'already_deleted') return 'Active logs removed'
+    if (status === 'error') return 'Cleanup failed'
+    return 'Archived'
 }
 
 const formatBytes = (value) => {

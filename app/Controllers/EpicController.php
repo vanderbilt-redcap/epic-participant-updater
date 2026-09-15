@@ -4,7 +4,9 @@ use Vanderbilt\EpicParticipantUpdater\EpicParticipantUpdater;
 use Vanderbilt\EpicParticipantUpdater\App\Models\EpicModel;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
 use Vanderbilt\EpicParticipantUpdater\App\Services\LogArchiveService;
+use Vanderbilt\EpicParticipantUpdater\App\Services\LogArchiveFile;
 
+/** Handles module API requests, including verified archive downloads and administrator actions. */
 class EpicController extends BaseController
 {
     private const LOGS_PARAM_START = '_start';
@@ -74,12 +76,17 @@ class EpicController extends BaseController
      */
     public function getLogArchives()
     {
-        $archives = (new LogArchiveService($this->module))->getArchiveList();
+        try {
+            $archives = (new LogArchiveService($this->module))->getArchiveList();
+        } catch (\Throwable $error) {
+            $this->printJSON(['error' => true, 'message' => 'Unable to load log archives. Contact your REDCap administrator.'], 500);
+        }
         foreach($archives as &$archive)
         {
             $archive['archive_download_url'] = $this->getLogArchiveDownloadUrl($archive['month'], 'archive');
             $archive['manifest_download_url'] = $this->getLogArchiveDownloadUrl($archive['month'], 'manifest');
         }
+        unset($archive);
 
         $this->printJSON([
             'data' => $archives,
@@ -90,7 +97,7 @@ class EpicController extends BaseController
     }
 
     /**
-     * Download an archive artifact after resolving the edoc from the archive index.
+     * Verify an indexed archive file before sending headers, then stream its owned snapshot unchanged.
      *
      * @param string $month
      * @param string $fileType
@@ -98,23 +105,65 @@ class EpicController extends BaseController
      */
     public function downloadLogArchive($month, $fileType)
     {
+        $file = null;
+        $handle = null;
+        $started = false;
+        // Allow the disconnect check to unwind through finally and remove the private snapshot.
+        $ignoreUserAbort = ignore_user_abort(true);
+        $displayErrors = ini_get('display_errors');
+        ini_set('display_errors', '0');
         try {
             $file = (new LogArchiveService($this->module))->getArchiveFile($month, $fileType);
-            $contents = $file['contents'];
-            $filename = $this->sanitizeDownloadFilename($file['filename']);
-            $mimeType = $file['mime_type'] ?: 'application/octet-stream';
+            $filename = $this->sanitizeDownloadFilename($file->getFilename());
+            $size = $file->getSize();
+            $handle = @fopen($file->getPath(), 'rb');
+            if (!$handle) throw new \RuntimeException('Could not open verified archive for delivery.');
+            if (headers_sent()) throw new \RuntimeException('Archive response headers have already been sent.');
 
-            header('Content-Type: ' . $mimeType);
+            // REDCap page buffers and compression must not prepend HTML or change the advertised attachment length.
+            while (ob_get_level() > 0) {
+                if (!@ob_end_clean()) throw new \RuntimeException('Could not clear the archive response buffer.');
+            }
+            ini_set('zlib.output_compression', '0');
+            if (function_exists('apache_setenv')) apache_setenv('no-gzip', '1');
+            if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+            header_remove('Content-Encoding');
+
+            header('Content-Type: ' . ($fileType === 'archive' ? 'application/zip' : 'application/json'));
             header('Content-Disposition: attachment; filename="' . $filename . '"');
-            header('Content-Length: ' . strlen($contents));
-            print $contents;
-            exit;
-        } catch(\Exception $exception) {
-            $this->printJSON([
-                'error' => true,
-                'message' => $exception->getMessage(),
-            ], $this->getExceptionStatusCode($exception, 404));
+            header('Content-Length: ' . $size);
+            header('Cache-Control: private, no-store, no-transform');
+            header('X-Content-Type-Options: nosniff');
+            $started = true;
+            $sent = 0;
+            while (!feof($handle)) {
+                $chunk = fread($handle, LogArchiveFile::IO_BYTES);
+                if ($chunk === false || ($chunk === '' && !feof($handle))) throw new \RuntimeException('Archive delivery was interrupted.');
+                echo $chunk;
+                $sent += strlen($chunk);
+                if (connection_aborted()) throw new \RuntimeException('Archive download connection was closed.');
+            }
+            if ($sent !== $size) throw new \RuntimeException('Archive delivery was incomplete.');
+        } catch(\Throwable $exception) {
+            $safeMonth = preg_match('/^\d{4}-\d{2}$/D', (string)$month) ? $month : 'invalid';
+            error_log('EPU archive download failed: month=' . $safeMonth . ' stage=' . ($started ? 'delivery' : 'verification') . ' exception=' . get_class($exception));
+            // Once binary output starts, preserve the incomplete transfer; never append a JSON error to it.
+            if (!$started && !headers_sent()) {
+                while (ob_get_level() > 0 && @ob_end_clean()) {}
+                header_remove('Content-Disposition');
+                header_remove('Content-Length');
+                http_response_code($this->getExceptionStatusCode($exception, 500));
+                header('Content-Type: application/json');
+                header('Cache-Control: private, no-store');
+                echo json_encode(['error' => true, 'message' => 'Unable to download this archive. Contact your REDCap administrator with the archive month.']);
+            }
+        } finally {
+            if (is_resource($handle)) fclose($handle);
+            if ($file) $file->close();
+            ini_set('display_errors', $displayErrors);
+            ignore_user_abort((bool)$ignoreUserAbort);
         }
+        exit;
     }
 
     /**

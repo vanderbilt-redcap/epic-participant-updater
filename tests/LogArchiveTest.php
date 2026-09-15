@@ -1,6 +1,7 @@
 <?php
 use PHPUnit\Framework\TestCase;
 use Vanderbilt\EpicParticipantUpdater\App\Services\LogArchiveService;
+use Vanderbilt\EpicParticipantUpdater\App\Services\LogArchiveFile;
 
 class LogArchiveTest extends TestCase
 {
@@ -124,19 +125,17 @@ class LogArchiveTest extends TestCase
     public function testArchiveMonthDoesNotDuplicateExistingIndexEntry()
     {
         $module = new FakeLogArchiveModule();
-        $module->setSystemSetting(LogArchiveService::ARCHIVE_INDEX_SETTING, json_encode([
-            '2026-01' => ['month' => '2026-01', 'archive_doc_id' => 10],
-        ]));
         $repository = new FakeLogArchiveRepository([
             ['log_id' => 1, 'timestamp' => '2026-01-15 10:00:00'],
         ]);
         $storage = new FakeLogArchiveStorage();
         $service = new LogArchiveService($module, $repository, $storage, '2026-04-30 12:00:00');
 
+        $service->archiveOldestEligibleMonth();
         $result = $service->archiveOldestEligibleMonth();
 
         $this->assertSame('already_archived', $result['status']);
-        $this->assertCount(0, $storage->files);
+        $this->assertCount(2, $storage->files);
     }
 
     public function testArchiveAndCleanupDeletesOnlyAfterVerification()
@@ -288,14 +287,16 @@ class LogArchiveTest extends TestCase
         $archiveFile = $service->getArchiveFile('2026-01', 'archive');
         $manifestFile = $service->getArchiveFile('2026-01', 'manifest');
 
-        $this->assertSame('epu_logs_2026-01.zip', $archiveFile['filename']);
-        $this->assertSame('application/zip', $archiveFile['mime_type']);
-        $this->assertSame('epu_logs_2026-01.manifest.json', $manifestFile['filename']);
-        $this->assertSame('text/plain', $manifestFile['mime_type']);
+        $this->assertSame('epu_logs_2026-01.zip', $archiveFile->getFilename());
+        $this->assertSame('application/zip', $archiveFile->getMimeType());
+        $this->assertSame('epu_logs_2026-01.manifest.json', $manifestFile->getFilename());
+        $this->assertSame('text/plain', $manifestFile->getMimeType());
 
-        $manifest = json_decode($manifestFile['contents'], true);
-        $archiveContents = self::readZipEntry($archiveFile['contents'], $manifest['archive_entry_filename']);
+        $manifest = json_decode($manifestFile->readMetadata(LogArchiveService::MAX_MANIFEST_BYTES), true);
+        $archiveContents = self::readZipEntry(file_get_contents($archiveFile->getPath()), $manifest['archive_entry_filename']);
         $this->assertStringContainsString('"message":"first"', $archiveContents);
+        $archiveFile->close();
+        $manifestFile->close();
     }
 
     public function testArchiveFileDownloadRejectsUnindexedRequests()
@@ -386,6 +387,8 @@ class FakeLogArchiveModule
     public $settings = [];
     public $logs = [];
 
+    public function readLogArchiveIndex() { return $this->getSystemSetting(LogArchiveService::ARCHIVE_INDEX_SETTING); }
+
     public function getSystemSetting($key)
     {
         return isset($this->settings[$key]) ? $this->settings[$key] : null;
@@ -437,12 +440,12 @@ class FakeLogArchiveRepository
         return null;
     }
 
-    public function getLogsForWindow($start, $end)
+    public function getLogsForWindow($start, $end, $maxLogId = null)
     {
         $matches = [];
         foreach($this->rows as $row)
         {
-            if($row['timestamp'] >= $start && $row['timestamp'] < $end)
+            if($row['timestamp'] >= $start && $row['timestamp'] < $end && ($maxLogId === null || $row['log_id'] <= $maxLogId))
             {
                 $matches[] = $row;
             }
@@ -450,12 +453,19 @@ class FakeLogArchiveRepository
         return $matches;
     }
 
-    public function countLogsForWindow($start, $end)
+    public function getMaxLogIdForWindow($start, $end)
     {
-        return count($this->getLogsForWindow($start, $end));
+        return max(array_merge([0], array_column($this->getLogsForWindow($start, $end), 'log_id')));
     }
 
-    public function deleteLogsForWindow($start, $end)
+    public function withArchiveLock(callable $operation) { return $operation(); }
+
+    public function countLogsForWindow($start, $end, $maxLogId = null)
+    {
+        return count($this->getLogsForWindow($start, $end, $maxLogId));
+    }
+
+    public function deleteLogsForWindow($start, $end, $maxLogId = null)
     {
         if($this->failDeleteBeforeDeleting)
         {
@@ -466,7 +476,7 @@ class FakeLogArchiveRepository
         $kept = [];
         foreach($this->rows as $row)
         {
-            if($row['timestamp'] >= $start && $row['timestamp'] < $end)
+            if($row['timestamp'] >= $start && $row['timestamp'] < $end && ($maxLogId === null || $row['log_id'] <= $maxLogId))
             {
                 $deleted++;
                 continue;
@@ -519,7 +529,11 @@ class FakeLogArchiveStorage
             return false;
         }
 
-        return isset($this->files[$docId]) ? $this->files[$docId] : false;
+        if (!isset($this->files[$docId])) return false;
+        $file = $this->files[$docId];
+        $owned = LogArchiveFile::create($file['filename'], $file['mime_type']);
+        file_put_contents($owned->getPath(), $file['contents']);
+        return $owned;
     }
 
     public function deleteFile($docId)

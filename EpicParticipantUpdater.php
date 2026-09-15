@@ -13,6 +13,7 @@ use Vanderbilt\EpicParticipantUpdater\App\Helpers\Record as RecordHelper;
 use Vanderbilt\EpicParticipantUpdater\App\Models\Logger;
 use Vanderbilt\EpicParticipantUpdater\App\Services\LogArchiveService;
 
+/** Integrates Epic participant updates, module configuration, and scheduled log retention with REDCap. */
 class EpicParticipantUpdater extends AbstractExternalModule
 {
 
@@ -283,6 +284,21 @@ class EpicParticipantUpdater extends AbstractExternalModule
     public function runLogArchiveCleanup()
     {
         return (new LogArchiveService($this))->archiveAndCleanupOldestEligibleMonth();
+    }
+
+    /** Read the archive index from the primary connection so replica lag cannot overwrite newer archive references. */
+    public function readLogArchiveIndex()
+    {
+        $result = db_query(
+            'SELECT s.value FROM redcap_external_module_settings s
+             INNER JOIN redcap_external_modules m ON m.external_module_id = s.external_module_id
+             WHERE m.directory_prefix = ? AND s.project_id IS NULL AND s.`key` = ?',
+            [$this->PREFIX, LogArchiveService::ARCHIVE_INDEX_SETTING], null, MYSQLI_STORE_RESULT, true
+        );
+        if (!$result || db_num_rows($result) > 1) throw new \RuntimeException('Could not read a consistent log archive index.');
+        $row = db_fetch_assoc($result);
+        db_free_result($result);
+        return $row ? $row['value'] : null;
     }
 
     /**
